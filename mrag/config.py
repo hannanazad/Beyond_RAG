@@ -268,6 +268,15 @@ class Config:
     # 10 of 20 cost eight searched sections to gain two cited ones.
     expansion_reserved_slots: int = 3
 
+    # ---- figure relevance filter --------------------------------------
+    # Figures arriving by graph link have score 0.0 and were never checked
+    # against the query, so off-topic tables ate image slots. The filter
+    # reranks them on caption/title/sign-codes and keeps the top few.
+    # OFF for retrieve(): turning it on changes the RAG baseline, so it
+    # must be measured. Always ON for the two VINE paths.
+    figure_relevance_filter: bool = False
+    top_k_figures_final: int = 4
+
     # Figure retrieval works in stages now:
     #   1. Path A — figures CITED by winning chunks (KG cross-links). High
     #      precision; count is whatever the winners cite.

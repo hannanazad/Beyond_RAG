@@ -228,6 +228,13 @@ class Retriever:
                 if len(figs_out) >= candidate_cap:
                     break
 
+        # OFF by default: switching this on changes the RAG baseline, so it
+        # has to be a measured change, not a silent one.
+        if getattr(CFG, "figure_relevance_filter", False):
+            figs_out = self._filter_figures_by_relevance(
+                query, figs_out,
+                keep=result.debug.get("figure_router", {}).get("max_figures"),
+            )
         result.figures = figs_out
         return self._finish_pages(query, result)
 
@@ -417,6 +424,7 @@ class Retriever:
                     figure_ids_seen.add(fid)
                     payload["source"] = "kg_link"
                     figs_out.append(payload)
+        figs_out = self._filter_figures_by_relevance(query, figs_out)
         result.figures = figs_out
 
         result.debug["n_chunks"] = len(final_chunks)
@@ -567,11 +575,69 @@ class Retriever:
                     figure_ids_seen.add(fid)
                     payload["source"] = "kg_link"
                     figs_out.append(payload)
+        figs_out = self._filter_figures_by_relevance(query, figs_out)
         result.figures = figs_out
 
         result.debug["n_chunks"] = len(final_chunks)
         result.debug["n_figures"] = len(figs_out)
         return result
+
+    def _filter_figures_by_relevance(
+        self,
+        query: str,
+        figs: List[Dict[str, Any]],
+        keep: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Drop figures that have nothing to do with the query.
+
+        Paths A, C and B collect figures in citation order with no relevance
+        check, so `score` is 0.0 for everything that arrived by graph link. On
+        a STOP-sign question that let Table 2D-1 (guide signs) and Table 2H-1
+        (general information signs) through — neither contains a STOP sign —
+        and they took 8 of the 12 image slots.
+
+        Scoring uses the cross-encoder already loaded for chunks, against the
+        figure's caption, title and depicted sign codes. Cheap: a handful of
+        short strings, no extra model.
+
+        Figures the QUERY NAMED are pinned and never dropped. If someone asks
+        about Table 2B-1, Table 2B-1 is not a candidate to be filtered.
+        """
+        if not figs:
+            return figs
+        keep = int(keep if keep is not None
+                   else getattr(CFG, "top_k_figures_final", 4))
+
+        pinned = [f for f in figs if f.get("source") == "explicit_query_id"]
+        rest = [f for f in figs if f.get("source") != "explicit_query_id"]
+        room = max(0, keep - len(pinned))
+        if not rest or room >= len(rest):
+            return pinned + rest[:room]
+
+        def _text(f: Dict[str, Any]) -> str:
+            codes = f.get("sign_codes") or f.get("sign_codes_depicted") or []
+            if isinstance(codes, str):
+                codes = [codes]
+            return " ".join(filter(None, [
+                str(f.get("figure_id", "")),
+                str(f.get("caption") or f.get("title") or ""),
+                "depicts " + " ".join(map(str, codes[:20])) if codes else "",
+            ]))[:1500]
+
+        try:
+            ranked = self.rerank.rank(query, [_text(f) for f in rest], top_k=room)
+        except Exception as e:
+            log.warning("Figure relevance rerank failed (%r); keeping order", e)
+            return pinned + rest[:room]
+
+        kept = []
+        for idx, score in ranked:
+            kept.append({**rest[idx], "relevance": float(score)})
+        dropped = [rest[i].get("figure_id") for i in range(len(rest))
+                   if i not in {ix for ix, _ in ranked}]
+        if dropped:
+            log.info("Figure filter: kept %d, dropped %s", len(kept) + len(pinned), dropped)
+        return pinned + kept
 
     def _finish_pages(self, query: str, result: RetrievalResult) -> RetrievalResult:
         """ColPali page retrieval (runs for every query, incl. no-figure ones)."""
