@@ -232,10 +232,163 @@ class Retriever:
         return self._finish_pages(query, result)
 
     # ------------------------------------------------------------------
-    # VINE entry point. SEPARATE from retrieve() on purpose: the RAG
-    # baseline must keep behaving exactly as it did, or the Table 2
+    # VINE entry points. Both are SEPARATE from retrieve() on purpose: the
+    # RAG baseline must keep behaving exactly as it did, or the Table 2
     # comparison compares two different systems.
+    #
+    # Two jobs, two methods:
+    #   retrieve_for_compile()    breadth  — find every provision that might
+    #                                        hold an obligation
+    #   retrieve_for_obligation() depth    — everything about ONE claim
     # ------------------------------------------------------------------
+
+    def retrieve_for_compile(
+        self,
+        query: str,
+        top_k: Optional[int] = None,
+        expand_cross_references: bool = True,
+        expansion_slots: Optional[int] = None,
+    ) -> RetrievalResult:
+        """Wide retrieval for the obligation-extraction step.
+
+        The compiler reads this and extracts obligations from it. A provision
+        that never comes back has its obligations silently omitted, and you
+        cannot verify an obligation you never extracted — so obligation recall
+        is capped by what this returns. That is a different objective from
+        answering a question, where a tight evidence set is better.
+
+        Cross-reference expansion: for each section the top-ranked chunks
+        belong to, pull in the sections it cites. Only `cites_section` edges.
+        Not `mentions` (2,559 of them) or `depicts` (2,202) — those flood the
+        candidate set with loosely related material.
+
+        This is not a clever retrieval technique. It is following the pointers
+        the standard puts in its own text: 4K.04 paragraph 4 says "see
+        Paragraph 6 in Section 4K.03", so 4K.03 is part of 4K.04. In this
+        corpus 338 sections cite another, and 77 of 120 answerable benchmark
+        questions have a provision citing a section the gold answer key never
+        lists.
+
+        Expanded chunks were never ranked, so they carry no search score and
+        would lose to anything the search found. They get RESERVED SLOTS
+        instead: `top_k_fused` is 30 and `top_k_after_graph` is 40, so ten
+        places already existed for this and have never been filled.
+
+        Expect context precision to fall. That is the right trade here —
+        missing an obligation is worse than reading an extra paragraph — which
+        is also why this is not used on the RAG path.
+        """
+        result = RetrievalResult()
+        result.debug["query"] = query
+        result.debug["mode"] = "compile"
+
+        explicit = self.kg.query_entities(query)
+        dense, sparse_list = self.text.encode_both([query])
+        fused = self.store.search_chunks_hybrid(
+            CFG.coll_chunks, dense[0], sparse_list[0], top_k=CFG.top_k_fused,
+        )
+
+        # ---- score the searched chunks, same formula as retrieve() -------
+        scored = []
+        for hit in fused:
+            payload = hit["payload"] or {}
+            base = float(hit.get("score", 0.0))
+            s_graph = self.kg.proximity_score(explicit, payload.get("chunk_id", ""))
+            s_rt = CFG.rule_type_weight(payload.get("content_type", "Support"))
+            s_hier = _hierarchy_prior(query, payload)
+            scored.append((
+                CFG.w_dense * base
+                + CFG.w_graph * s_graph
+                + CFG.w_ruletype * (s_rt - 1.0)
+                + CFG.w_hierarchy * s_hier,
+                hit,
+            ))
+        scored.sort(key=lambda t: t[0], reverse=True)
+        precursor = [h for _s, h in scored]
+        seen_ids = {(h["payload"] or {}).get("chunk_id", "") for h in precursor}
+
+        # ---- expansion, into its own reserved slots ----------------------
+        n_slots = int(expansion_slots if expansion_slots is not None
+                      else max(0, CFG.top_k_after_graph - CFG.top_k_fused))
+        expanded_hits: List[Dict[str, Any]] = []
+        cited_sections: List[str] = []
+
+        if expand_cross_references and n_slots > 0:
+            top_sections, seen_secs = [], set()
+            for h in precursor[: CFG.expansion_source_chunks]:
+                sec = (h["payload"] or {}).get("section_id", "")
+                if sec and sec not in seen_secs:
+                    seen_secs.add(sec)
+                    top_sections.append(sec)
+
+            for sec in top_sections:
+                for ref in self.kg.sections_cited_by(sec):
+                    if ref not in seen_secs and ref not in cited_sections:
+                        cited_sections.append(ref)
+
+            expand_ids = []
+            for ref in cited_sections:
+                for cid in self.kg.chunks_for_section(ref):
+                    if cid not in seen_ids:
+                        expand_ids.append(cid)
+
+            expanded_hits = self.store.fetch_chunks_by_ids(
+                CFG.coll_chunks, expand_ids,
+                default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
+            )[:n_slots]
+
+        result.debug["expanded_from_sections"] = cited_sections
+        result.debug["expanded_chunks"] = len(expanded_hits)
+        result.debug["expansion_slots"] = n_slots
+
+        # ---- rerank searched + expanded together -------------------------
+        candidates = precursor[: CFG.top_k_fused] + expanded_hits
+        k = int(top_k if top_k is not None
+                else getattr(CFG, "top_k_compile_chunks", 20))
+        final_chunks = []
+        if candidates:
+            docs = [h["payload"].get("text", "")[:1500] for h in candidates]
+            for idx, score in self.rerank.rank(query, docs, top_k=k):
+                payload = candidates[idx]["payload"] or {}
+                final_chunks.append({
+                    **payload,
+                    "score": score,
+                    "source": "expanded" if idx >= len(precursor[: CFG.top_k_fused])
+                              else "searched",
+                })
+        result.chunks = final_chunks
+        result.debug["n_expanded_kept"] = sum(
+            1 for c in final_chunks if c.get("source") == "expanded")
+
+        # ---- figures: named first, then cited by the winning chunks ------
+        figure_ids_seen: Set[str] = set()
+        figs_out: List[Dict[str, Any]] = []
+        cap = CFG.top_k_figures_candidates
+        for node in sorted(explicit):
+            if not node.startswith("figure:"):
+                continue
+            fid = node.split(":", 1)[1]
+            payload = _figure_payload_from_graph(self.kg, fid)
+            if payload and fid not in figure_ids_seen:
+                figure_ids_seen.add(fid)
+                payload["source"] = "explicit_query_id"
+                figs_out.append(payload)
+        for ch in final_chunks:
+            if len(figs_out) >= cap:
+                break
+            for fid in self.kg.figures_for_chunk(ch.get("chunk_id", "")):
+                if fid in figure_ids_seen or len(figs_out) >= cap:
+                    continue
+                payload = _figure_payload_from_graph(self.kg, fid)
+                if payload:
+                    figure_ids_seen.add(fid)
+                    payload["source"] = "kg_link"
+                    figs_out.append(payload)
+        result.figures = figs_out
+
+        result.debug["n_chunks"] = len(final_chunks)
+        result.debug["n_figures"] = len(figs_out)
+        return result
 
     def retrieve_for_obligation(
         self,

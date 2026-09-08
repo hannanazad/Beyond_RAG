@@ -257,6 +257,12 @@ class Config:
     # They have no RRF rank, so without a floor they can never compete.
     # Roughly the RRF score at rank 5 (1/(60+5) = 0.0154).
     obligation_anchor_score: float = 0.015
+    # Chunks the compiler reads to extract obligations. Wider than the
+    # RAG default: a missed provision is a missed obligation.
+    top_k_compile_chunks: int = 20
+    # How many top-ranked chunks contribute their section's citations
+    # to cross-reference expansion.
+    expansion_source_chunks: int = 10
 
     # Figure retrieval works in stages now:
     #   1. Path A — figures CITED by winning chunks (KG cross-links). High
