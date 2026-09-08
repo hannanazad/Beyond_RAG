@@ -276,11 +276,7 @@ class Config:
     # must be measured. Always ON for the two VINE paths.
     figure_relevance_filter: bool = False
     top_k_figures_final: int = 4
-    # How many winning chunks contribute their sign codes as the query's
-    # code context. A STOP-sign question retrieves chunks tagged R1-1, and a
-    # figure that shares no code with any of them is almost certainly a
-    # different sign family.
-    figure_code_context_chunks: int = 6
+
 
     # Figure retrieval works in stages now:
     #   1. Path A — figures CITED by winning chunks (KG cross-links). High

@@ -656,13 +656,22 @@ class Retriever:
             return pinned
 
         # ---- what sign codes is this query about? ------------------------
+        # From the QUERY only. Taking them from the winning chunks was a
+        # mistake: on a sizes question the top chunks are size-table
+        # paragraphs listing dozens of unrelated codes, so a STOP-sign query
+        # ended up with a context of D1-1, D1-2, D1-3 (guide signs) and the
+        # filter then preferred the guide-sign tables.
+        #
+        # Two sources, both exact:
+        #   - a code written in the query, e.g. "(R2-1)"
+        #   - a sign NAME written in the query, matched against the graph's
+        #     canonical_name — "STOP-sign" -> STOP Sign -> R1-1. 556 codes
+        #     carry a name.
         context_codes: Set[str] = set()
         for node in (explicit or ()):
             if node.startswith("signcode:"):
                 context_codes.add(node.split(":", 1)[1].upper())
-        for ch in (context_chunks or [])[: getattr(CFG, "figure_code_context_chunks", 6)]:
-            for c in (ch.get("sign_codes") or []):
-                context_codes.add(str(c).upper())
+        context_codes |= self._codes_named_in(query)
 
         def _codes(f: Dict[str, Any]) -> Set[str]:
             raw = f.get("sign_codes") or f.get("sign_codes_depicted") or ()
@@ -678,7 +687,7 @@ class Retriever:
                 "depicts " + " ".join(codes[:20]) if codes else "",
             ]))[:1500]
 
-        # ---- cross-encoder score, used as the tiebreak -------------------
+        # ---- cross-encoder score, used as the final tiebreak -------------
         ce = {}
         try:
             for i, sc in self.rerank.rank(query, [_text(f) for f in rest],
@@ -690,27 +699,59 @@ class Retriever:
 
         scored = []
         for i, f in enumerate(rest):
-            overlap = len(_codes(f) & context_codes) if context_codes else 0
-            scored.append({**f, "code_overlap": overlap, "relevance": ce.get(i, 0.0)})
+            fc = _codes(f)
+            overlap = len(fc & context_codes) if context_codes else 0
+            # Specificity, not raw count: Table 9A-1 lists 170 codes and would
+            # overlap with almost anything. A table where the wanted sign is a
+            # larger share of its contents is more likely to be about it.
+            specificity = overlap / len(fc) if fc else 0.0
+            scored.append({**f, "code_overlap": overlap,
+                           "code_specificity": round(specificity, 5),
+                           "relevance": ce.get(i, 0.0)})
 
-        any_overlap = any(s["code_overlap"] > 0 for s in scored)
-        if any_overlap:
+        if any(s["code_overlap"] > 0 for s in scored):
             eligible = [s for s in scored if s["code_overlap"] > 0]
-            dropped = [(s["figure_id"], s["code_overlap"], round(s["relevance"], 2))
+            dropped = [(s["figure_id"], round(s["relevance"], 2))
                        for s in scored if s["code_overlap"] == 0]
         else:
             eligible, dropped = scored, []
-        eligible.sort(key=lambda s: (-s["code_overlap"], -s["relevance"]))
+        eligible.sort(key=lambda s: (-s["code_specificity"], -s["relevance"]))
 
         kept = eligible[:room]
         log.info(
-            "Figure filter | pinned=%s | codes=%s | kept=%s%s",
+            "Figure filter | pinned=%s | query codes=%s | kept=%s%s",
             [f.get("figure_id") for f in pinned],
-            sorted(context_codes)[:8] or "none",
-            [(s["figure_id"], s["code_overlap"], round(s["relevance"], 2)) for s in kept],
+            sorted(context_codes) or "none",
+            [(s["figure_id"], s["code_overlap"], s["code_specificity"]) for s in kept],
             f" | dropped(no code match)={dropped}" if dropped else "",
         )
         return pinned + kept
+
+    _sign_name_index: Optional[List[Tuple[str, str]]] = None
+
+    def _codes_named_in(self, text: str) -> Set[str]:
+        """Sign codes whose canonical name appears in the text.
+
+        The graph stores canonical_name on SignCode nodes ("STOP Sign" for
+        R1-1), so a query that says "STOP-sign" can be resolved to a code even
+        though it never writes one. Built once and cached on the instance.
+        """
+        if Retriever._sign_name_index is None:
+            idx = []
+            for node, data in self.kg.g.nodes(data=True):
+                if data.get("kind") != "SignCode":
+                    continue
+                name = (data.get("canonical_name") or "").strip()
+                code = data.get("id")
+                # Names under 5 chars ("Sign") match everything.
+                if name and code and len(name) >= 5:
+                    idx.append((_norm_words(name), str(code).upper()))
+            idx.sort(key=lambda t: -len(t[0]))       # longest name wins first
+            Retriever._sign_name_index = idx
+            log.debug("Sign-name index built: %d names", len(idx))
+
+        hay = _norm_words(text)
+        return {code for name, code in Retriever._sign_name_index if name in hay}
 
     def _finish_pages(self, query: str, result: RetrievalResult) -> RetrievalResult:
         """ColPali page retrieval (runs for every query, incl. no-figure ones)."""
@@ -725,6 +766,13 @@ class Retriever:
             except Exception as e:
                 log.warning("ColPali page retrieval failed: %r", e)
         return result
+
+
+
+def _norm_words(text: str) -> str:
+    """Lowercase, punctuation to spaces, single-spaced and padded, so
+    " stop sign " matches "STOP-sign" but not "nonstop signal"."""
+    return " " + re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", text.lower())).strip() + " "
 
 
 def _hierarchy_prior(query: str, payload: Dict[str, Any]) -> float:
