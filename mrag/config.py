@@ -276,6 +276,12 @@ class Config:
     # must be measured. Always ON for the two VINE paths.
     figure_relevance_filter: bool = False
     top_k_figures_final: int = 4
+    # Drop a figure whose relevance is below this FRACTION of the best
+    # candidate's. Relative, because cross-encoder scores are not on a
+    # fixed scale. 0.0 disables it and only the count cap applies.
+    # Set this from real scores — turn the filter on, read the
+    # 'Figure filter' log line, then pick a value.
+    figure_relevance_min_ratio: float = 0.0
 
     # Figure retrieval works in stages now:
     #   1. Path A — figures CITED by winning chunks (KG cross-links). High

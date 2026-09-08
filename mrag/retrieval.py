@@ -611,8 +611,8 @@ class Retriever:
         pinned = [f for f in figs if f.get("source") == "explicit_query_id"]
         rest = [f for f in figs if f.get("source") != "explicit_query_id"]
         room = max(0, keep - len(pinned))
-        if not rest or room >= len(rest):
-            return pinned + rest[:room]
+        if not rest:
+            return pinned
 
         def _text(f: Dict[str, Any]) -> str:
             codes = f.get("sign_codes") or f.get("sign_codes_depicted") or []
@@ -624,19 +624,39 @@ class Retriever:
                 "depicts " + " ".join(map(str, codes[:20])) if codes else "",
             ]))[:1500]
 
+        # Always score, even when everything would fit. A count cap alone
+        # cannot help when the problem is 3 irrelevant figures and 4 slots —
+        # which is the actual case: Table 2H-1 (general information signs) has
+        # no STOP sign in it and still took image slots on a STOP-sign query.
         try:
-            ranked = self.rerank.rank(query, [_text(f) for f in rest], top_k=room)
+            ranked = self.rerank.rank(query, [_text(f) for f in rest],
+                                      top_k=len(rest))
         except Exception as e:
             log.warning("Figure relevance rerank failed (%r); keeping order", e)
             return pinned + rest[:room]
 
-        kept = []
-        for idx, score in ranked:
-            kept.append({**rest[idx], "relevance": float(score)})
-        dropped = [rest[i].get("figure_id") for i in range(len(rest))
-                   if i not in {ix for ix, _ in ranked}]
-        if dropped:
-            log.info("Figure filter: kept %d, dropped %s", len(kept) + len(pinned), dropped)
+        scored = [{**rest[i], "relevance": float(sc)} for i, sc in ranked]
+
+        # Relative cutoff: drop anything scoring far below the best candidate.
+        # Relative, not absolute, because cross-encoder scores are not on a
+        # fixed scale. Set to 0.0 to disable and fall back to the count cap.
+        ratio = float(getattr(CFG, "figure_relevance_min_ratio", 0.0))
+        kept = scored
+        if ratio > 0.0 and scored:
+            top = max(s["relevance"] for s in scored)
+            floor = top * ratio if top > 0 else float("-inf")
+            kept = [s for s in scored if s["relevance"] >= floor]
+
+        dropped = [(s["figure_id"], round(s["relevance"], 4))
+                   for s in scored if s not in kept]
+        kept = kept[:room]
+        log.info(
+            "Figure filter | pinned=%s | scored=%s | kept=%s%s",
+            [f.get("figure_id") for f in pinned],
+            [(s["figure_id"], round(s["relevance"], 4)) for s in scored],
+            [s["figure_id"] for s in kept],
+            f" | dropped={dropped}" if dropped else "",
+        )
         return pinned + kept
 
     def _finish_pages(self, query: str, result: RetrievalResult) -> RetrievalResult:
