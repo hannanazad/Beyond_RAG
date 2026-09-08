@@ -29,7 +29,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 import numpy as np
 
@@ -230,6 +230,162 @@ class Retriever:
 
         result.figures = figs_out
         return self._finish_pages(query, result)
+
+    # ------------------------------------------------------------------
+    # VINE entry point. SEPARATE from retrieve() on purpose: the RAG
+    # baseline must keep behaving exactly as it did, or the Table 2
+    # comparison compares two different systems.
+    # ------------------------------------------------------------------
+
+    def retrieve_for_obligation(
+        self,
+        query: str,
+        obligation: str,
+        certificates: Optional[Sequence[Dict[str, Any]]] = None,
+        top_k: Optional[int] = None,
+        follow_cross_references: bool = True,
+    ) -> RetrievalResult:
+        """Retrieve evidence for ONE obligation, conditioned on what is already
+        established.
+
+        `retrieve()` answers "what is relevant to this question" once and stops.
+        This answers "what do I need to check THIS claim, given what I already
+        know" — the paper's R_i = Retrieve(q, phi_i, Gamma_t, K).
+
+        Three things differ from the one-shot path:
+
+        1. The search text is the obligation, not the question. Verifying "the
+           roadway is classified as a conventional road" should not retrieve
+           whatever the original question was about.
+        2. Sections already established by certificates are pulled WHOLE, by id,
+           rather than hoping a vector search surfaces the right paragraphs.
+           Their cross-referenced sections come too, one hop, because a
+           provision's pointers are part of the provision.
+        3. `top_k` is caller-controlled. The RAG default of 6 chunks is a page
+           and a half of a standard; an obligation with a guard and an
+           exception needs more.
+
+        `certificates` follow Appendix A: each is a mapping with an "evidence"
+        list of {"type": "section"|"figure"|"table", "id": "..."}. A bare list
+        of section-id strings is also accepted.
+        """
+        result = RetrievalResult()
+        result.debug["query"] = query
+        result.debug["obligation"] = obligation
+
+        # ---- 1. what do the certificates already establish? --------------
+        established: List[str] = []
+        for cert in certificates or []:
+            if isinstance(cert, str):
+                established.append(cert)
+                continue
+            for ev in (cert.get("evidence") or []):
+                if isinstance(ev, str):
+                    established.append(ev)
+                elif ev.get("type") == "section" and ev.get("id"):
+                    established.append(str(ev["id"]))
+        established = list(dict.fromkeys(established))
+
+        anchor_sections = list(established)
+        if follow_cross_references:
+            for sec in established:
+                for ref in self.kg.sections_cited_by(sec):
+                    if ref not in anchor_sections:
+                        anchor_sections.append(ref)
+        result.debug["established_sections"] = established
+        result.debug["anchor_sections"] = anchor_sections
+
+        # ---- 2. pull those sections whole, by id -------------------------
+        anchor_chunk_ids: List[str] = []
+        for sec in anchor_sections:
+            anchor_chunk_ids.extend(self.kg.chunks_for_section(sec))
+        anchor_hits = self.store.fetch_chunks_by_ids(
+            CFG.coll_chunks, anchor_chunk_ids,
+            default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
+        )
+        result.debug["anchor_chunks"] = len(anchor_hits)
+
+        # ---- 3. search on the OBLIGATION text ----------------------------
+        explicit = self.kg.query_entities(f"{obligation} {query}")
+        dense, sparse_list = self.text.encode_both([obligation])
+        fused = self.store.search_chunks_hybrid(
+            CFG.coll_chunks, dense[0], sparse_list[0], top_k=CFG.top_k_fused,
+        )
+
+        # ---- 4. merge, then score with the SAME formula as retrieve() ----
+        merged, seen = [], set()
+        for hit in anchor_hits + fused:          # anchors first: ties go to them
+            cid = (hit["payload"] or {}).get("chunk_id", "")
+            if cid and cid in seen:
+                continue
+            seen.add(cid)
+            merged.append(hit)
+
+        scored = []
+        for hit in merged:
+            payload = hit["payload"] or {}
+            chunk_id = payload.get("chunk_id", "")
+            base = float(hit.get("score", 0.0))
+            s_graph = self.kg.proximity_score(explicit, chunk_id)
+            s_rt = CFG.rule_type_weight(payload.get("content_type", "Support"))
+            s_hier = _hierarchy_prior(obligation, payload)
+            final = (
+                CFG.w_dense * base
+                + CFG.w_graph * s_graph
+                + CFG.w_ruletype * (s_rt - 1.0)
+                + CFG.w_hierarchy * s_hier
+            )
+            scored.append((final, hit))
+        scored.sort(key=lambda t: t[0], reverse=True)
+        precursor = [h for _s, h in scored[: CFG.top_k_after_graph]]
+
+        # ---- 5. rerank against the obligation, not the question ----------
+        k = int(top_k if top_k is not None
+                else getattr(CFG, "top_k_obligation_chunks", 12))
+        final_chunks = []
+        if precursor:
+            docs = [h["payload"].get("text", "")[:1500] for h in precursor]
+            for idx, score in self.rerank.rank(obligation, docs, top_k=k):
+                payload = precursor[idx]["payload"] or {}
+                final_chunks.append({**payload, "score": score})
+        result.chunks = final_chunks
+
+        # ---- 6. figures ---------------------------------------------------
+        # No router here: the compiler already decided this obligation needs
+        # visual verification when it assigned the verifier. Figures named in
+        # the obligation come first, then figures the winning chunks cite.
+        figure_ids_seen: Set[str] = set()
+        figs_out: List[Dict[str, Any]] = []
+        cap = CFG.top_k_figures_candidates
+
+        for node in sorted(explicit):
+            if not node.startswith("figure:"):
+                continue
+            fid = node.split(":", 1)[1]
+            if fid in figure_ids_seen:
+                continue
+            payload = _figure_payload_from_graph(self.kg, fid)
+            if payload:
+                figure_ids_seen.add(fid)
+                payload["source"] = "explicit_obligation_id"
+                figs_out.append(payload)
+
+        for ch in final_chunks:
+            if len(figs_out) >= cap:
+                break
+            for fid in self.kg.figures_for_chunk(ch.get("chunk_id", "")):
+                if fid in figure_ids_seen or len(figs_out) >= cap:
+                    continue
+                payload = _figure_payload_from_graph(self.kg, fid)
+                if payload:
+                    figure_ids_seen.add(fid)
+                    payload["source"] = "kg_link"
+                    figs_out.append(payload)
+        result.figures = figs_out
+
+        result.debug["n_chunks"] = len(final_chunks)
+        result.debug["n_figures"] = len(figs_out)
+        return result
 
     def _finish_pages(self, query: str, result: RetrievalResult) -> RetrievalResult:
         """ColPali page retrieval (runs for every query, incl. no-figure ones)."""

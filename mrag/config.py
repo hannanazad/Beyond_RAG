@@ -247,6 +247,17 @@ class Config:
     top_k_after_graph: int = 40
     top_k_after_rerank: int = 6
 
+    # ---- VINE / per-obligation retrieval ------------------------------
+    # Used ONLY by Retriever.retrieve_for_obligation. The RAG path keeps
+    # top_k_after_rerank so the baseline is unchanged.
+    # 6 chunks is ~1.5 sections (median section = 4 chunks); an obligation
+    # with a guard and an exception needs more.
+    top_k_obligation_chunks: int = 12
+    # Score given to chunks pulled by id from an established section.
+    # They have no RRF rank, so without a floor they can never compete.
+    # Roughly the RRF score at rank 5 (1/(60+5) = 0.0154).
+    obligation_anchor_score: float = 0.015
+
     # Figure retrieval works in stages now:
     #   1. Path A — figures CITED by winning chunks (KG cross-links). High
     #      precision; count is whatever the winners cite.

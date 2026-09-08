@@ -321,6 +321,51 @@ class KG:
                 out.append(fid)
         return out
 
+    def chunks_for_section(self, section_id: str) -> List[str]:
+        """Every chunk of a section, in paragraph order.
+
+        The graph has no way to ask this before now, so anything that knows it
+        wants a whole provision — per-obligation retrieval, graph expansion,
+        evidence completeness — had to hope a vector search would surface the
+        right paragraphs. Median section is 4 chunks; the largest is 62.
+        """
+        node = f"section:{section_id}"
+        if not self.g.has_node(node):
+            return []
+        out: List[tuple] = []
+        for _u, v, d in self.g.out_edges(node, data=True):
+            if d.get("label") != "contains" or not v.startswith("chunk:"):
+                continue
+            vd = self.g.nodes.get(v, {})
+            out.append((vd.get("ordinal", 0), v.split(":", 1)[1]))
+        out.sort()
+        seen, ids = set(), []
+        for _o, cid in out:
+            if cid not in seen:
+                seen.add(cid)
+                ids.append(cid)
+        return ids
+
+    def sections_cited_by(self, section_id: str) -> List[str]:
+        """Sections this one cross-references, via its chunks' cites_section
+        edges. `4K.04` -> `['4K.03']`, because paragraph 4 points there.
+
+        Gold evidence lists the anchor section only, so a provision's pointers
+        are invisible to anything scoring against the answer key alone.
+        """
+        out, seen = [], set()
+        for cid in self.chunks_for_section(section_id):
+            node = f"chunk:{cid}"
+            if not self.g.has_node(node):
+                continue
+            for _u, v, d in self.g.out_edges(node, data=True):
+                if d.get("label") == "cites_section" and v.startswith("section:"):
+                    sec = v.split(":", 1)[1]
+                    if sec != section_id and sec not in seen:
+                        seen.add(sec)
+                        out.append(sec)
+        return out
+
     def section_cites_figures(self, section_id: str) -> bool:
         n = f"section:{section_id}"
         return bool(self.g.has_node(n)

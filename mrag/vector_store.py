@@ -250,6 +250,55 @@ class VectorStore:
 
         return _rrf_merge(dense_hits, sparse_hits, top_k=top_k)
 
+    def fetch_chunks_by_ids(
+        self,
+        name: str,
+        chunk_ids: Iterable[str],
+        default_score: float = 0.0,
+    ) -> List[Dict[str, Any]]:
+        """Fetch chunks by their string chunk_id, with no vector search.
+
+        Needed by anything that knows WHICH chunk it wants rather than what it
+        is semantically near: graph expansion pulling in a cross-referenced
+        provision, or per-obligation retrieval fetching a specific section.
+
+        Returns the same shape as `_rrf_merge`, i.e. dicts of
+        {"id", "score", "payload"}, so callers can mix these with search hits
+        without special-casing. `score` is `default_score` because these
+        chunks were never ranked — the caller decides what that is worth.
+
+        Silently skips ids that are not in the collection.
+        """
+        ids = list(dict.fromkeys(chunk_ids))          # de-dupe, keep order
+        if not ids:
+            return []
+
+        point_ids = [chunk_id_to_int(c) for c in ids]
+        try:
+            records = self._client.retrieve(
+                collection_name=name,
+                ids=point_ids,
+                with_payload=True,
+                with_vectors=False,
+            )
+        except Exception as e:
+            log.warning("fetch_chunks_by_ids failed (%r); returning nothing", e)
+            return []
+
+        by_pid = {r.id: r for r in records}
+        out: List[Dict[str, Any]] = []
+        for chunk_id, pid in zip(ids, point_ids):
+            rec = by_pid.get(pid)
+            if rec is None:
+                continue
+            out.append({"id": pid, "score": default_score, "payload": rec.payload})
+
+        missing = len(ids) - len(out)
+        if missing:
+            log.debug("fetch_chunks_by_ids: %d of %d ids not in %s",
+                      missing, len(ids), name)
+        return out
+
     def search_figures(
         self,
         name: str,
