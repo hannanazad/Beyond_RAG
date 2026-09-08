@@ -266,7 +266,7 @@ class Config:
     # Output slots reserved for cross-reference-expanded chunks.
     # Every reserved slot is one the search does not get: reserving
     # 10 of 20 cost eight searched sections to gain two cited ones.
-    expansion_reserved_slots: int = 5
+    expansion_reserved_slots: int = 3
 
     # Figure retrieval works in stages now:
     #   1. Path A — figures CITED by winning chunks (KG cross-links). High
