@@ -234,6 +234,7 @@ class Retriever:
             figs_out = self._filter_figures_by_relevance(
                 query, figs_out,
                 keep=result.debug.get("figure_router", {}).get("max_figures"),
+                context_chunks=final_chunks, explicit=explicit,
             )
         result.figures = figs_out
         return self._finish_pages(query, result)
@@ -424,7 +425,8 @@ class Retriever:
                     figure_ids_seen.add(fid)
                     payload["source"] = "kg_link"
                     figs_out.append(payload)
-        figs_out = self._filter_figures_by_relevance(query, figs_out)
+        figs_out = self._filter_figures_by_relevance(
+            query, figs_out, context_chunks=final_chunks, explicit=explicit)
         result.figures = figs_out
 
         result.debug["n_chunks"] = len(final_chunks)
@@ -575,7 +577,8 @@ class Retriever:
                     figure_ids_seen.add(fid)
                     payload["source"] = "kg_link"
                     figs_out.append(payload)
-        figs_out = self._filter_figures_by_relevance(query, figs_out)
+        figs_out = self._filter_figures_by_relevance(
+            query, figs_out, context_chunks=final_chunks, explicit=explicit)
         result.figures = figs_out
 
         result.debug["n_chunks"] = len(final_chunks)
@@ -608,54 +611,104 @@ class Retriever:
         keep = int(keep if keep is not None
                    else getattr(CFG, "top_k_figures_final", 4))
 
+    def _filter_figures_by_relevance(
+        self,
+        query: str,
+        figs: List[Dict[str, Any]],
+        keep: Optional[int] = None,
+        context_chunks: Optional[List[Dict[str, Any]]] = None,
+        explicit: Optional[Set[str]] = None,
+    ) -> List[Dict[str, Any]]:
+        """Drop figures that have nothing to do with the query.
+
+        Paths A, C and B collect figures in citation order with no relevance
+        check, so a STOP-sign question kept Table 2H-1 (general information
+        signs) and Table 7B-1 (school areas), neither of which contains a STOP
+        sign, while they ate image slots.
+
+        Caption text cannot separate these. Measured on a real query, the
+        cross-encoder scored Table 7B-1 at 4.81 and Table 2H-1 at 4.25 — ABOVE
+        Table 8B-1 at 2.56, which actually contains R1-1. Every caption reads
+        "... Sign and Plaque Sizes", so they all match a sizes question equally
+        well. No score threshold fixes an order that is simply wrong.
+
+        Sign codes do separate them, and they are already in the graph:
+        Table 2B-1 and Table 8B-1 depict R1-1; Table 7B-1 and Table 2H-1 do
+        not. The query's codes come from any code named outright plus the codes
+        carried by the winning chunks — a STOP-sign question retrieves chunks
+        tagged R1-1.
+
+        So: rank by how many codes a figure shares with the query context, and
+        use the cross-encoder only to break ties. If nothing shares a code, or
+        there is no code context at all, fall back to the cross-encoder alone.
+
+        Figures the QUERY NAMED are pinned and never dropped.
+        """
+        if not figs:
+            return figs
+        keep = int(keep if keep is not None
+                   else getattr(CFG, "top_k_figures_final", 4))
+
         pinned = [f for f in figs if f.get("source") == "explicit_query_id"]
         rest = [f for f in figs if f.get("source") != "explicit_query_id"]
         room = max(0, keep - len(pinned))
         if not rest:
             return pinned
 
+        # ---- what sign codes is this query about? ------------------------
+        context_codes: Set[str] = set()
+        for node in (explicit or ()):
+            if node.startswith("signcode:"):
+                context_codes.add(node.split(":", 1)[1].upper())
+        for ch in (context_chunks or [])[: getattr(CFG, "figure_code_context_chunks", 6)]:
+            for c in (ch.get("sign_codes") or []):
+                context_codes.add(str(c).upper())
+
+        def _codes(f: Dict[str, Any]) -> Set[str]:
+            raw = f.get("sign_codes") or f.get("sign_codes_depicted") or ()
+            if isinstance(raw, str):
+                raw = [raw]
+            return {str(c).upper() for c in raw}
+
         def _text(f: Dict[str, Any]) -> str:
-            codes = f.get("sign_codes") or f.get("sign_codes_depicted") or []
-            if isinstance(codes, str):
-                codes = [codes]
+            codes = sorted(_codes(f))
             return " ".join(filter(None, [
                 str(f.get("figure_id", "")),
                 str(f.get("caption") or f.get("title") or ""),
-                "depicts " + " ".join(map(str, codes[:20])) if codes else "",
+                "depicts " + " ".join(codes[:20]) if codes else "",
             ]))[:1500]
 
-        # Always score, even when everything would fit. A count cap alone
-        # cannot help when the problem is 3 irrelevant figures and 4 slots —
-        # which is the actual case: Table 2H-1 (general information signs) has
-        # no STOP sign in it and still took image slots on a STOP-sign query.
+        # ---- cross-encoder score, used as the tiebreak -------------------
+        ce = {}
         try:
-            ranked = self.rerank.rank(query, [_text(f) for f in rest],
-                                      top_k=len(rest))
+            for i, sc in self.rerank.rank(query, [_text(f) for f in rest],
+                                          top_k=len(rest)):
+                ce[i] = float(sc)
         except Exception as e:
-            log.warning("Figure relevance rerank failed (%r); keeping order", e)
-            return pinned + rest[:room]
+            log.warning("Figure relevance rerank failed (%r); caption order kept", e)
+            ce = {i: -float(i) for i in range(len(rest))}
 
-        scored = [{**rest[i], "relevance": float(sc)} for i, sc in ranked]
+        scored = []
+        for i, f in enumerate(rest):
+            overlap = len(_codes(f) & context_codes) if context_codes else 0
+            scored.append({**f, "code_overlap": overlap, "relevance": ce.get(i, 0.0)})
 
-        # Relative cutoff: drop anything scoring far below the best candidate.
-        # Relative, not absolute, because cross-encoder scores are not on a
-        # fixed scale. Set to 0.0 to disable and fall back to the count cap.
-        ratio = float(getattr(CFG, "figure_relevance_min_ratio", 0.0))
-        kept = scored
-        if ratio > 0.0 and scored:
-            top = max(s["relevance"] for s in scored)
-            floor = top * ratio if top > 0 else float("-inf")
-            kept = [s for s in scored if s["relevance"] >= floor]
+        any_overlap = any(s["code_overlap"] > 0 for s in scored)
+        if any_overlap:
+            eligible = [s for s in scored if s["code_overlap"] > 0]
+            dropped = [(s["figure_id"], s["code_overlap"], round(s["relevance"], 2))
+                       for s in scored if s["code_overlap"] == 0]
+        else:
+            eligible, dropped = scored, []
+        eligible.sort(key=lambda s: (-s["code_overlap"], -s["relevance"]))
 
-        dropped = [(s["figure_id"], round(s["relevance"], 4))
-                   for s in scored if s not in kept]
-        kept = kept[:room]
+        kept = eligible[:room]
         log.info(
-            "Figure filter | pinned=%s | scored=%s | kept=%s%s",
+            "Figure filter | pinned=%s | codes=%s | kept=%s%s",
             [f.get("figure_id") for f in pinned],
-            [(s["figure_id"], round(s["relevance"], 4)) for s in scored],
-            [s["figure_id"] for s in kept],
-            f" | dropped={dropped}" if dropped else "",
+            sorted(context_codes)[:8] or "none",
+            [(s["figure_id"], s["code_overlap"], round(s["relevance"], 2)) for s in kept],
+            f" | dropped(no code match)={dropped}" if dropped else "",
         )
         return pinned + kept
 
