@@ -146,6 +146,28 @@ class Retriever:
                 #    handled below.
                 return self._finish_pages(query, result)
 
+        # Path 0: figures and tables the QUERY ITSELF names.
+        # `explicit` comes from kg.query_entities(query) at step 1 but was only
+        # ever used for proximity scoring on text chunks — so asking "what is in
+        # Table 2B-1" could return every figure except Table 2B-1, whenever the
+        # chunk that cites it fell outside the reranked top-k. Named evidence is
+        # the strongest signal available; it goes first and cannot be crowded
+        # out by the later paths.
+        for node in sorted(explicit):
+            if not node.startswith("figure:"):
+                continue
+            fid = node.split(":", 1)[1]
+            if fid in figure_ids_seen:
+                continue
+            payload = _figure_payload_from_graph(self.kg, fid)
+            if payload:
+                figure_ids_seen.add(fid)
+                payload["source"] = "explicit_query_id"
+                figs_out.append(payload)
+        if figs_out:
+            log.info("Path 0: query named %d figure/table(s): %s",
+                     len(figs_out), [f.get("figure_id") for f in figs_out])
+
         # Path A: figures the winning chunks explicitly cite via "see Figure X-Y"
         for ch in final_chunks:
             for fid in self.kg.figures_for_chunk(ch.get("chunk_id", "")):
