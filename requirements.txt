@@ -77,8 +77,15 @@ qwen-vl-utils>=0.0.8
 # Int4WeightOnlyConfig` at the top, with no try/except).
 torchao>=0.13,<0.14
 
-# ----- API-mode VLM (Qwen3-VL via DashScope, or any OpenAI-compatible API) --
+# ----- API-mode VLM ---------------------------------------------------------
+# DashScope (Qwen) and Gemini are reached through the OpenAI-compatible client
+# with a custom base_url. scripts/score_answers.py also uses this client to
+# call the GPT-5.6 judge.
 openai>=1.40
+
+# Claude models use Anthropic's native SDK, NOT the OpenAI-compatible path.
+# Without this, any Claude run dies with ModuleNotFoundError at the first call.
+anthropic>=0.40
 
 # ----- Retrieval models ------------------------------------------------------
 # BGE-M3 (dense + sparse + colbert in one model)

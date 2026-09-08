@@ -28,6 +28,7 @@ To swap models or providers, edit CFG in mrag/config.py only:
 """
 from __future__ import annotations
 
+import collections
 import base64
 import logging
 import os
@@ -1226,35 +1227,71 @@ class VLM:
         used_visuals = []
 
         # A canonical MUTCD figure/table may span several sheets. Retrieval
-        # emits every sheet in `image_paths`; the old code read the singular
+        # emits every sheet in `image_paths`; older code read the singular
         # `image_path` and so only ever showed sheet 1. 116 of 553 canonical
-        # entities are multi-sheet (174 sheets total were being dropped).
-        max_sheets = int(getattr(CFG, "max_sheets_per_figure", 4))
+        # entities are multi-sheet (174 sheets were being dropped).
+        #
+        # ALLOCATION IS ROUND-ROBIN, NOT GREEDY. Taking sheets figure-by-figure
+        # lets one 8-sheet table eat most of the budget and starve every figure
+        # after it — which is worse than the original bug, because a question
+        # with five figures used to see all five. Instead: sheet 1 of every
+        # figure first, then sheet 2 of every figure, and so on. Selection is
+        # round-robin; the final list is re-sorted so each figure's sheets stay
+        # together and in order, which is what the model needs to read them.
+        max_sheets = int(getattr(CFG, "max_sheets_per_figure", 8))
         max_images = int(getattr(CFG, "max_images_total", 12))
+        page_reserve = int(getattr(CFG, "max_page_images", 2))
 
+        # Existing sheets per figure, in sheet order, capped per figure.
+        per_figure: List[List[str]] = []
         for f in figures:
             sheets = [p for p in (f.get("image_paths") or []) if p]
             if not sheets:
                 single = f.get("image_path", "")
                 sheets = [single] if single else []
             sheets = [p for p in sheets if Path(p).exists()][:max_sheets]
-            total = len(sheets)
-            for n, ip in enumerate(sheets, 1):
-                if len(image_paths) >= max_images:
-                    log.warning(
-                        "Image budget %d reached; dropping remaining sheets of %s",
-                        max_images, f.get("figure_id", "?"),
-                    )
-                    break
-                image_paths.append(ip)
-                # One used_visuals entry per image: _format_visual_lines
-                # numbers them positionally, so the two lists must stay 1:1.
-                used_visuals.append(("Figure", {**f, "_sheet": n, "_sheet_of": total}))
-        for p in pages:
-            ip = p.get("image_path", "")
-            if ip and Path(ip).exists():
-                image_paths.append(ip)
-                used_visuals.append(("Page", p))
+            per_figure.append(sheets)
+
+        page_paths = [p.get("image_path", "") for p in pages]
+        page_paths = [p for p in page_paths if p and Path(p).exists()]
+        # Leave room for page renderings so figures cannot crowd them out.
+        figure_budget = max(0, max_images - min(len(page_paths), page_reserve))
+
+        # Round-robin selection: (figure index, sheet index) pairs.
+        picked: List[tuple[int, int]] = []
+        depth = 0
+        while len(picked) < figure_budget and any(len(s) > depth for s in per_figure):
+            for fi, sheets in enumerate(per_figure):
+                if depth < len(sheets) and len(picked) < figure_budget:
+                    picked.append((fi, depth))
+            depth += 1
+
+        dropped = sum(len(s) for s in per_figure) - len(picked)
+        if dropped:
+            log.warning(
+                "Image budget %d: kept %d of %d sheets across %d figures "
+                "(round-robin, so every figure keeps at least sheet 1)",
+                max_images, len(picked), len(picked) + dropped, len(per_figure),
+            )
+
+        # Re-sort so a figure's sheets appear together, in sheet order.
+        picked.sort()
+        kept_per_figure = collections.Counter(fi for fi, _ in picked)
+        for fi, si in picked:
+            image_paths.append(per_figure[fi][si])
+            # One used_visuals entry per image: _format_visual_lines numbers
+            # them positionally, so the two lists must stay 1:1.
+            used_visuals.append(("Figure", {
+                **figures[fi],
+                "_sheet": si + 1,
+                "_sheet_of": kept_per_figure[fi],
+            }))
+
+        for ip in page_paths:
+            if len(image_paths) >= max_images:
+                break
+            image_paths.append(ip)
+            used_visuals.append(("Page", pages[page_paths.index(ip)]))
 
         evidence_text = self._format_evidence_text(chunks)
         visual_lines = self._format_visual_lines(used_visuals)

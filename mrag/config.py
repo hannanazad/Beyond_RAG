@@ -257,6 +257,9 @@ class Config:
     # and a hard ceiling on total images per request.
     max_sheets_per_figure: int = 8
     max_images_total: int = 12
+    # Slots held back for full-page renderings so figure sheets cannot
+    # crowd them out entirely.
+    max_page_images: int = 2
 
     top_k_figures_candidates: int = 10
     top_k_figures: int = 4
