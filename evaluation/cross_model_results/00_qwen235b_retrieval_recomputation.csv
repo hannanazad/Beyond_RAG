@@ -1,0 +1,2 @@
+Model,Retrieval (/25),Recall@5,MRR,nDCG@6,Context precision@6,Modality routing,Evidence sufficiency,Exact visual crop hit,Visual crop precision,Overall score (/100),Method
+Qwen3-VL 235B,19.346431888480193,0.8666666666666667,0.8255555555555556,0.8125731948430974,0.47555555555555556,0.78,0.9333333333333333,0.7764705882352941,0.6274509803921569,86.72745280599334,Recomputed from the raw 150-record primary outputs using the same retrieval definitions and 97-point normalization applied to the other final model evaluations.

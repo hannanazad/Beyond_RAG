@@ -1,0 +1,5 @@
+ablation_id: A6_no_reranker
+vlm_alias: frontier_claude
+prompt_style: fewshot
+gold_path: /content/drive/MyDrive/MRAG/benchmarks/mutcd150/v1/mutcd_benchmark_gold_v1_1_msdi.jsonl
+output_path: ablations/results/runs_A6_no_reranker.jsonl

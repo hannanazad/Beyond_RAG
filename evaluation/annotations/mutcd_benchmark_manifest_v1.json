@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "benchmark_version": "MUTCD-150-v1.0",
+  "created_at": "2026-07-11T03:28:26.257252+00:00",
+  "source_document": {
+    "filename": "mutcd11theditionr1hl.pdf",
+    "sha256": "f508594285e5fccc45714660cc6aba1f895ae88226449345582fbbc1ceb7ba07",
+    "pdf_pages": 1162,
+    "edition": "MUTCD 11th Edition with Revision 1 incorporated"
+  },
+  "counts": {
+    "total": 150,
+    "answerable": 120,
+    "unanswerable": 30,
+    "development": 30,
+    "test": 120,
+    "by_primary_modality": {
+      "text": 60,
+      "table": 30,
+      "figure": 30,
+      "mixed": 30
+    }
+  },
+  "artifacts": {
+    "question_only": {
+      "filename": "mutcd_benchmark_questions_v1.jsonl",
+      "sha256": "3a04b1d620a80704eefac34c565449a0cb8814e781dd6d73b8afb77318b954b2",
+      "purpose": "Safe input to the RAG runner; contains no gold answers or evidence."
+    },
+    "gold": {
+      "filename": "mutcd_benchmark_gold_v1.jsonl",
+      "sha256": "ce52928b96baa5467fba37a486ad351470ac5374d97888cfdf1be994c8562f05",
+      "purpose": "Evaluator-only locked answers, evidence, and scoring metadata."
+    },
+    "review_csv": {
+      "filename": "mutcd_benchmark_review_v1.csv",
+      "sha256": "87e554cbd726f554a40a10901ea4f9c1b033a8fb71cbdc3564cf3102b3e7c043",
+      "purpose": "Human review sheet."
+    }
+  },
+  "design": {
+    "primary_modalities": {
+      "text": 60,
+      "table": 30,
+      "figure": 30,
+      "mixed": 30
+    },
+    "answerability": {
+      "answerable": 120,
+      "unanswerable": 30
+    },
+    "split": {
+      "development": 30,
+      "test": 120
+    },
+    "model_agnostic": true,
+    "gold_leakage_control": "Do not load the gold file during model execution."
+  }
+}
