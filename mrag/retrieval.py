@@ -248,6 +248,7 @@ class Retriever:
         top_k: Optional[int] = None,
         expand_cross_references: bool = True,
         expansion_slots: Optional[int] = None,
+        reserved_slots: Optional[int] = None,
     ) -> RetrievalResult:
         """Wide retrieval for the obligation-extraction step.
 
@@ -349,7 +350,15 @@ class Retriever:
         # So: two independent reranks, then merge.
         k = int(top_k if top_k is not None
                 else getattr(CFG, "top_k_compile_chunks", 20))
-        n_reserved = min(n_slots, k // 2) if expanded_hits else 0
+        # How much of the OUTPUT expansion is allowed to take. This is a real
+        # trade, not a free win: every reserved slot is one the search does not
+        # get. Reserving half of 20 cost eight searched sections to gain two
+        # cited ones. A quarter keeps most of what search found while still
+        # guaranteeing the cross-referenced provisions a place. Hard ceiling of
+        # k//2 so no setting can starve the searched pool entirely.
+        want_reserved = int(reserved_slots if reserved_slots is not None
+                            else getattr(CFG, "expansion_reserved_slots", 5))
+        n_reserved = min(want_reserved, n_slots, k // 2, len(expanded_hits))
         n_searched = k - n_reserved
 
         def _rerank(pool: List[Dict[str, Any]], want: int, source: str):
