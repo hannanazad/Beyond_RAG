@@ -341,24 +341,48 @@ class Retriever:
         result.debug["expanded_chunks"] = len(expanded_hits)
         result.debug["expansion_slots"] = n_slots
 
-        # ---- rerank searched + expanded together -------------------------
-        candidates = precursor[: CFG.top_k_fused] + expanded_hits
+        # ---- rerank searched and expanded SEPARATELY ---------------------
+        # Reserving slots only in the candidate pool does nothing: the
+        # reranker then scores everything together and the expanded chunks,
+        # which are there precisely because search ranked them below the
+        # cutoff, lose again. The slots have to be reserved in the OUTPUT.
+        # So: two independent reranks, then merge.
         k = int(top_k if top_k is not None
                 else getattr(CFG, "top_k_compile_chunks", 20))
-        final_chunks = []
-        if candidates:
-            docs = [h["payload"].get("text", "")[:1500] for h in candidates]
-            for idx, score in self.rerank.rank(query, docs, top_k=k):
-                payload = candidates[idx]["payload"] or {}
-                final_chunks.append({
-                    **payload,
-                    "score": score,
-                    "source": "expanded" if idx >= len(precursor[: CFG.top_k_fused])
-                              else "searched",
-                })
+        n_reserved = min(n_slots, k // 2) if expanded_hits else 0
+        n_searched = k - n_reserved
+
+        def _rerank(pool: List[Dict[str, Any]], want: int, source: str):
+            if not pool or want <= 0:
+                return []
+            docs = [h["payload"].get("text", "")[:1500] for h in pool]
+            out = []
+            for idx, score in self.rerank.rank(query, docs, top_k=want):
+                payload = pool[idx]["payload"] or {}
+                out.append({**payload, "score": score, "source": source})
+            return out
+
+        searched_out = _rerank(precursor[: CFG.top_k_fused], n_searched, "searched")
+        expanded_out = _rerank(expanded_hits, n_reserved, "expanded")
+
+        # If one pool underfills, give the remainder to the other.
+        short = k - len(searched_out) - len(expanded_out)
+        if short > 0:
+            have = {c.get("chunk_id") for c in searched_out + expanded_out}
+            extra_pool = precursor[CFG.top_k_fused:] or precursor[: CFG.top_k_fused]
+            for h in extra_pool:
+                if short <= 0:
+                    break
+                p = h["payload"] or {}
+                if p.get("chunk_id") in have:
+                    continue
+                searched_out.append({**p, "score": 0.0, "source": "searched"})
+                short -= 1
+
+        final_chunks = searched_out + expanded_out
         result.chunks = final_chunks
-        result.debug["n_expanded_kept"] = sum(
-            1 for c in final_chunks if c.get("source") == "expanded")
+        result.debug["n_expanded_kept"] = len(expanded_out)
+        result.debug["reserved_slots_used"] = n_reserved
 
         # ---- figures: named first, then cited by the winning chunks ------
         figure_ids_seen: Set[str] = set()
