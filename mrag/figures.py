@@ -30,6 +30,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .font_index import get_font_index
 from .figure_core import (
     CaptionHit, FigureRecord, parse_caption_line, parse_midline_caption,
     regions_for_page, coverage_report, chapter_of, is_toc_page, MENTION_RE,
@@ -329,7 +330,61 @@ def _poppler_captions_for_page(pdf_path, pno):
             caps.append(hit)
     if is_toc_page(line_texts):
         caps = []
+
+    # Reject anchors that are body text, not captions.
+    #
+    # The old test was punctuation: an id ending in a period was a caption.
+    # That is wrong -- a sentence ends the same way ("...illustrated in
+    # Figure 2A-4."), and 80 crops in the shipped corpus are paragraphs cropped
+    # on exactly that mistake. 60 of them then overwrote their node's caption,
+    # page and primary image.
+    #
+    # MUTCD sets body text in Times and captions in a Helvetica face, so the
+    # font is a categorical answer rather than a threshold. Measured against
+    # the shipped corpus with a human-verified junk list: 78 of 80 junk
+    # rejected, 646 of 647 good kept. See mrag/font_index.py.
+    if caps:
+        try:
+            fi = get_font_index(str(pdf_path))
+            keep, dropped = [], []
+            for c in caps:
+                if fi.has_caption_font(pno, c.kind, c.canonical_id):
+                    keep.append(c)
+                else:
+                    dropped.append(c)
+            if dropped:
+                log.info("p%d: dropped %d body-text anchor(s): %s", pno,
+                         len(dropped),
+                         [f"{c.kind} {c.canonical_id}" for c in dropped])
+                _record_rejected(pdf_path, pno, dropped)
+            caps = keep
+        except Exception as e:          # never let the filter break an ingest
+            log.warning("font check unavailable on p%d (%r); keeping all "
+                        "caption hits", pno, e)
     return caps, (pw, ph)
+
+
+# Rejected anchors are written out rather than silently dropped: the rule is
+# ~99%% accurate, not perfect, and a human should be able to see what it threw
+# away. 2E-11 p404 is a real figure whose caption lives in the artwork rather
+# than the text layer, so no text rule can keep it.
+_REJECT_LOG: List[dict] = []
+
+
+def _record_rejected(pdf_path, pno, dropped) -> None:
+    for c in dropped:
+        _REJECT_LOG.append({"page_pdf": pno, "kind": c.kind,
+                            "canonical_id": c.canonical_id,
+                            "title": c.title, "raw_text": c.raw_text,
+                            "inset": c.inset})
+
+
+def write_rejected_log(path: Path) -> int:
+    """Write anchors the font filter rejected. Review before trusting a run."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(_REJECT_LOG, indent=1))
+    return len(_REJECT_LOG)
 
 
 def _poppler_render_page(pdf_path, pno, dpi) -> Path:
