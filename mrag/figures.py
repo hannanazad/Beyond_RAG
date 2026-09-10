@@ -65,7 +65,13 @@ def extract_figures(
     pdf_path, out_dir = Path(pdf_path), Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     if backend == "auto":
-        backend = "fitz" if _HAS_FITZ else "poppler"
+        # POPPLER, not fitz. Caption validation and font-derived table
+        # bounds live on the poppler path only; fitz silently bypasses
+        # both. A run on the fitz path produced 727 crops with 0 rejected
+        # anchors -- every junk crop kept, every table boundary wrong.
+        # Costs nothing: font_index needs pdftohtml, so poppler is already
+        # a hard dependency.
+        backend = "poppler"
     log.info("figure extraction v2 — backend=%s dpi=%d", backend, dpi)
     if backend == "fitz":
         recs = _extract_fitz(pdf_path, out_dir, dpi, page_whitelist)
@@ -110,7 +116,13 @@ def rescue_missing(
         log.warning("rescue: no caption pages found for %s", sorted(missing))
         return []
     if backend == "auto":
-        backend = "fitz" if _HAS_FITZ else "poppler"
+        # POPPLER, not fitz. Caption validation and font-derived table
+        # bounds live on the poppler path only; fitz silently bypasses
+        # both. A run on the fitz path produced 727 crops with 0 rejected
+        # anchors -- every junk crop kept, every table boundary wrong.
+        # Costs nothing: font_index needs pdftohtml, so poppler is already
+        # a hard dependency.
+        backend = "poppler"
     fn = _extract_fitz if backend == "fitz" else _extract_poppler
     cand = fn(pdf_path, out_dir, dpi, sorted(pages_todo), min_h=relaxed_min_h)
     added = [r for r in cand if (r.kind, r.canonical_id) in missing]
