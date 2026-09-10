@@ -268,6 +268,26 @@ def _extract_poppler(pdf_path, out_dir, dpi, page_whitelist, min_h=None):
             continue
         kw = {"min_h": min_h} if min_h is not None else {}
         regions = regions_for_page(caps, pw, ph, **kw)
+
+        # TABLES get their extent from the font layers instead.
+        # regions_for_page crops from one caption to the next, which in a
+        # two-column layout lets a body-text mention in the LEFT column cut
+        # across the real table in the RIGHT one -- Table 2A-3 came out 36pt
+        # tall. It also stops at the ruled border, so footnotes printed outside
+        # it were lost, and those notes are frequently obligations (Table 3G-1
+        # note 3 caps spacing at 300 feet regardless of the tabulated values;
+        # Table 6B-4's L/W/S key exists nowhere else in the corpus).
+        #
+        # Font layers give the true extent: caption Helvetica>=13, cells AND
+        # footnotes HelveticaNeueLTPro-Md 11, body Times 17. A table runs from
+        # its caption to the last 11pt run before body prose resumes, so notes
+        # are included by construction. Verified over all 68 tables: 88 crops,
+        # exactly matching a hand-cropped reference set.
+        try:
+            regions = _table_regions_by_font(pdf_path, pno, caps, regions)
+        except Exception as e:
+            log.warning("font-based table bounds unavailable on p%d (%r); "
+                        "falling back to caption-to-caption", pno, e)
         if not regions:
             continue
         page_png = _poppler_render_page(pdf_path, pno, dpi)
@@ -451,3 +471,46 @@ def _record(cap: CaptionHit, pno: int, label: str, path: str,
         dpi=dpi,
         chapter=chapter_of(cap.canonical_id),
     )
+
+
+def _table_regions_by_font(pdf_path, pno, caps, regions):
+    """Replace the region of every TABLE caption with its font-derived extent.
+    Figure regions are left alone -- figures have no reliable font layer, and
+    an over-wide figure crop is harmless while a truncated table is not."""
+    from .table_bounds import find_tables
+    from .font_index import get_font_index
+
+    fi = get_font_index(str(pdf_path))
+    runs = [(t, l, w, h, fam, size, txt)
+            for (txt, fam, size, t, l, w, h) in fi.page_runs_with_boxes(pno)]
+    if not runs:
+        return regions
+    by_id = {tb.table_id: tb for tb in find_tables(runs)}
+    if not by_id:
+        return regions
+
+    out, seen = [], set()
+    for cap, box in regions:
+        tb = by_id.get(cap.canonical_id) if cap.kind.lower() == "table" else None
+        if tb:
+            seen.add(cap.canonical_id)
+            out.append((cap, tb.as_pdf_points()))
+        else:
+            out.append((cap, box))
+
+    # Add tables regions_for_page dropped entirely. It bounds each region by the
+    # next caption, so a stray same-page mention can shrink a real table below
+    # the minimum height and delete it -- on p103 an empty-title "Table 2A-4"
+    # anchor cut Table 2A-3 down and it vanished. The font bounds do not depend
+    # on neighbouring captions, so they recover it.
+    cap_by_id = {c.canonical_id: c for c in caps if c.kind.lower() == "table"}
+    for tid, tb in by_id.items():
+        if tid in seen:
+            continue
+        cap = cap_by_id.get(tid)
+        if cap is None:
+            continue
+        log.info("p%d: recovered Table %s dropped by caption-to-caption bounds",
+                 pno, tid)
+        out.append((cap, tb.as_pdf_points()))
+    return out

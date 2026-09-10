@@ -80,7 +80,7 @@ class FontIndex:
 
     def __init__(self, pdf_path: Path):
         self.pdf_path = Path(pdf_path)
-        self._pages: Dict[int, List[Tuple[str, str, float]]] = {}
+        self._pages: Dict[int, List[tuple]] = {}
         self._built = False
 
     def build(self) -> "FontIndex":
@@ -130,12 +130,20 @@ class FontIndex:
                 if not txt:
                     continue
                 size, family = fonts.get(m.group(5), (0.0, "?"))
-                runs.append((_norm_dashes(txt), family, size))
+                runs.append((_norm_dashes(txt), family, size,
+                             int(m.group(1)), int(m.group(2)),
+                             int(m.group(3)), int(m.group(4))))
             self._pages[pno] = runs
         self._built = True
         return self
 
     def page_runs(self, pno: int) -> List[Tuple[str, str, float]]:
+        """(text, family, size) — geometry dropped."""
+        return [(r[0], r[1], r[2]) for r in self.page_runs_with_boxes(pno)]
+
+    def page_runs_with_boxes(self, pno: int):
+        """(text, family, size, top, left, width, height) in pdftohtml pixels,
+        which are 1.5x PDF points."""
         if not self._built:
             self.build()
         return self._pages.get(pno, [])
