@@ -46,6 +46,7 @@ coordinate matching is needed.
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 from functools import lru_cache
 from pathlib import Path
@@ -83,9 +84,25 @@ class FontIndex:
         self._built = False
 
     def build(self) -> "FontIndex":
-        """One pdftohtml pass over the whole document. ~10s for MUTCD."""
+        """One pdftohtml pass over the whole document. ~15s for MUTCD."""
         if self._built:
             return self
+        # Check the binary up front. Without this the failure surfaces several
+        # frames deep inside subprocess, and because the caller in figures.py
+        # catches exceptions and carries on, a missing pdftohtml means EVERY
+        # junk anchor is kept with only a warning in the log. Fail loudly here
+        # instead: a silently disabled filter is worse than a stopped ingest.
+        if shutil.which("pdftohtml") is None:
+            raise RuntimeError(
+                "pdftohtml not found. It ships with poppler-utils, the same "
+                "package as pdftotext and pdftoppm which this pipeline already "
+                "uses, so a partial install is easy to miss.\n"
+                "  Debian/Ubuntu/Colab:  apt-get install -y poppler-utils\n"
+                "  macOS:                brew install poppler\n"
+                "Without it, caption anchors cannot be checked against the "
+                "font they are set in, and body-text mentions will be cropped "
+                "as figures."
+            )
         out = subprocess.run(
             ["pdftohtml", "-xml", "-i", "-q", "-stdout", str(self.pdf_path)],
             capture_output=True, text=True, errors="ignore",

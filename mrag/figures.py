@@ -359,8 +359,15 @@ def _poppler_captions_for_page(pdf_path, pno):
                 _record_rejected(pdf_path, pno, dropped)
             caps = keep
         except Exception as e:          # never let the filter break an ingest
-            log.warning("font check unavailable on p%d (%r); keeping all "
-                        "caption hits", pno, e)
+            global _FONT_CHECK_WARNED
+            if not _FONT_CHECK_WARNED:
+                _FONT_CHECK_WARNED = True
+                log.error(
+                    "FONT CHECK DISABLED (%s). Caption anchors are NOT being "
+                    "validated, so body-text mentions will be cropped as "
+                    "figures -- 79 such crops existed in the previous corpus. "
+                    "Install poppler-utils and re-ingest.", e)
+            log.warning("font check unavailable on p%d; keeping all anchors", pno)
     return caps, (pw, ph)
 
 
@@ -369,6 +376,7 @@ def _poppler_captions_for_page(pdf_path, pno):
 # away. 2E-11 p404 is a real figure whose caption lives in the artwork rather
 # than the text layer, so no text rule can keep it.
 _REJECT_LOG: List[dict] = []
+_FONT_CHECK_WARNED = False
 
 
 def _record_rejected(pdf_path, pno, dropped) -> None:

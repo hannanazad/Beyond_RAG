@@ -1,3 +1,12 @@
+# ----- SYSTEM DEPENDENCY (not installable via pip) --------------------------
+# poppler-utils provides pdftotext, pdftoppm, pdffonts AND pdftohtml.
+# pdftohtml is required by mrag/font_index.py to read the font a caption is set
+# in; without it, caption anchors cannot be validated and body-text mentions
+# get cropped as figures. Colab ships a PARTIAL poppler install -- pdftotext and
+# pdftoppm are present but pdftohtml is not.
+#   Debian/Ubuntu/Colab:  apt-get install -y poppler-utils
+#   macOS:                brew install poppler
+
 # MUTCD Multimodal RAG (v3) — pinned requirements
 # Tested with Python 3.12 on Google Colab (A100) and TAMU HPRC Grace.
 #
