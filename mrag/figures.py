@@ -295,14 +295,17 @@ def _extract_poppler(pdf_path, out_dir, dpi, page_whitelist, min_h=None):
         # its caption to the last 11pt run before body prose resumes, so notes
         # are included by construction. Verified over all 68 tables: 88 crops,
         # exactly matching a hand-cropped reference set.
+        # Rendered up front: table bounds use ink to find drawn content that
+        # has no text (Table 6P-2's symbol icons).
+        page_png = _poppler_render_page(pdf_path, pno, dpi)
         try:
-            regions = _table_regions_by_font(pdf_path, pno, caps, regions)
+            regions = _table_regions_by_font(pdf_path, pno, caps, regions,
+                                             page_png=page_png, dpi=dpi)
         except Exception as e:
             log.warning("font-based table bounds unavailable on p%d (%r); "
                         "falling back to caption-to-caption", pno, e)
         if not regions:
             continue
-        page_png = _poppler_render_page(pdf_path, pno, dpi)
         img = Image.open(page_png)
         scale = dpi / 72.0
         for cap, (x0, y0, x1, y1) in regions:
@@ -485,11 +488,12 @@ def _record(cap: CaptionHit, pno: int, label: str, path: str,
     )
 
 
-def _table_regions_by_font(pdf_path, pno, caps, regions):
+def _table_regions_by_font(pdf_path, pno, caps, regions,
+                           page_png=None, dpi: int = 220):
     """Replace the region of every TABLE caption with its font-derived extent.
     Figure regions are left alone -- figures have no reliable font layer, and
     an over-wide figure crop is harmless while a truncated table is not."""
-    from .table_bounds import find_tables
+    from .table_bounds import find_tables, refine_with_ink
     from .font_index import get_font_index
 
     fi = get_font_index(str(pdf_path))
@@ -497,9 +501,17 @@ def _table_regions_by_font(pdf_path, pno, caps, regions):
             for (txt, fam, size, t, l, w, h) in fi.page_runs_with_boxes(pno)]
     if not runs:
         return regions
-    by_id = {tb.table_id: tb for tb in find_tables(runs)}
-    if not by_id:
+    tables = find_tables(runs)
+    if not tables:
         return regions
+
+    # Some table content is drawn, not typed. Table 6P-2 is a symbol legend
+    # whose icons are vector graphics and appear nowhere in the text layer, so
+    # a text-derived box clipped every one of them. Widen using ink, but only
+    # into space that holds no text -- otherwise a neighbour gets swallowed.
+    if page_png and Path(page_png).exists():
+        tables = [refine_with_ink(t, page_png, 918, runs=runs) for t in tables]
+    by_id = {tb.table_id: tb for tb in tables}
 
     out, seen = [], set()
     for cap, box in regions:
