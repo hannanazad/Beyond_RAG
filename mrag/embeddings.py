@@ -111,10 +111,13 @@ class ImageEmbedder:
         model_name: str = "vidore/colqwen2-v0.1",
         device: Optional[str] = None,
         torch_dtype: Optional[str] = "bfloat16",
+        revision: Optional[str] = None,
     ) -> None:
         self.model_name = model_name
         self.device = device or _auto_device()
         self.torch_dtype = torch_dtype
+        # Pinned repo commit for the PROCESSOR. See CFG.colqwen_revision.
+        self.revision = revision
         self._model = None
         self._processor = None
 
@@ -122,11 +125,20 @@ class ImageEmbedder:
         import torch
         from colpali_engine.models import ColQwen2, ColQwen2Processor
         dtype = getattr(torch, self.torch_dtype) if isinstance(self.torch_dtype, str) else self.torch_dtype
+        # The MODEL is NOT given `revision`. ColQwen2 is a PEFT adapter; on
+        # adapter repos transformers can apply `revision` to the BASE model
+        # repo (vidore/colqwen2-base), where this commit does not exist. The
+        # model already loads at main, and adapter_model.safetensors and
+        # adapter_config.json at main are byte-identical to the pinned commit
+        # (checked in Colab via blob ids). Only the processor needs the pin.
         self._model = ColQwen2.from_pretrained(
             self.model_name, torch_dtype=dtype, device_map=self.device,
         ).eval()
-        self._processor = ColQwen2Processor.from_pretrained(self.model_name)
-        log.info("ImageEmbedder loaded: %s", self.model_name)
+        self._processor = ColQwen2Processor.from_pretrained(
+            self.model_name, revision=self.revision,
+        )
+        log.info("ImageEmbedder loaded: %s (model @ main, processor @ %s)",
+                 self.model_name, self.revision or "main")
         return self
 
     def encode_images(self, images, batch_size: int = 2) -> List[np.ndarray]:

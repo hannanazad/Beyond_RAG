@@ -207,6 +207,15 @@ class Config:
     # ----- Models -----------------------------------------------------------
     bge_m3_model: str = "BAAI/bge-m3"
     colqwen_model: str = "vidore/colqwen2-v0.1"
+    # PINNED. On 2026-08-17 the vidore/colqwen2-v0.1 repo gained Sentence
+    # Transformers files, including additional_chat_templates/*.jinja.
+    # transformers 4.54.1 crashes opening that folder while loading the
+    # processor ("expected str, bytes or os.PathLike object, not NoneType").
+    # Commit 04d81562 (2025-03-21) is the last one before that change.
+    # Verified in Colab: adapter_model.safetensors and adapter_config.json are
+    # byte-identical to main, and the processor loads. Applied to the
+    # PROCESSOR only (see ImageEmbedder.load). Set to None for main.
+    colqwen_revision: Optional[str] = "04d81562a4005e7204c239941a5e36d2b93415e8"
     reranker_model: str = "mixedbread-ai/mxbai-rerank-large-v2"
     vlm_model: str = "Qwen/Qwen2.5-VL-7B-Instruct"
     vlm_model_fallback: str = "Qwen/Qwen2.5-VL-3B-Instruct"

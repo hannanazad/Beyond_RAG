@@ -53,7 +53,9 @@ def init_pipeline(load_image_embedder: bool = True, load_vlm: bool = True) -> Pi
     if load_image_embedder:
         try:
             log.info("Loading ColPali image embedder: %s", CFG.colqwen_model)
-            p.image = ImageEmbedder(CFG.colqwen_model).load()
+            p.image = ImageEmbedder(
+                CFG.colqwen_model, revision=getattr(CFG, "colqwen_revision", None),
+            ).load()
         except Exception as e:
             log.warning("Image embedder load failed (%r); page retrieval disabled.", e)
             p.image = None

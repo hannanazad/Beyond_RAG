@@ -198,8 +198,14 @@ class Retriever:
                     fid = payload.get("figure_id")
                     if fid and fid not in figure_ids_seen:
                         figure_ids_seen.add(fid)
+                        # A visual hit matches ONE crop (one sheet). Rebuild
+                        # the payload from the graph so every sheet of the
+                        # figure reaches the VLM, as Path A already does.
+                        full = _figure_payload_from_graph(self.kg, fid) or {}
                         figs_out.append({
                             **payload,
+                            **full,
+                            "matched_image_path": payload.get("image_path", ""),
                             "score": float(getattr(h, "score", 0.0)),
                             "source": "visual",
                         })

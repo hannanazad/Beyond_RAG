@@ -114,55 +114,144 @@ def step_build_kg(chunks, figures, sign_codes_dict):
     return g
 
 
+def _texts_fingerprint(texts) -> str:
+    """sha256 over the exact strings that get embedded, in order."""
+    import hashlib
+    h = hashlib.sha256()
+    for t in texts:
+        h.update(t.encode("utf-8"))
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
 def step_text_embeddings(chunks, figures):
     """BGE-M3 chunks (dense + sparse) and figure captions (dense).
 
-    Caches all three arrays as .npy / .json under cache_dir so re-runs of
-    ingestion (after a Colab session death) skip the ~5 min encoding step.
+    Caches under cache_dir so re-runs skip encoding. The cache is now
+    CHECKED before use. The old version loaded any cache file it found, so
+    after the crops were redone it paired 727 old caption vectors with 648
+    new figures, by position. Chunk and caption caches are checked
+    separately, so a stale caption cache re-encodes only the captions.
+
+    A manifest (text_embeddings_manifest.json) records a fingerprint of the
+    exact texts embedded and which encoder mode produced them.
     """
     import json
     cache_chunk_dense  = CFG.cache_dir / "chunks_dense.npy"
     cache_chunk_sparse = CFG.cache_dir / "chunks_sparse.json"
     cache_fig_dense    = CFG.cache_dir / "figures_dense.npy"
-
-    if (cache_chunk_dense.exists() and cache_chunk_sparse.exists()
-            and cache_fig_dense.exists()):
-        log.info("Text embeddings cache hit — loading from disk")
-        dense_c = np.load(cache_chunk_dense)
-        with open(cache_chunk_sparse, "r") as f:
-            sparse_raw = json.load(f)
-        sparse_c = [{int(k): float(v) for k, v in d.items()} for d in sparse_raw]
-        dense_f = np.load(cache_fig_dense)
-        return (dense_c, sparse_c, dense_f)
-
-    log.info("Loading BGE-M3 text embedder ...")
-    te = TextEmbedder(CFG.bge_m3_model).load()
+    manifest_path      = CFG.cache_dir / "text_embeddings_manifest.json"
 
     chunk_texts = [
         f"[{c.content_type}] Section {c.section_id} — {c.section_title}. {c.text}"
         for c in chunks
     ]
-    log.info("Encoding %d chunks (dense + sparse) ...", len(chunk_texts))
-    dense_c, sparse_c = te.encode_both(chunk_texts, batch_size=16)
-
     figure_texts = [
         f"{f.figure_id}. {f.title or f.caption}. Depicts: "
         f"{', '.join(f.sign_codes_depicted) or '—'}."
         for f in figures
     ]
-    log.info("Encoding %d figure captions ...", len(figure_texts))
-    dense_f = te.encode_dense(figure_texts, batch_size=32)
+    fp_chunks, fp_figs = _texts_fingerprint(chunk_texts), _texts_fingerprint(figure_texts)
 
-    # Cache to disk for fast resume after session death.
-    log.info("Caching text embeddings ...")
-    np.save(cache_chunk_dense, dense_c)
-    with open(cache_chunk_sparse, "w") as f:
-        json.dump([{str(k): v for k, v in d.items()} for d in sparse_c], f)
-    np.save(cache_fig_dense, dense_f)
-    log.info("  cached -> %s, %s, %s",
-             cache_chunk_dense.name, cache_chunk_sparse.name, cache_fig_dense.name)
+    manifest = {}
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text())
+        except Exception as e:
+            log.warning("unreadable %s (%r); treating caches as unverified", manifest_path.name, e)
 
+    # ---- chunks -------------------------------------------------------------
+    dense_c = sparse_c = None
+    if cache_chunk_dense.exists() and cache_chunk_sparse.exists():
+        d = np.load(cache_chunk_dense)
+        with open(cache_chunk_sparse, "r") as fh:
+            sraw = json.load(fh)
+        rec = manifest.get("chunks", {})
+        if len(d) != len(chunks) or len(sraw) != len(chunks):
+            log.warning("chunk embedding cache is STALE: %d dense / %d sparse rows for %d chunks; re-encoding",
+                        len(d), len(sraw), len(chunks))
+        elif rec and rec.get("sha256") != fp_chunks:
+            log.warning("chunk embedding cache is STALE: chunk texts changed since it was built; re-encoding")
+        else:
+            if not rec:
+                # Caches from before the manifest existed: row counts match, so
+                # accept them rather than force a long re-encode, and say so.
+                log.warning("chunk embedding cache has no manifest; accepting on row count (%d)", len(d))
+            dense_c = d
+            sparse_c = [{int(k): float(v) for k, v in x.items()} for x in sraw]
+            log.info("chunk embeddings: cache OK (%d rows)", len(d))
+
+    # ---- figure captions ----------------------------------------------------
+    dense_f = None
+    if cache_fig_dense.exists():
+        d = np.load(cache_fig_dense)
+        rec = manifest.get("figures", {})
+        if len(d) != len(figures):
+            log.warning("caption embedding cache is STALE: %d rows for %d figures; re-encoding captions only",
+                        len(d), len(figures))
+        elif rec.get("sha256") != fp_figs:
+            # No manifest, or captions changed. Captions are short, so
+            # re-encoding is cheap; never trust an unverified caption cache.
+            log.warning("caption embedding cache is unverified or changed; re-encoding captions only")
+        else:
+            dense_f = d
+            log.info("caption embeddings: cache OK (%d rows)", len(d))
+
+    if dense_c is not None and dense_f is not None:
+        _warn_if_sparse_empty(sparse_c, manifest.get("chunks", {}).get("encoder_mode"))
+        return (dense_c, sparse_c, dense_f)
+
+    log.info("Loading BGE-M3 text embedder ...")
+    te = TextEmbedder(CFG.bge_m3_model).load()
+    mode = getattr(te, "_mode", None)
+    if mode != "bge-m3":
+        log.error("TextEmbedder is in %r mode, NOT bge-m3: sparse (keyword) vectors "
+                  "produced now will be EMPTY", mode)
+
+    if dense_c is None:
+        log.info("Encoding %d chunks (dense + sparse) ...", len(chunk_texts))
+        dense_c, sparse_c = te.encode_both(chunk_texts, batch_size=16)
+        np.save(cache_chunk_dense, dense_c)
+        with open(cache_chunk_sparse, "w") as fh:
+            json.dump([{str(k): v for k, v in x.items()} for x in sparse_c], fh)
+        manifest["chunks"] = {"n": len(chunks), "sha256": fp_chunks, "encoder_mode": mode}
+
+    if dense_f is None:
+        log.info("Encoding %d figure captions ...", len(figure_texts))
+        dense_f = te.encode_dense(figure_texts, batch_size=32)
+        np.save(cache_fig_dense, dense_f)
+        manifest["figures"] = {"n": len(figures), "sha256": fp_figs, "encoder_mode": mode}
+
+    if "chunks" not in manifest:
+        # chunk cache was accepted on row count; record what it now matches
+        manifest["chunks"] = {"n": len(chunks), "sha256": fp_chunks, "encoder_mode": "unknown (pre-manifest)"}
+    manifest_path.write_text(json.dumps(manifest, indent=2))
+    log.info("  cached -> %s", manifest_path.name)
+
+    _warn_if_sparse_empty(sparse_c, manifest.get("chunks", {}).get("encoder_mode"))
     return (dense_c, sparse_c, dense_f)
+
+
+def _warn_if_sparse_empty(sparse_c, mode) -> None:
+    n_nonempty = sum(1 for x in sparse_c if x)
+    if n_nonempty == 0:
+        log.error("ALL %d chunk sparse (keyword) vectors are EMPTY (encoder mode: %s). "
+                  "Hybrid search is running dense-only.", len(sparse_c), mode)
+    else:
+        log.info("chunk sparse vectors: %d of %d non-empty", n_nonempty, len(sparse_c))
+
+_IMAGE_EMBEDDER = None
+
+
+def _get_image_embedder() -> ImageEmbedder:
+    """Load ColQwen2 once per ingest run and share it between the page step
+    and the figure-crop step (they used to load it twice)."""
+    global _IMAGE_EMBEDDER
+    if _IMAGE_EMBEDDER is None:
+        _IMAGE_EMBEDDER = ImageEmbedder(
+            CFG.colqwen_model, revision=getattr(CFG, "colqwen_revision", None),
+        ).load()
+    return _IMAGE_EMBEDDER
 
 
 def step_page_embeddings(out_dir: Path):
@@ -187,7 +276,7 @@ def step_page_embeddings(out_dir: Path):
     if todo:
         log.info("Loading ColQwen2 image embedder ...")
         try:
-            ie = ImageEmbedder(CFG.colqwen_model).load()
+            ie = _get_image_embedder()
         except Exception as e:
             log.warning("ColQwen2 unavailable (%r); skipping page embeddings.", e)
             return None
@@ -237,12 +326,16 @@ def step_figure_visual_embeddings(figures):
     cache = CFG.cache_dir / "colqwen_figures"
     cache.mkdir(parents=True, exist_ok=True)
 
+    # ONE ENTRY PER CROP, keyed by the crop's file name. Keying by figure_id
+    # made every sheet of a multi-sheet figure (116 of 553 ids) write to the
+    # same cache file, so only the last sheet survived. Crop file names are
+    # unique (648 crops, 648 names).
     pairs: list[tuple[str, str, Path]] = []  # (figure_id, image_path, cache_path)
     for f in figures:
         ip = getattr(f, "image_path", "") or ""
         if not ip or not Path(ip).exists():
             continue
-        cp = cache / f"{_figure_cache_name(f.figure_id)}.npy"
+        cp = cache / f"crop__{_figure_cache_name(Path(ip).stem)}.npy"
         pairs.append((f.figure_id, ip, cp))
 
     todo = [(fid, ip, cp) for fid, ip, cp in pairs if not cp.exists()]
@@ -252,7 +345,7 @@ def step_figure_visual_embeddings(figures):
     if todo:
         log.info("Loading ColQwen2 image embedder (for figure crops) ...")
         try:
-            ie = ImageEmbedder(CFG.colqwen_model).load()
+            ie = _get_image_embedder()
         except Exception as e:
             log.warning("ColQwen2 unavailable (%r); skipping figure-visual embeddings.", e)
             return None
@@ -330,7 +423,9 @@ def step_upsert_qdrant(chunks, figures, dense_c, sparse_c, dense_f, page_data,
             "sign_codes_depicted": f.sign_codes_depicted,
         }
         fig_rows.append(FigureRow(
-            id=chunk_id_to_int(f.figure_id), dense=dv, payload=payload
+            # one point per crop; chunk_id_to_int(f.figure_id) made the sheets
+            # of a multi-sheet figure overwrite each other
+            id=chunk_id_to_int(f"figcap:{Path(f.image_path).name}"), dense=dv, payload=payload
         ))
     log.info("Upserting %d figures to Qdrant ...", len(fig_rows))
     store.upsert_figures(CFG.coll_figures, fig_rows)
@@ -351,10 +446,11 @@ def step_upsert_qdrant(chunks, figures, dense_c, sparse_c, dense_f, page_data,
     if figure_visual_data:
         # Build a quick map from figure_id -> figures.jsonl payload so we
         # can attach caption / page / sign_codes alongside the vector.
-        fig_lookup = {f.figure_id: f for f in figures}
+        # Look up by CROP path, not figure_id: several crops share an id.
+        fig_lookup = {getattr(f, "image_path", ""): f for f in figures}
         fv_rows = []
         for fid, ip, vecs in figure_visual_data:
-            f = fig_lookup.get(fid)
+            f = fig_lookup.get(ip)
             payload = {
                 "figure_id":           fid,
                 "kind":                getattr(f, "kind", "") if f else "",
@@ -365,9 +461,11 @@ def step_upsert_qdrant(chunks, figures, dense_c, sparse_c, dense_f, page_data,
                 "image_path":          ip,
                 "sign_codes_depicted": list(getattr(f, "sign_codes_depicted", []) or [])
                                        if f else [],
+                "sheet":               getattr(f, "sheet", None) if f else None,
             }
             fv_rows.append(PageRow(
-                id=chunk_id_to_int(f"figvis:{fid}"),
+                # one Qdrant point per crop; "figvis:<figure_id>" collided
+                id=chunk_id_to_int(f"figvis:{Path(ip).name}"),
                 vectors=vecs,
                 payload=payload,
             ))
