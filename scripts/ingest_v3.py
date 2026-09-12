@@ -204,8 +204,11 @@ def step_text_embeddings(chunks, figures):
     log.info("Loading BGE-M3 text embedder ...")
     te = TextEmbedder(CFG.bge_m3_model).load()
     mode = getattr(te, "_mode", None)
-    if mode != "bge-m3":
-        log.error("TextEmbedder is in %r mode, NOT bge-m3: sparse (keyword) vectors "
+    # "bge-m3-direct" runs BGE-M3's own sparse head on plain transformers and
+    # DOES produce sparse weights (verified against the published values), so
+    # only the sentence-transformers fallback is a problem.
+    if mode not in ("bge-m3", "bge-m3-direct"):
+        log.error("TextEmbedder is in %r mode: sparse (keyword) vectors "
                   "produced now will be EMPTY", mode)
 
     if dense_c is None:
@@ -239,6 +242,43 @@ def _warn_if_sparse_empty(sparse_c, mode) -> None:
                   "Hybrid search is running dense-only.", len(sparse_c), mode)
     else:
         log.info("chunk sparse vectors: %d of %d non-empty", n_nonempty, len(sparse_c))
+
+def _read_vector_cache(cache_dir: Path, keys: list) -> dict:
+    """Read cached multi-vectors, preferring a single bundled archive.
+
+    The per-item .npy files stay as the crash-safe working cache while
+    encoding. Reading them back is the problem: 1,162 page files plus 648 crop
+    files is 1,810 separate opens on Google Drive, which took 27 minutes of a
+    30-minute run even though nothing was encoded. One bundle is one read.
+    """
+    bundle = cache_dir.with_suffix(".npz")
+    if bundle.exists():
+        try:
+            with np.load(bundle) as z:
+                if set(keys).issubset(set(z.files)):
+                    return {k: z[k] for k in keys}
+            log.warning("%s is missing some keys; falling back to per-item files",
+                        bundle.name)
+        except Exception as e:
+            log.warning("could not read %s (%r); falling back to per-item files",
+                        bundle.name, e)
+    out = {k: np.load(cache_dir / f"{k}.npy") for k in keys}
+    try:
+        np.savez(bundle, **out)
+        log.info("bundled %d vectors -> %s (future runs read one file)",
+                 len(out), bundle.name)
+    except Exception as e:
+        log.warning("could not write %s (%r); per-item files kept", bundle.name, e)
+    return out
+
+
+def _invalidate_vector_bundle(cache_dir: Path) -> None:
+    """Drop the bundle when its per-item cache is rebuilt."""
+    bundle = cache_dir.with_suffix(".npz")
+    if bundle.exists():
+        bundle.unlink()
+        log.info("invalidated stale bundle %s", bundle.name)
+
 
 _IMAGE_EMBEDDER = None
 
@@ -289,13 +329,13 @@ def step_page_embeddings(out_dir: Path):
             for path, v in zip(batch_paths, vecs):
                 page_num = int(path.stem.split("_")[1])
                 np.save(cache / f"{page_num:04d}.npy", v)
+        _invalidate_vector_bundle(cache)
 
     # Now collect everything (newly-encoded + previously-cached) for the upsert.
-    out = []
-    for p in pngs:
-        page_num = int(p.stem.split("_")[1])
-        vec = np.load(cache / f"{page_num:04d}.npy")
-        out.append((page_num, str(p), vec))
+    keys = [f"{int(p.stem.split('_')[1]):04d}" for p in pngs]
+    vecs_by_key = _read_vector_cache(cache, keys)
+    out = [(int(p.stem.split("_")[1]), str(p), vecs_by_key[k])
+           for p, k in zip(pngs, keys)]
     log.info("ColPali pages: %d page vectors ready", len(out))
     return out
 
@@ -357,11 +397,11 @@ def step_figure_visual_embeddings(figures):
             vecs = ie.encode_images(imgs, batch_size=batch)
             for (fid, ip, cp), v in zip(sub, vecs):
                 np.save(cp, v)
+        _invalidate_vector_bundle(cache)
 
-    out = []
-    for fid, ip, cp in pairs:
-        v = np.load(cp)
-        out.append((fid, ip, v))
+    keys = [cp.stem for _fid, _ip, cp in pairs]
+    vecs_by_key = _read_vector_cache(cache, keys)
+    out = [(fid, ip, vecs_by_key[cp.stem]) for fid, ip, cp in pairs]
     log.info("ColPali figures: %d figure-image vectors ready", len(out))
     return out
 
