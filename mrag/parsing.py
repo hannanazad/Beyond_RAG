@@ -703,7 +703,10 @@ def _crop_note_texts(doc, crop, allow_unmarked: bool = False) -> List[str]:
                 lines.append(t)
         if not lines: continue
         txt = _clean_text(" ".join(lines))
-        if CAPTION_RE.match(txt) or REV_MARK_RE.match(txt): continue
+        # A revision mark can share a PDF block with the note it sits beside,
+        # so stripping whole "Rev. 1" lines is not enough.
+        txt = re.sub(r"\s*\bRev\.\s*1\b\s*", " ", txt).strip()
+        if not txt or CAPTION_RE.match(txt): continue
         marked = bool(NOTE_WORD_RE.match(txt) or NOTE_MARKER_RE.match(txt))
         # Continuation first: a wrapped tail carries no marker, and left to the
         # start rules it would open a second note mid-sentence ("shoulder
@@ -742,25 +745,33 @@ def _parse_crop_notes(doc, figures, chunks: List[Chunk], sign_code_re) -> List[C
     # table_refs on the citing chunks, so nothing is lost. A citing section in
     # the figure's own chapter is used when the crop page has no owner.
     page_owner: List[tuple] = sorted(
-        (c.page_pdf, c.section_id, c.section_title) for c in chunks
+        (c.page_pdf, c.section_id, c.section_title, c.part, c.chapter) for c in chunks
         if c.source in ("paragraph", "list_item"))
     citing: dict = {}
     for c in chunks:
         for ref in list(c.figure_refs) + list(c.table_refs):
             citing.setdefault(ref, []).append((c.section_id, c.section_title))
 
+    # part/chapter come from the anchor section too. Leaving them unset filed
+    # all 583 note chunks under "Part ?"/"Chapter ?" in the graph and broke the
+    # Part-match score bonus in retrieval.
+    sec_meta = {sid: (title, part, chap) for _, sid, title, part, chap in page_owner}
+
     def anchor_for(canon: str, page: int):
         best = None
-        for pg, sid, title in page_owner:
-            if pg <= page: best = (sid, title)
+        for pg, sid, title, part, chap in page_owner:
+            if pg <= page: best = (sid, title, part, chap)
             else: break
         if best:
             return best
         chapter = canon.split("-")[0].upper()
         for sid, title in citing.get(canon, []):
             if sid.split(".")[0].upper() == chapter:
-                return (sid, title)
-        return citing.get(canon, [("", "")])[0]
+                t, part, chap = sec_meta.get(sid, (title, None, None))
+                return (sid, t, part, chap)
+        sid, title = citing.get(canon, [("", "")])[0]
+        t, part, chap = sec_meta.get(sid, (title, None, None))
+        return (sid, t, part, chap)
 
     counter: dict = collections.Counter()
     out: List[Chunk] = []
@@ -770,7 +781,7 @@ def _parse_crop_notes(doc, figures, chunks: List[Chunk], sign_code_re) -> List[C
         fig_id = get(f, "figure_id", "")
         canon = _normalize_id(get(f, "canonical_id", "") or fig_id.split(" ", 1)[-1])
         kind = (get(f, "kind", "Figure") or "Figure").lower()
-        sec_id, sec_title = anchor_for(canon, crop["page_pdf"])
+        sec_id, sec_title, sec_part, sec_chap = anchor_for(canon, crop["page_pdf"])
         # Unmarked sentences are accepted inside figures only. Inside tables
         # they would sweep in prose-heavy cells (Tables 2L-3, 2L-4, 5A-1).
         for text in _crop_note_texts(doc, crop, allow_unmarked=(kind != "table")):
@@ -781,7 +792,7 @@ def _parse_crop_notes(doc, figures, chunks: List[Chunk], sign_code_re) -> List[C
             tag = "TBLNOTE" if kind == "table" else "FIGNOTE"
             out.append(Chunk(
                 chunk_id=f"MUTCD11e_{tag}_{canon}_{n:02d}",
-                part=get(f, "chapter", "") and None, chapter=None,
+                part=sec_part, chapter=sec_chap,
                 section_id=sec_id, section_title=sec_title,
                 content_type=rule, ordinal=n,
                 page_pdf=crop["page_pdf"], page_printed=str(get(f, "page_printed", "") or crop["page_pdf"]),
