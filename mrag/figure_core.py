@@ -133,7 +133,10 @@ class FigureRecord:
     bbox: List[float]          # [x0, y0, x1, y1] in PDF points, top-left origin
     dpi: int
     chapter: str = ""          # derived from id: "2B-14" -> "2B"
-    extraction_method: str = "caption_below_v2"
+    # v5: FIGURE regions now come from the artwork layer (figure_bounds.py),
+    # so the caption is inside the crop and body prose is not. A v2 file
+    # is therefore stale and must be re-extracted.
+    extraction_method: str = "caption_below_v5"
     sign_codes_depicted: List[str] = field(default_factory=list)
     anchor_section: str = ""   # filled by KG builder from first citing chunk
 

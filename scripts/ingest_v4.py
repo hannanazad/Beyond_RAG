@@ -83,13 +83,13 @@ def _invalidate_embedding_caches(*names: str):
             log.warning("invalidated stale embedding cache: %s", p)
 
 
-def _figures_jsonl_is_v2(path: Path) -> bool:
+def _figures_jsonl_is_current(path: Path) -> bool:
     """Cheap version peek on the first row — never parses into dataclasses,
     so a v1 file with missing v2 fields can't crash the check."""
     try:
         with open(path, "r", encoding="utf-8") as f:
             first = json.loads(next(f))
-        return str(first.get("extraction_method", "")).startswith("caption_below_v2")
+        return str(first.get("extraction_method", "")).startswith("caption_below_v5")
     except Exception:
         return False
 
@@ -97,14 +97,14 @@ def _figures_jsonl_is_v2(path: Path) -> bool:
 def step_extract_figures_v4(min_coverage: float):
     """Extract -> rescue -> validate. The single most important change in v4."""
     if CFG.figures_jsonl.exists():
-        if _figures_jsonl_is_v2(CFG.figures_jsonl):
+        if _figures_jsonl_is_current(CFG.figures_jsonl):
             figs = F.read_jsonl(CFG.figures_jsonl)
-            log.info("figures.jsonl is already v2 (%d crops); skipping "
+            log.info("figures.jsonl is already v5 (%d crops); skipping "
                      "extraction (delete to redo)", len(figs))
             return figs
-        log.warning("figures.jsonl is v1 — archiving and re-extracting with v2")
+        log.warning("figures.jsonl predates v5 — archiving and re-extracting")
         shutil.move(str(CFG.figures_jsonl),
-                    str(CFG.figures_jsonl.with_suffix(".v1.bak.jsonl")))
+                    str(CFG.figures_jsonl.with_suffix(".old.bak.jsonl")))
         # Figure captions/count changed -> caption embeddings stale, and the
         # per-figure ColQwen2 crop embeddings (keyed by figure_id) would be
         # wrongly treated as "already cached" even though the CROP IMAGES
@@ -137,7 +137,7 @@ def step_parse_chunks_v4():
     """Re-parse chunks: parsing.py v4 normalises U+2011 dashes, so refs like
     'Table 6B\u20112' now populate chunk.table_refs. Cached chunks parsed by the
     old code miss those refs — force re-parse if the cache predates v4."""
-    stamp = CFG.cache_dir / "chunks_v4.stamp"
+    stamp = CFG.cache_dir / "chunks_v5.stamp"
     if CFG.chunks_jsonl.exists() and stamp.exists():
         log.info("chunks.jsonl is v4; skipping parse (delete to redo)")
         return P.read_chunks_jsonl(CFG.chunks_jsonl)
@@ -149,7 +149,11 @@ def step_parse_chunks_v4():
     doc = fitz.open(str(CFG.pdf_path))
     outline_codes = SC.mine_from_outline(doc.get_toc())
     log.info("Bootstrapped %d sign codes from outline", len(outline_codes))
-    chunks = P.parse_chunks(CFG.pdf_path, sign_code_re=SC.get_sign_code_re())
+    # figures are extracted before this step; parse_chunks needs them to
+    # find the notes printed inside figure and table crops
+    figs = F.read_jsonl(CFG.figures_jsonl) if CFG.figures_jsonl.exists() else None
+    chunks = P.parse_chunks(CFG.pdf_path, sign_code_re=SC.get_sign_code_re(),
+                            figures=figs)
     P.write_chunks_jsonl(chunks, CFG.chunks_jsonl)
     stamp.write_text("v4")
     log.info("Parsed %d chunks -> %s", len(chunks), CFG.chunks_jsonl)
@@ -159,12 +163,13 @@ def step_parse_chunks_v4():
 def step_build_kg_v4(chunks, figures, sign_codes_dict):
     if CFG.graph_pickle.exists():
         g = KGM.read(CFG.graph_pickle)
-        if g.graph.get("schema_version") == 2:
-            log.info("graph.gpickle is schema v2; skipping build (delete to redo)")
+        if g.graph.get("schema_version") == 3:
+            log.info("graph.gpickle is schema v3; skipping build (delete to redo)")
             return g
-        log.warning("graph.gpickle is v1 — archiving and rebuilding as v2")
+        old_v = g.graph.get("schema_version", 1)
+        log.warning("graph.gpickle is schema v%s — archiving and rebuilding as v3", old_v)
         shutil.move(str(CFG.graph_pickle),
-                    str(CFG.graph_pickle.with_suffix(".v1.bak")))
+                    str(CFG.graph_pickle.with_suffix(f".v{old_v}.bak")))
     g = KGM.build(chunks, figures, sign_codes_dict)
     KGM.write(g, CFG.graph_pickle)
     log.info("KG v2 built: %s", g.graph["build_stats"])

@@ -30,6 +30,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from .figure_bounds import figure_regions_by_artwork as _figure_regions_by_artwork
 from .font_index import get_font_index
 from .figure_core import (
     CaptionHit, FigureRecord, parse_caption_line, parse_midline_caption,
@@ -127,7 +128,7 @@ def rescue_missing(
     cand = fn(pdf_path, out_dir, dpi, sorted(pages_todo), min_h=relaxed_min_h)
     added = [r for r in cand if (r.kind, r.canonical_id) in missing]
     for r in added:
-        r.extraction_method = "caption_below_v2_rescued"
+        r.extraction_method = "caption_below_v5_rescued"
     records.extend(added)
     log.info("rescue: recovered %d crops for %s",
              len(added), sorted({(r.kind, r.canonical_id) for r in added}))
@@ -304,6 +305,16 @@ def _extract_poppler(pdf_path, out_dir, dpi, page_whitelist, min_h=None):
         except Exception as e:
             log.warning("font-based table bounds unavailable on p%d (%r); "
                         "falling back to caption-to-caption", pno, e)
+        # FIGURES get their extent from the artwork layer. regions_for_page
+        # starts a figure BELOW its caption, so 559 of 560 figure crops had no
+        # caption at all, and with no caption to stop at the crop ran on into
+        # body prose. See figure_bounds.py.
+        try:
+            regions = _figure_regions_by_artwork(pdf_path, pno, caps, regions)
+        except Exception as e:
+            log.warning("artwork-based figure bounds unavailable on p%d (%r); "
+                        "falling back to caption-to-caption", pno, e)
+
         if not regions:
             continue
         img = Image.open(page_png)
@@ -491,8 +502,8 @@ def _record(cap: CaptionHit, pno: int, label: str, path: str,
 def _table_regions_by_font(pdf_path, pno, caps, regions,
                            page_png=None, dpi: int = 220):
     """Replace the region of every TABLE caption with its font-derived extent.
-    Figure regions are left alone -- figures have no reliable font layer, and
-    an over-wide figure crop is harmless while a truncated table is not."""
+    Figure regions are handled separately, by artwork rather than by font --
+    see figure_bounds.figure_regions_by_artwork, applied straight after this."""
     from .table_bounds import find_tables, refine_with_ink
     from .font_index import get_font_index
 

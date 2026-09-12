@@ -59,7 +59,10 @@ def build(
     sign_codes: Dict[str, SignCodeEntry],
 ) -> nx.MultiDiGraph:
     g = nx.MultiDiGraph()
-    g.graph["schema_version"] = 2
+    # v3: real Section nodes even when a section was cited before it was
+    # parsed (252 used to stay as unresolved SectionRef stubs), plus
+    # Paragraph nodes and the part_of_paragraph / note_on edges.
+    g.graph["schema_version"] = 3
 
     # ---- 1. hierarchy: Part / Chapter / Section / Chunk ---------------------
     for c in chunks:
@@ -73,11 +76,18 @@ def build(
         if not g.has_node(chap_node):
             g.add_node(chap_node, kind="Chapter", title=chap_id, part=part_id)
             g.add_edge(part_node, chap_node, label="contains")
-        if not g.has_node(sec_node):
+        # Write the real Section node even if a placeholder already exists.
+        # The old `if not g.has_node(...)` guard meant any section cited before
+        # it was parsed kept its SectionRef stub: 252 real sections ended up
+        # with kind="SectionRef", unresolved=True, no title and no chapter edge.
+        existing = g.nodes.get(sec_node, {})
+        if not existing.get("resolved_section"):
             g.add_node(sec_node, kind="Section", id=c.section_id,
                        title=c.section_title, page_pdf=c.page_pdf,
                        page_printed=c.page_printed, chapter=chap_id,
-                       part=part_id, cites_any_figure=False)
+                       part=part_id, unresolved=False, resolved_section=True,
+                       cites_any_figure=existing.get("cites_any_figure", False))
+        if not g.has_edge(chap_node, sec_node):
             g.add_edge(chap_node, sec_node, label="contains")
         g.add_node(chunk_node, kind="Chunk", id=c.chunk_id, section=c.section_id,
                    content_type=c.content_type, ordinal=c.ordinal,
@@ -98,6 +108,26 @@ def build(
             _ref(f"section:{sid}", "SectionRef", "cites_section")
         for sc in c.sign_codes:
             _ref(f"signcode:{sc.upper()}", "SignCodeRef", "mentions")
+        # parent links added with list splitting and note chunks:
+        #   list_item  -> the paragraph it was split out of
+        #   note       -> the figure or table the note is printed inside
+        parent = getattr(c, "parent_id", None)
+        if parent:
+            if getattr(c, "source", "") == "list_item":
+                # The paragraph itself is no longer a chunk once it is split,
+                # so give it a node of its own rather than a dangling edge.
+                # It also gives "4C.05 Paragraph 4" something to resolve to.
+                para_node = f"paragraph:{parent}"
+                if not g.has_node(para_node):
+                    g.add_node(para_node, kind="Paragraph", id=parent,
+                               section=c.section_id, content_type=c.content_type,
+                               ordinal=c.ordinal, page_pdf=c.page_pdf,
+                               unresolved=False)
+                    g.add_edge(sec_node, para_node, label="contains")
+                g.add_edge(para_node, chunk_node, label="contains")
+                g.add_edge(chunk_node, para_node, label="part_of_paragraph")
+            elif getattr(c, "source", "") in ("figure_note", "table_note"):
+                _ref(f"figure:{parent}", "FigureRef", "note_on")
         if c.figure_refs or c.table_refs:
             g.nodes[sec_node]["cites_any_figure"] = True
 
