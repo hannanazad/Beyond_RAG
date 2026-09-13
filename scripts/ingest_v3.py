@@ -441,6 +441,14 @@ def step_upsert_qdrant(chunks, figures, dense_c, sparse_c, dense_f, page_data,
             "section_refs":  c.section_refs,
             "sign_codes":    c.sign_codes,
             "modal_verbs":   c.modal_verbs,
+            # v5 fields. authority_inferred matters to VINE: a certificate's
+            # normative_authority must not silently treat a type guessed from
+            # the verb ("shall" -> Standard, inside an unlabelled figure note)
+            # as if the manual had printed the heading.
+            "source":             getattr(c, "source", "paragraph"),
+            "parent_id":          getattr(c, "parent_id", None),
+            "item":               getattr(c, "item", None),
+            "authority_inferred": bool(getattr(c, "authority_inferred", False)),
             "text":          c.text,
         }
         chunk_rows.append(ChunkRow(
