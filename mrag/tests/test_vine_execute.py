@@ -1,7 +1,8 @@
 """Tests for the VINE executor. Builds the paper's Appendix B network and
 checks Eq 4 gating, typed merges, Unknown propagation and the S3.1 rejections."""
 import sys
-sys.path.insert(0, "/home/claude/w")
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from mrag.vine import (Authority, Certificate, CertificateStore, Evidence,
                        MergeType, Network, Operation, Status, enabled, execute,
                        merge_statuses)
