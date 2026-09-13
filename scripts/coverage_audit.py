@@ -18,7 +18,10 @@ chunks = P.parse_chunks(pdf, sign_code_re=SC.get_sign_code_re(), figures=figures
 doc = pymupdf.open(pdf); toc = doc.get_toc()
 norm = lambda t: re.sub(r"\s+", " ", t.translate({0x2010: 45, 0x2011: 45, 0x2012: 45,
                                                   0x2013: 45, 0x2014: 45})).strip()
-blob = " || ".join(norm(c.text) for c in chunks)
+# display_text(), not text: the lead-in shared by a list group is stored
+# apart from the item body so siblings embed distinctly, but it IS text
+# from the manual and must count as covered.
+blob = " || ".join(norm(c.display_text()) for c in chunks)
 
 body_start = min(p for l, t, p in toc if l == 1 and t.upper().startswith("PART 1"))
 app_start = min(p for l, t, p in toc if l == 1 and t.lower().startswith("appendi"))
