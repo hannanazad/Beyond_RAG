@@ -55,6 +55,20 @@ class VectorStore:
     def client(self):
         return self._client
 
+    def close(self) -> None:
+        """Release the on-disk Qdrant lock.
+
+        Local Qdrant takes an exclusive file lock. Once the notebook kernel
+        has initialised the pipeline, a subprocess ingest cannot open the same
+        folder and dies with "already accessed by another instance" — after
+        doing all the encoding work."""
+        client = getattr(self, "_client", None)
+        if client is not None:
+            try:
+                client.close()
+            finally:
+                self._client = None
+
     # ----- schema -----------------------------------------------------------
 
     def init_collections(

@@ -163,9 +163,18 @@ def step_parse_chunks_v4():
 def step_build_kg_v4(chunks, figures, sign_codes_dict):
     if CFG.graph_pickle.exists():
         g = KGM.read(CFG.graph_pickle)
-        if g.graph.get("schema_version") == 3:
-            log.info("graph.gpickle is schema v3; skipping build (delete to redo)")
+        # The schema check alone is not enough. The graph is built FROM the
+        # chunks, so it is stale whenever chunks.jsonl has been rewritten --
+        # even when the schema is unchanged. Adding `lead_in` reparsed every
+        # chunk and left a v3 graph that the schema check happily reused.
+        stale = (CFG.chunks_jsonl.exists()
+                 and CFG.graph_pickle.stat().st_mtime < CFG.chunks_jsonl.stat().st_mtime)
+        if g.graph.get("schema_version") == 3 and not stale:
+            log.info("graph.gpickle is schema v3 and newer than chunks.jsonl; "
+                     "skipping build (delete to redo)")
             return g
+        if stale:
+            log.warning("graph.gpickle predates chunks.jsonl — rebuilding")
         old_v = g.graph.get("schema_version", 1)
         log.warning("graph.gpickle is schema v%s — archiving and rebuilding as v3", old_v)
         shutil.move(str(CFG.graph_pickle),
