@@ -75,6 +75,20 @@ class Chunk:
     parent_id:      Optional[str] = None       # list_item: id of the paragraph it came from
     item:           Optional[str] = None       # list_item: its marker, e.g. "C" or "12"
     authority_inferred: bool = False           # True when content_type was not printed in the manual
+    # Shared context split OUT of `text`. A list item's lead-in ("The
+    # following words and phrases ... shall have the following meanings:") is
+    # identical across all 295 items of 1C.02, and across all 1,920 list items
+    # the shared prefix was a median 47% of the chunk, over half of it in 855
+    # cases. Embedding that pulls every sibling toward the same vector and
+    # gives them identical sparse tokens, so retrieval cannot tell them apart.
+    # It still carries meaning -- often the condition the items sit under --
+    # so it travels with the chunk and is restored for the model by
+    # display_text(); it is simply not what gets embedded or reranked.
+    lead_in:        Optional[str] = None
+
+    def display_text(self) -> str:
+        """What a model should read: the lead-in restored in front of the item."""
+        return f"{self.lead_in} {self.text}".strip() if self.lead_in else self.text
 
 
 # --------------------------------------------------------------------------- #
@@ -293,11 +307,15 @@ def _parse_one_section(
                                0x2013: "-", 0x2014: "-"})
 
     def _emit(cid: str, text: str, page_pdf: int, page_label: str, **extra) -> None:
-        figure_refs  = sorted(set(_normalize_id(x) for x in FIGREF_RE.findall(text)))
-        table_refs   = sorted(set(_normalize_id(x) for x in TABREF_RE.findall(text)))
-        section_refs = sorted({x for x in SECREF_RE.findall(text) if x != sec_id})
-        sign_codes   = sorted(set(sign_code_re.findall(text))) if sign_code_re else []
-        modal = sorted({m.lower() for m in MODAL_RE.findall(text)})
+        # References and modal verbs are read from lead-in + text: a lead-in
+        # such as "... shall comply with the following:" carries the modal
+        # verb for every item beneath it, and often the cross-references too.
+        scan = f"{extra.get('lead_in') or ''} {text}".strip()
+        figure_refs  = sorted(set(_normalize_id(x) for x in FIGREF_RE.findall(scan)))
+        table_refs   = sorted(set(_normalize_id(x) for x in TABREF_RE.findall(scan)))
+        section_refs = sorted({x for x in SECREF_RE.findall(scan) if x != sec_id})
+        sign_codes   = sorted(set(sign_code_re.findall(scan))) if sign_code_re else []
+        modal = sorted({m.lower() for m in MODAL_RE.findall(scan)})
         chunks.append(Chunk(
             chunk_id=cid, part=hierarchy.get("part"), chapter=hierarchy.get("chapter"),
             section_id=sec_id, section_title=section_title, content_type=cur_rule,
@@ -332,9 +350,9 @@ def _parse_one_section(
                 lead = _clean(" ".join(texts[:lead_end]))
                 for mk, i, j in items:
                     body = _clean(" ".join(texts[i:j]))
-                    text = f"{lead} {body}".strip() if lead else body
-                    _emit(f"{cid}_item{mk}", text, cur_body[i][1], cur_body[i][2],
-                          source="list_item", parent_id=cid, item=mk)
+                    _emit(f"{cid}_item{mk}", body, cur_body[i][1], cur_body[i][2],
+                          source="list_item", parent_id=cid, item=mk,
+                          lead_in=lead or None)
         cur_body = []
 
     for p_idx in range(page_start_idx, page_end_idx):
@@ -481,21 +499,23 @@ def _parse_figure_notes(doc, toc, hierarchy: dict, sign_code_re) -> List[Chunk]:
                             fig_id, it["n"])
                 continue
             lead = f"{title}. {it['subhead']}." if it["subhead"] else f"{title}."
-            text = _clean_text(f"{lead} {it['n']}. " + " ".join(it["lines"]))
+            text = _clean_text(f"{it['n']}. " + " ".join(it["lines"]))
+            full = _clean_text(f"{lead} {text}")
             cid = (f"MUTCD11e_6P01_TA{fig_id.split('-')[1]}"
                    f"_{it['rule']}_{it['n']:02d}")
-            figure_refs = sorted(set(_normalize_id(x) for x in FIGREF_RE.findall(text)))
+            figure_refs = sorted(set(_normalize_id(x) for x in FIGREF_RE.findall(full)))
             out.append(Chunk(
                 chunk_id=cid, part=hierarchy.get("part"), chapter=hierarchy.get("chapter"),
                 section_id="6P.01", section_title="Typical Applications",
                 content_type=it["rule"], ordinal=it["n"],
                 page_pdf=page_no, page_printed=page_label, text=text,
                 figure_refs=figure_refs,
-                table_refs=sorted(set(_normalize_id(x) for x in TABREF_RE.findall(text))),
-                section_refs=sorted({x for x in SECREF_RE.findall(text) if x != "6P.01"}),
-                sign_codes=sorted(set(sign_code_re.findall(text))) if sign_code_re else [],
-                modal_verbs=sorted({m.lower() for m in MODAL_RE.findall(text)}),
+                table_refs=sorted(set(_normalize_id(x) for x in TABREF_RE.findall(full))),
+                section_refs=sorted({x for x in SECREF_RE.findall(full) if x != "6P.01"}),
+                sign_codes=sorted(set(sign_code_re.findall(full))) if sign_code_re else [],
+                modal_verbs=sorted({m.lower() for m in MODAL_RE.findall(full)}),
                 source="figure_note", parent_id=f"Figure {fig_id}", item=str(it["n"]),
+                lead_in=lead,                 # the TA title, and the method it sits under
                 authority_inferred=False,     # labels are printed in the manual
             ))
     return out
@@ -553,14 +573,15 @@ def _parse_appendices(doc, toc, sign_code_re) -> List[Chunk]:
             ordinal += 1
             rule = cur_rule or "Support"
             head = _clean_text(" ".join(title_lines))
-            full = _clean_text(f"{head}. {lead}. {text}" if lead else f"{head}. {text}")
+            head_lead = _clean_text(f"{head}. {lead}." if lead else f"{head}.")
+            full = _clean_text(f"{head_lead} {text}")
             out.append(Chunk(
                 chunk_id=f"MUTCD11e_{app_id}_{rule}_{ordinal:02d}",
                 part="Appendices", chapter=f"Appendix {app_id}",
                 section_id=app_id, section_title=head, content_type=rule,
                 ordinal=ordinal, page_pdf=first_page,
                 page_printed=doc.load_page(first_page - 1).get_label() or str(first_page),
-                text=full,
+                text=text, lead_in=head_lead,
                 figure_refs=sorted(set(_normalize_id(x) for x in FIGREF_RE.findall(full))),
                 table_refs=sorted(set(_normalize_id(x) for x in TABREF_RE.findall(full))),
                 section_refs=sorted(set(SECREF_RE.findall(full))),
@@ -789,6 +810,7 @@ def _parse_crop_notes(doc, figures, chunks: List[Chunk], sign_code_re) -> List[C
             n = counter[fig_id]
             full = _clean_text(f"{fig_id}. {text}")
             rule = _authority_from_verb(text)
+            note_text = _clean_text(text)
             tag = "TBLNOTE" if kind == "table" else "FIGNOTE"
             out.append(Chunk(
                 chunk_id=f"MUTCD11e_{tag}_{canon}_{n:02d}",
@@ -796,7 +818,7 @@ def _parse_crop_notes(doc, figures, chunks: List[Chunk], sign_code_re) -> List[C
                 section_id=sec_id, section_title=sec_title,
                 content_type=rule, ordinal=n,
                 page_pdf=crop["page_pdf"], page_printed=str(get(f, "page_printed", "") or crop["page_pdf"]),
-                text=full,
+                text=note_text, lead_in=f"{fig_id}.",
                 figure_refs=sorted(set(_normalize_id(x) for x in FIGREF_RE.findall(full))),
                 table_refs=sorted(set(_normalize_id(x) for x in TABREF_RE.findall(full))),
                 section_refs=sorted({x for x in SECREF_RE.findall(full) if x != sec_id}),

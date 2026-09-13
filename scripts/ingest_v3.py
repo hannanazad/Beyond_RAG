@@ -143,6 +143,10 @@ def step_text_embeddings(chunks, figures):
     manifest_path      = CFG.cache_dir / "text_embeddings_manifest.json"
 
     chunk_texts = [
+        # `c.text` NOT `c.display_text()`: the lead-in is shared by every
+        # sibling item, so embedding it made the siblings near-identical. The
+        # section title already supplies context, and the lead-in still
+        # reaches the model through the payload.
         f"[{c.content_type}] Section {c.section_id} — {c.section_title}. {c.text}"
         for c in chunks
     ]
@@ -449,6 +453,7 @@ def step_upsert_qdrant(chunks, figures, dense_c, sparse_c, dense_f, page_data,
             "parent_id":          getattr(c, "parent_id", None),
             "item":               getattr(c, "item", None),
             "authority_inferred": bool(getattr(c, "authority_inferred", False)),
+            "lead_in":            getattr(c, "lead_in", None),
             "text":          c.text,
         }
         chunk_rows.append(ChunkRow(

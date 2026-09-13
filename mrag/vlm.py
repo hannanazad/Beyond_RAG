@@ -1333,10 +1333,19 @@ class VLM:
                 evidence_blocks.append(
                     f"[Section {c.get('section_id')} §{c.get('ordinal')} — "
                     f"{c.get('section_title','')} (p.{c.get('page_printed','?')})]\n"
-                    f"{(c.get('text','') or '')[:CFG.max_chunk_chars_in_prompt]}"
+                    # lead_in is stored apart from text so siblings embed
+                    # distinctly; the model must still see it, because it
+                    # often carries the condition the item sits under
+                    f"{self._chunk_display_text(c)[:CFG.max_chunk_chars_in_prompt]}"
                 )
             evidence_blocks.append("")
         return "\n".join(evidence_blocks)
+
+    @staticmethod
+    def _chunk_display_text(c) -> str:
+        lead = (c.get("lead_in") or "").strip()
+        body = (c.get("text") or "").strip()
+        return f"{lead} {body}".strip() if lead else body
 
     def _format_visual_lines(self, used_visuals) -> List[str]:
         visual_lines = []

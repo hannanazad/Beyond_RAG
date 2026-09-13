@@ -262,6 +262,18 @@ class Config:
     # 6 chunks is ~1.5 sections (median section = 4 chunks); an obligation
     # with a guard and an exception needs more.
     top_k_obligation_chunks: int = 12
+    # A certificate anchors on the sections it used, and those sections were
+    # pulled WHOLE. That was fine when the median section held 4 chunks; after
+    # lists were split it is not. 1C.02 Definitions is 297 chunks and 6P.01 is
+    # 532, so one definitional certificate flooded the candidate pool with the
+    # entire dictionary and drowned everything else, including the notes of an
+    # established table. Above this size the section is searched, not swallowed.
+    max_anchor_chunks_per_section: int = 24
+    # Notes printed inside an established figure or table are not candidates
+    # competing on relevance -- they are the conditions attached to evidence
+    # the network has already accepted (Table 6B-4's L/W/S key, Table 4C-7's
+    # definition of a high-occupancy bus). They get guaranteed slots.
+    pinned_note_slots: int = 6
     # Score given to chunks pulled by id from an established section.
     # They have no RRF rank, so without a floor they can never compete.
     # Roughly the RRF score at rank 5 (1/(60+5) = 0.0154).

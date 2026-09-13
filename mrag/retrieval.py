@@ -555,15 +555,27 @@ class Retriever:
         # where the condition on the number lives (Table 6B-4's L/W/S key,
         # Table 4C-7's definition of a high-occupancy bus). A calculator
         # obligation that gets the number without its note is confidently wrong.
-        for tid in anchors["tables"]:
-            anchor_chunk_ids_from_tables = self.kg.note_chunks_for(tid)
-            established_note_ids.extend(anchor_chunk_ids_from_tables)
+        for ident in anchors["tables"] + anchors["figures"]:
+            established_note_ids.extend(self.kg.note_chunks_for(ident))
+        established_note_ids = list(dict.fromkeys(established_note_ids))
+        result.debug["established_notes"] = established_note_ids
 
         # ---- 2. pull those sections whole, by id -------------------------
-        anchor_chunk_ids: List[str] = list(established_note_ids)
+        anchor_chunk_ids: List[str] = []
+        cap = int(getattr(CFG, "max_anchor_chunks_per_section", 24))
+        oversized = []
         for sec in anchor_sections:
-            anchor_chunk_ids.extend(self.kg.chunks_for_section(sec))
+            ids = self.kg.chunks_for_section(sec)
+            if len(ids) > cap:
+                # Too big to swallow: 1C.02 is 297 chunks and 6P.01 is 532.
+                # Pulling one whole flooded the pool and drowned the rest,
+                # including the notes of an established table. Leave it to the
+                # search, which finds the paragraphs bearing on THIS obligation.
+                oversized.append((sec, len(ids)))
+                continue
+            anchor_chunk_ids.extend(ids)
         anchor_chunk_ids = list(dict.fromkeys(anchor_chunk_ids))
+        result.debug["oversized_sections_not_pulled_whole"] = oversized
         anchor_hits = self.store.fetch_chunks_by_ids(
             CFG.coll_chunks, anchor_chunk_ids,
             default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
@@ -613,6 +625,26 @@ class Retriever:
             for idx, score in self.rerank.rank(obligation, docs, top_k=k):
                 payload = precursor[idx]["payload"] or {}
                 final_chunks.append({**payload, "score": score})
+        # ---- 5b. pin the notes of established evidence -------------------
+        # These were losing the rerank: one note against 368 anchor chunks.
+        # A condition attached to accepted evidence does not compete for a
+        # slot; a calculator that reads a taper formula without the key that
+        # defines L, W and S is confidently wrong.
+        if established_note_ids:
+            have = {c.get("chunk_id") for c in final_chunks}
+            want = [i for i in established_note_ids if i not in have]
+            n_pin = min(len(want), int(getattr(CFG, "pinned_note_slots", 6)))
+            if n_pin:
+                pinned = self.store.fetch_chunks_by_ids(
+                    CFG.coll_chunks, want[:n_pin],
+                    default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
+                )
+                notes = [{**(h["payload"] or {}), "score": float(h.get("score", 0.0)),
+                          "source": "established_evidence_note"} for h in pinned]
+                # drop the weakest searched chunks to make room, never the notes
+                final_chunks = notes + final_chunks[: max(0, k - len(notes))]
+            result.debug["pinned_notes"] = [c.get("chunk_id") for c in final_chunks
+                                            if c.get("source") == "established_evidence_note"]
         result.chunks = final_chunks
 
         # ---- 6. figures ---------------------------------------------------
