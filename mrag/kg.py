@@ -328,6 +328,26 @@ class KG:
                     out.append(v.split(":", 1)[1])
         return out
 
+    def note_chunks_for(self, figure_or_table_id: str) -> List[str]:
+        """Chunk ids of the notes printed inside a figure or table.
+
+        A table's numbers are meaningless without its notes: Table 6B-4's
+        L/W/S key, Table 4C-7's definition of a high-occupancy bus, Table
+        3G-1's "spacing should not exceed 300 feet". These are separate
+        chunks joined to the figure/table by a `note_on` edge, so a
+        calculator or visual obligation can pull the conditions attached to
+        the value it is about to use.
+        """
+        fid = str(figure_or_table_id).strip()
+        # accept "Table 6B-4", "6B-4", or a node id
+        for node in (fid if fid.startswith("figure:") else f"figure:{fid}",
+                     f"figure:Table {fid}", f"figure:Figure {fid}"):
+            if self.g.has_node(node):
+                return [u.split(":", 1)[1]
+                        for u, _v, d in self.g.in_edges(node, data=True)
+                        if d.get("label") == "note_on"]
+        return []
+
     def figures_for_section(self, section_id: str) -> List[str]:
         """Figures anchored in (strong) then cited in (medium) this section."""
         node = f"section:{section_id}"

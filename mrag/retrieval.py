@@ -50,6 +50,65 @@ class RetrievalResult:
     debug:   Dict[str, Any]       = field(default_factory=dict)
 
 
+ESTABLISHED_STATUSES = ("TRUE", "FALSE")
+
+
+def anchors_from_certificates(certificates) -> dict:
+    """Read Appendix A certificates into retrieval anchors.
+
+    Returns {"sections": [...], "figures": [...], "tables": [...],
+             "ignored": [...]} with order preserved and duplicates dropped.
+
+    Two things the old inline version got wrong:
+
+    * it read only evidence of type "section", so a figure or table that an
+      upstream certificate had already used was invisible to the next
+      obligation -- exactly the evidence a visual or calculator obligation
+      needs;
+    * it ignored `status`. An UNKNOWN certificate establishes nothing (S3.2:
+      missing evidence is propagated as unresolved), so narrowing retrieval
+      around its evidence would be focusing on a claim that was never made
+      out. TRUE and FALSE are both established outcomes -- "this is not a
+      conventional road" is a fact, and the sections where that was checked
+      are still the right place to look -- so both anchor.
+
+    A bare list of section-id strings is still accepted.
+    """
+    sections: List[str] = []
+    figures: List[str] = []
+    tables: List[str] = []
+    ignored: List[str] = []
+    for cert in certificates or []:
+        if isinstance(cert, str):
+            sections.append(cert)
+            continue
+        if not isinstance(cert, dict):
+            continue
+        status = str(cert.get("status", "TRUE")).strip().upper()
+        if status not in ESTABLISHED_STATUSES:
+            ignored.append(str(cert.get("claim", ""))[:80])
+            continue
+        for ev in (cert.get("evidence") or []):
+            if isinstance(ev, str):
+                sections.append(ev)
+                continue
+            if not isinstance(ev, dict):
+                continue
+            kind, ident = str(ev.get("type", "")).lower(), ev.get("id")
+            if not ident:
+                continue
+            ident = str(ident).strip()
+            if kind == "section":
+                sections.append(ident)
+            elif kind == "figure":
+                figures.append(ident)
+            elif kind == "table":
+                tables.append(ident)
+    dedupe = lambda xs: list(dict.fromkeys(xs))
+    return {"sections": dedupe(sections), "figures": dedupe(figures),
+            "tables": dedupe(tables), "ignored": ignored}
+
+
 class Retriever:
     def __init__(
         self,
@@ -474,19 +533,11 @@ class Retriever:
         result = RetrievalResult()
         result.debug["query"] = query
         result.debug["obligation"] = obligation
+        established_note_ids: List[str] = []
 
         # ---- 1. what do the certificates already establish? --------------
-        established: List[str] = []
-        for cert in certificates or []:
-            if isinstance(cert, str):
-                established.append(cert)
-                continue
-            for ev in (cert.get("evidence") or []):
-                if isinstance(ev, str):
-                    established.append(ev)
-                elif ev.get("type") == "section" and ev.get("id"):
-                    established.append(str(ev["id"]))
-        established = list(dict.fromkeys(established))
+        anchors = anchors_from_certificates(certificates)
+        established = anchors["sections"]
 
         anchor_sections = list(established)
         if follow_cross_references:
@@ -496,11 +547,23 @@ class Retriever:
                         anchor_sections.append(ref)
         result.debug["established_sections"] = established
         result.debug["anchor_sections"] = anchor_sections
+        result.debug["established_figures"] = anchors["figures"]
+        result.debug["established_tables"] = anchors["tables"]
+        result.debug["ignored_unknown_certificates"] = anchors["ignored"]
+
+        # A table established by a certificate brings its NOTES: the note is
+        # where the condition on the number lives (Table 6B-4's L/W/S key,
+        # Table 4C-7's definition of a high-occupancy bus). A calculator
+        # obligation that gets the number without its note is confidently wrong.
+        for tid in anchors["tables"]:
+            anchor_chunk_ids_from_tables = self.kg.note_chunks_for(tid)
+            established_note_ids.extend(anchor_chunk_ids_from_tables)
 
         # ---- 2. pull those sections whole, by id -------------------------
-        anchor_chunk_ids: List[str] = []
+        anchor_chunk_ids: List[str] = list(established_note_ids)
         for sec in anchor_sections:
             anchor_chunk_ids.extend(self.kg.chunks_for_section(sec))
+        anchor_chunk_ids = list(dict.fromkeys(anchor_chunk_ids))
         anchor_hits = self.store.fetch_chunks_by_ids(
             CFG.coll_chunks, anchor_chunk_ids,
             default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
@@ -560,16 +623,21 @@ class Retriever:
         figs_out: List[Dict[str, Any]] = []
         cap = CFG.top_k_figures_candidates
 
-        for node in sorted(explicit):
-            if not node.startswith("figure:"):
-                continue
-            fid = node.split(":", 1)[1]
+        pinned = ([("explicit_obligation_id", n.split(":", 1)[1])
+                   for n in sorted(explicit) if n.startswith("figure:")]
+                  # Figures and tables carried by a certificate are already
+                  # established evidence. Dropping them, as the old code did by
+                  # reading only "section" evidence, meant a visual obligation
+                  # could not see the figure an upstream certificate had used.
+                  + [("certificate_evidence", fid)
+                     for fid in anchors["figures"] + anchors["tables"]])
+        for source, fid in pinned:
             if fid in figure_ids_seen:
                 continue
             payload = _figure_payload_from_graph(self.kg, fid)
             if payload:
                 figure_ids_seen.add(fid)
-                payload["source"] = "explicit_obligation_id"
+                payload["source"] = source
                 figs_out.append(payload)
 
         for ch in final_chunks:
@@ -590,32 +658,6 @@ class Retriever:
         result.debug["n_chunks"] = len(final_chunks)
         result.debug["n_figures"] = len(figs_out)
         return result
-
-    def _filter_figures_by_relevance(
-        self,
-        query: str,
-        figs: List[Dict[str, Any]],
-        keep: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
-        """Drop figures that have nothing to do with the query.
-
-        Paths A, C and B collect figures in citation order with no relevance
-        check, so `score` is 0.0 for everything that arrived by graph link. On
-        a STOP-sign question that let Table 2D-1 (guide signs) and Table 2H-1
-        (general information signs) through — neither contains a STOP sign —
-        and they took 8 of the 12 image slots.
-
-        Scoring uses the cross-encoder already loaded for chunks, against the
-        figure's caption, title and depicted sign codes. Cheap: a handful of
-        short strings, no extra model.
-
-        Figures the QUERY NAMED are pinned and never dropped. If someone asks
-        about Table 2B-1, Table 2B-1 is not a candidate to be filtered.
-        """
-        if not figs:
-            return figs
-        keep = int(keep if keep is not None
-                   else getattr(CFG, "top_k_figures_final", 4))
 
     def _filter_figures_by_relevance(
         self,
