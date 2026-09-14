@@ -52,7 +52,11 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
 TABLE_FONT_RE = re.compile(r"^HelveticaNeue", re.IGNORECASE)
-TABLE_FONT_MIN, TABLE_FONT_MAX = 6.0, 12.0
+# 6..12 covered cells (-Md 11) and footnote markers (8) but NOT headers, which
+# are set one step larger in the bold face (-Bd 14). Every table therefore came
+# out with header_rows=[] and a calculator had columns of numbers with nothing
+# saying what the columns meant. The caption is bold 18 and stays out.
+TABLE_FONT_MIN, TABLE_FONT_MAX = 6.0, 15.5
 # Superscript footnote references are the SAME family at ~7pt. On Table 2C-3
 # the cell "N/A" is 11pt at x=350 and the marker "5" is 7pt at x=370, so the
 # size alone identifies the reference -- no regex on the text needed.
@@ -74,6 +78,7 @@ class Cell:
     row: int
     col: int
     marker: Optional[str] = None       # footnote reference on this cell
+    header: bool = False               # set in the bold table face
 
 
 @dataclass
@@ -84,6 +89,7 @@ class TableContent:
     cells: List[Cell] = field(default_factory=list)
     footnotes: List[Dict] = field(default_factory=list)
     n_cols: int = 0
+    n_header_rows: int = 0
 
     def to_dict(self) -> dict:
         return {
@@ -91,6 +97,7 @@ class TableContent:
             "page_pdf": self.page_pdf,
             "n_cols": self.n_cols,
             "header_rows": self.header_rows,
+            "n_header_rows": self.n_header_rows,
             "rows": self._as_rows(),
             "footnotes": self.footnotes,
         }
@@ -124,6 +131,15 @@ def _is_paragraph_number(run) -> bool:
 
 def _is_table_font(family: str, size: float) -> bool:
     return bool(TABLE_FONT_RE.match(family)) and TABLE_FONT_MIN <= size <= TABLE_FONT_MAX
+
+
+HEADER_FONT_MIN = 12.5          # cells are 11, headers 14, caption 18
+
+
+def _is_header_font(family: str, size: float) -> bool:
+    """Bold table face at header size. The caption is also bold but larger,
+    and it is already excluded before cells are built."""
+    return family.endswith("-Bd") and size >= HEADER_FONT_MIN
 
 
 def _stop_ratio(text: str) -> float:
@@ -214,7 +230,34 @@ def extract(runs: Sequence[Tuple[int, int, int, int, str, float]],
             if not txt and marker:          # a lone superscript is not a cell
                 txt, marker = marker, None
             if txt:
-                tc.cells.append(Cell(text=txt, row=ri, col=ci, marker=marker))
+                # A header cell is set in the BOLD table face; data cells are
+                # not. MUTCD typography: caption -Bd 18, headers -Bd 14, cells
+                # -Md 11. Without this every table came back with
+                # header_rows=[] and a calculator had columns of numbers with
+                # nothing saying which column meant what -- so "275 ft" could
+                # not be tied to "55 mph, Condition B at 40 mph".
+                bold = sum(len(g[6]) for g in group if _is_header_font(g[4], g[5]))
+                plain = sum(len(g[6]) for g in group) - bold
+                tc.cells.append(Cell(text=txt, row=ri, col=ci, marker=marker,
+                                     header=bold > plain))
+
+    # ---- which rows are header rows? ----------------------------------
+    # A row is a header row when its cells are bold AND it sits above every
+    # data row. Bold appears inside the body too (Table 2B-1 bolds a sign
+    # name), so "bold" alone would scatter header rows through the table.
+    by_row: Dict[int, List[Cell]] = {}
+    for c in tc.cells:
+        by_row.setdefault(c.row, []).append(c)
+    header_idx: List[int] = []
+    for ri in sorted(by_row):
+        cells = by_row[ri]
+        if sum(1 for c in cells if c.header) * 2 >= len(cells):
+            header_idx.append(ri)
+        else:
+            break                      # first non-header row ends the head
+    tc.header_rows = [[c.text for c in sorted(by_row[ri], key=lambda c: c.col)]
+                      for ri in header_idx]
+    tc.n_header_rows = len(header_idx)
 
     # ---- footnotes ---------------------------------------------------
     # Group note lines into notes: a new note starts at a marker.
