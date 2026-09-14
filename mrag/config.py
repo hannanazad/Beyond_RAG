@@ -281,6 +281,13 @@ class Config:
     # Chunks the compiler reads to extract obligations. Wider than the
     # RAG default: a missed provision is a missed obligation.
     top_k_compile_chunks: int = 20
+    # Kq is a SUBGRAPH, not a ranked list. The compiler decomposes obligations
+    # out of what this returns, so a provision that never arrives can never
+    # become an obligation (S3.1) and the terminal state gets certified
+    # without it. Closure material is therefore APPENDED in its own budget
+    # rather than made to compete with the searched chunks for the same slots.
+    compile_closure_budget: int = 40
+    compile_closure_kinds: tuple = ("cited_section", "note", "definition", "sibling_item")
     # How many top-ranked chunks contribute their section's citations
     # to cross-reference expansion.
     expansion_source_chunks: int = 10

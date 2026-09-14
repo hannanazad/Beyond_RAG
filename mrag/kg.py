@@ -62,6 +62,20 @@ def build(
     # v3: real Section nodes even when a section was cited before it was
     # parsed (252 used to stay as unresolved SectionRef stubs), plus
     # Paragraph nodes and the part_of_paragraph / note_on edges.
+    # Defined-term index: {term -> chunk id}. Computed here because build()
+    # has the chunk text and the graph does not store it.
+    terms: Dict[str, str] = {}
+    for c in chunks:
+        if not (c.section_id.endswith(".02") or c.section_id.endswith(".03")):
+            continue
+        m = _DEFINED_TERM_RE.match(c.text[:120])
+        if m:
+            terms.setdefault(m.group(1).strip().lower(), c.chunk_id)
+    g.graph["defined_terms"] = terms
+    g.graph["_terms_by_length"] = sorted(terms, key=len, reverse=True)
+    g.graph["build_stats"] = {**g.graph.get("build_stats", {}),
+                              "defined_terms": len(terms)}
+
     g.graph["schema_version"] = 3
 
     # ---- 1. hierarchy: Part / Chapter / Section / Chunk ---------------------
@@ -271,6 +285,11 @@ def read(path: Path) -> nx.MultiDiGraph:
 # Query wrapper                                                               #
 # --------------------------------------------------------------------------- #
 
+# "119. Lane Reduction-a gradual narrowing ..." / "Accessible Pedestrian Signal-a device ..."
+_MAX_SIBLING_ITEMS = 24
+_DEFINED_TERM_RE = re.compile(r"^(?:\d{1,3}\.\s*)?([A-Z][A-Za-z0-9 ,()/&'\-]{2,60}?)\s*[\u2010-\u2015-]{1,2}\s*[a-z(]")
+
+
 class KG:
     def __init__(self, g: nx.MultiDiGraph) -> None:
         self.g = g
@@ -395,6 +414,67 @@ class KG:
                 seen.add(cid)
                 ids.append(cid)
         return ids
+
+    def defined_terms(self) -> Dict[str, str]:
+        """{lower-cased defined term -> chunk id of its definition}.
+
+        Built at graph-build time (the graph stores no chunk text) and
+        persisted in g.graph. A definitional obligation is one of the seven
+        kinds in S3.1, and the compiler cannot raise one for a term whose
+        definition never reached Kq.
+        """
+        return self.g.graph.get("defined_terms", {})
+
+    def definition_chunk(self, term: str) -> Optional[str]:
+        return self.defined_terms().get(str(term).strip().lower())
+
+    def terms_defined_in(self, text: str, min_len: int = 6) -> List[str]:
+        """Defined terms that occur in `text`, longest first.
+
+        Longest-first matters: "conventional road" must win over "road".
+        """
+        low = " " + re.sub(r"\s+", " ", text.lower()) + " "
+        out = []
+        for term in self.g.graph.get("_terms_by_length", []):
+            if len(term) < min_len:
+                break
+            if f" {term} " in low or f" {term}s " in low or f" {term}," in low:
+                out.append(term)
+        return out
+
+    def notes_for_section(self, section_id: str) -> List[str]:
+        """Note chunks of every figure/table this section cites or anchors.
+
+        A table's number without its note is the failure mode this project
+        keeps hitting: Table 6B-4's L/W/S key, Table 4C-7's definition of a
+        high-occupancy bus, Table 3G-1's 300-foot cap.
+        """
+        out: List[str] = []
+        for fid in self.figures_for_section(section_id):
+            out.extend(self.note_chunks_for(fid))
+        return list(dict.fromkeys(out))
+
+    def paragraph_items(self, chunk_id: str) -> List[str]:
+        """Sibling list items of the paragraph a chunk belongs to.
+
+        Retrieval returns ONE item of a split list; its siblings are part of
+        the same provision and often carry the exception.
+        """
+        node = f"chunk:{chunk_id}"
+        if not self.g.has_node(node):
+            return []
+        out: List[str] = []
+        for _u, v, d in self.g.out_edges(node, data=True):
+            if d.get("label") != "part_of_paragraph":
+                continue
+            for _p, w, dd in self.g.out_edges(v, data=True):
+                if dd.get("label") == "contains" and w.startswith("chunk:"):
+                    out.append(w.split(":", 1)[1])
+        out = [c for c in dict.fromkeys(out) if c != chunk_id]
+        # 1C.02 is one paragraph of 295 items. Its "siblings" are 294
+        # unrelated definitions, so a big group is not a provision whose parts
+        # belong together and pulling it in floods Kq.
+        return [] if len(out) > _MAX_SIBLING_ITEMS else out
 
     def sections_cited_by(self, section_id: str) -> List[str]:
         """Sections this one cross-references, via its chunks' cites_section

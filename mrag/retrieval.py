@@ -322,6 +322,8 @@ class Retriever:
         expand_cross_references: bool = True,
         expansion_slots: Optional[int] = None,
         reserved_slots: Optional[int] = None,
+        closure: bool = True,
+        closure_budget: Optional[int] = None,
     ) -> RetrievalResult:
         """Wide retrieval for the obligation-extraction step.
 
@@ -494,9 +496,102 @@ class Retriever:
             query, figs_out, context_chunks=final_chunks, explicit=explicit)
         result.figures = figs_out
 
-        result.debug["n_chunks"] = len(final_chunks)
+        # ---- close Kq under the relations a provision depends on ---------
+        # Everything above is still a RANKED LIST. What the compiler needs is
+        # the subgraph: the notes that condition a cited table, the
+        # definitions of the classes a provision applies to, the sections it
+        # points at, and the sibling items of a split list. These are appended
+        # in their own budget, never made to compete for a searched slot.
+        if closure:
+            extra = self._close_kq(
+                final_chunks,
+                int(closure_budget if closure_budget is not None
+                    else getattr(CFG, "compile_closure_budget", 40)),
+                tuple(getattr(CFG, "compile_closure_kinds",
+                              ("cited_section", "note", "definition", "sibling_item"))),
+            )
+            result.chunks = final_chunks + extra
+            counts = {}
+            for c in extra:
+                counts[c["source"]] = counts.get(c["source"], 0) + 1
+            result.debug["closure"] = counts
+            result.debug["n_closure_chunks"] = len(extra)
+
+        result.debug["n_chunks"] = len(result.chunks)
         result.debug["n_figures"] = len(figs_out)
         return result
+
+    # ------------------------------------------------------------------
+    def _close_kq(self, seed, budget, kinds):
+        """Close the retrieved set under the relations a provision depends on.
+
+        Search returns provisions. A provision is not self-contained: its
+        threshold sits in a table whose NOTE carries the condition, the class
+        it applies to is a DEFINED TERM, its exception sits in a CITED
+        SECTION, and a split list item's SIBLINGS are the rest of the same
+        rule. None of those wins a relevance ranking against the provision
+        that names them, so they are fetched by following graph edges instead
+        of by scoring.
+
+        This is what makes Kq a subgraph rather than a top-k list. The
+        compiler decomposes obligations out of Kq (S3.1), so a provision that
+        never arrives can never become an obligation, and the terminal state
+        is then certified without that check.
+
+        Returns extra chunk payloads, each tagged with why it is here.
+        """
+        seen = {c.get("chunk_id") for c in seed}
+        seed_sections = list(dict.fromkeys(
+            c.get("section_id", "") for c in seed if c.get("section_id")))
+        wanted = []
+
+        def add(ids, reason):
+            for cid in ids:
+                if cid and cid not in seen:
+                    seen.add(cid)
+                    wanted.append((cid, reason))
+
+        if "cited_section" in kinds:
+            for sec in seed_sections:
+                for ref in self.kg.sections_cited_by(sec):
+                    add(self.kg.chunks_for_section(ref), "cited_section")
+        if "note" in kinds:
+            for sec in seed_sections:
+                add(self.kg.notes_for_section(sec), "note")
+            for c in seed:
+                for fid in list(c.get("figure_refs") or []) + list(c.get("table_refs") or []):
+                    add(self.kg.note_chunks_for(fid), "note")
+        if "definition" in kinds:
+            for c in seed:
+                text = f"{c.get('lead_in') or ''} {c.get('text') or ''}"
+                for term in self.kg.terms_defined_in(text):
+                    add([self.kg.definition_chunk(term)], "definition")
+        if "sibling_item" in kinds:
+            for c in seed:
+                add(self.kg.paragraph_items(c.get("chunk_id", "")), "sibling_item")
+
+        if not wanted:
+            return []
+        # spread the budget across reasons; otherwise cited_section, which is
+        # by far the largest, consumes all of it and the notes never arrive
+        by_reason = {}
+        for cid, reason in wanted:
+            by_reason.setdefault(reason, []).append(cid)
+        picked = []
+        while len(picked) < budget and any(by_reason.values()):
+            for reason in list(by_reason):
+                if len(picked) >= budget:
+                    break
+                if by_reason[reason]:
+                    picked.append((by_reason[reason].pop(0), reason))
+        reason_of = dict(picked)
+        hits = self.store.fetch_chunks_by_ids(
+            CFG.coll_chunks, [cid for cid, _ in picked],
+            default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
+        )
+        return [{**(h["payload"] or {}), "score": float(h.get("score", 0.0)),
+                 "source": reason_of.get((h["payload"] or {}).get("chunk_id"), "closure")}
+                for h in hits]
 
     def retrieve_for_obligation(
         self,
