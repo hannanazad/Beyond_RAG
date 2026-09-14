@@ -251,11 +251,13 @@ def validate(tables: List[Table], crops: Optional[List[dict]] = None,
     """
     problems: List[str] = []
     seen = set()
-    known = {}
+    known: Dict[str, list] = {}
+    pages: Dict[str, list] = {}
     if crops:
         for c in crops:
             if c.get("kind") == "Table":
                 known.setdefault(c["figure_id"], []).append(c.get("sheet"))
+                pages.setdefault(c["figure_id"], []).append(c.get("page_pdf"))
 
     for t in tables:
         where = f"{t.table_id}" + (f" sheet {t.sheet}" if t.sheet else "")
@@ -267,8 +269,19 @@ def validate(tables: List[Table], crops: Optional[List[dict]] = None,
         if known and t.table_id not in known:
             problems.append(f"{where}: not a table in figures.jsonl")
         elif known and t.sheet not in known[t.table_id]:
-            problems.append(f"{where}: sheet {t.sheet!r} not among "
-                            f"{known[t.table_id]} in figures.jsonl")
+            # figures.jsonl can be WRONG about sheets: "(Sheet 1 of 2)" is
+            # printed on the caption's second line for 28 multi-page figures
+            # and tables, and the extractor only reads the first, leaving
+            # sheet=None. If the page matches, trust the transcription and
+            # report the metadata defect instead of rejecting the record.
+            if t.page_pdf in pages.get(t.table_id, []):
+                problems.append(f"{where}: figures.jsonl has no sheet number for "
+                                f"this crop (page {t.page_pdf}); its `sheet` field "
+                                f"needs fixing, the transcription looks right")
+            else:
+                problems.append(f"{where}: sheet {t.sheet!r} not among "
+                                f"{known[t.table_id]} in figures.jsonl, and "
+                                f"page {t.page_pdf} does not match either")
 
         if not t.column_labels:
             problems.append(f"{where}: no column labels")
