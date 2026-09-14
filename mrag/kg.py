@@ -476,6 +476,43 @@ class KG:
         # belong together and pulling it in floods Kq.
         return [] if len(out) > _MAX_SIBLING_ITEMS else out
 
+    def chunk_for_paragraph(self, section_id: str, ordinal: int) -> Optional[str]:
+        """The chunk holding paragraph `ordinal` of `section_id`.
+
+        The manual points at paragraphs, not sections: 4K.04 says "see
+        Paragraph 6 in Section 4K.03". Resolving that to the whole section
+        hands a verifier 25 chunks and asks it to guess which one was meant.
+        """
+        node = f"section:{section_id}"
+        if not self.g.has_node(node):
+            return None
+        # Paragraph nodes FIRST. Where a paragraph was split into list items,
+        # every item carries the PARENT's ordinal, so matching chunks first
+        # returned item 1 of 295 for "Paragraph 3 of Section 1C.02" -- one
+        # definition standing in for the whole provision.
+        for _u, v, d in self.g.out_edges(node, data=True):
+            if d.get("label") == "contains" and v.startswith("paragraph:") \
+                    and int(self.g.nodes[v].get("ordinal", -1)) == int(ordinal):
+                return v.split(":", 1)[1]
+        for _u, v, d in self.g.out_edges(node, data=True):
+            if d.get("label") != "contains" or not v.startswith("chunk:"):
+                continue
+            if int(self.g.nodes[v].get("ordinal", -1)) == int(ordinal):
+                return v.split(":", 1)[1]
+        return None
+
+    def resolves(self, kind: str, ident: str) -> bool:
+        """Does this reference point at something that actually exists?
+
+        4 of the manual's own section references do not: 8B.05, 8C.05, 8E.10
+        and 9D.10 appear in the text but not in its outline.
+        """
+        if kind == "section":
+            node = f"section:{ident}"
+            return self.g.has_node(node) and self.g.nodes[node].get("kind") == "Section"
+        node = self.figure(ident)
+        return bool(node) and not self.g.nodes[node].get("unresolved")
+
     def sections_cited_by(self, section_id: str) -> List[str]:
         """Sections this one cross-references, via its chunks' cites_section
         edges. `4K.04` -> `['4K.03']`, because paragraph 4 points there.
