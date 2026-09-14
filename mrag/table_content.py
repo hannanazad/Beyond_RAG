@@ -47,6 +47,7 @@ Markers survive extraction: on 2C-3 a cell reads "N/A" followed by a separate
 """
 from __future__ import annotations
 
+import collections
 import re
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -78,7 +79,14 @@ class Cell:
     row: int
     col: int
     marker: Optional[str] = None       # footnote reference on this cell
-    header: bool = False               # set in the bold table face
+    header: bool = False               # face differs from the table body face
+    face: tuple = ()                   # (font family, rounded size)
+    # horizontal extent, kept so a header that SPANS several data columns can
+    # be attached to each of them. "Condition B: Deceleration to the listed
+    # advisory speed" sits over eight columns in Table 2C-3; without the span
+    # it belongs to none of them.
+    x0: int = 0
+    x1: int = 0
 
 
 @dataclass
@@ -90,6 +98,7 @@ class TableContent:
     footnotes: List[Dict] = field(default_factory=list)
     n_cols: int = 0
     n_header_rows: int = 0
+    column_labels: List[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -98,6 +107,7 @@ class TableContent:
             "n_cols": self.n_cols,
             "header_rows": self.header_rows,
             "n_header_rows": self.n_header_rows,
+            "column_labels": self.column_labels,
             "rows": self._as_rows(),
             "footnotes": self.footnotes,
         }
@@ -110,7 +120,9 @@ class TableContent:
         for r in sorted(by_row):
             row = []
             for c in sorted(by_row[r], key=lambda c: c.col):
-                d = {"text": c.text}
+                # `col` is the GRID column, so a row with a missing cell no
+                # longer shifts everything after it out of alignment.
+                d = {"text": c.text, "col": c.col}
                 if c.marker:
                     d["footnote_ref"] = c.marker
                 row.append(d)
@@ -208,8 +220,15 @@ def extract(runs: Sequence[Tuple[int, int, int, int, str, float]],
         rows.setdefault(key, []).append(r)
 
     ordered = [rows[k] for k in sorted(rows)]
-    widths = [len(row) for row in ordered]
-    tc.n_cols = max(widths) if widths else 0
+
+    # ---- a GLOBAL column grid ----------------------------------------
+    # `col` used to be the cell's position within its own row. Any row with a
+    # missing cell shifted every column after it, so Table 2C-3's advisory
+    # speeds (0, 10, 20 ...) landed one column out and a header could not be
+    # attached to the right values. Column edges are instead taken once, from
+    # the whole table, and every cell is assigned to the edge it sits on.
+    grid = _column_grid(ordered, col_gap)
+    tc.n_cols = len(grid)
 
     for ri, row in enumerate(ordered):
         row = sorted(row, key=lambda r: r[1])
@@ -221,7 +240,9 @@ def extract(runs: Sequence[Tuple[int, int, int, int, str, float]],
             else:
                 cur.append(r)
         merged.append(cur)
-        for ci, group in enumerate(merged):
+        for group in merged:
+            ci = _grid_column(min(g[1] for g in group),
+                              max(g[1] + g[2] for g in group), grid)
             # size separates the value from its footnote reference
             body = [g for g in group if g[5] > MARKER_FONT_MAX]
             refs = [g for g in group if g[5] <= MARKER_FONT_MAX]
@@ -236,10 +257,13 @@ def extract(runs: Sequence[Tuple[int, int, int, int, str, float]],
                 # header_rows=[] and a calculator had columns of numbers with
                 # nothing saying which column meant what -- so "275 ft" could
                 # not be tied to "55 mph, Condition B at 40 mph".
-                bold = sum(len(g[6]) for g in group if _is_header_font(g[4], g[5]))
-                plain = sum(len(g[6]) for g in group) - bold
+                face = max(((g[4], round(g[5])) for g in body or group),
+                           key=lambda f: sum(len(g[6]) for g in group
+                                             if (g[4], round(g[5])) == f))
                 tc.cells.append(Cell(text=txt, row=ri, col=ci, marker=marker,
-                                     header=bold > plain))
+                                     face=face,
+                                     x0=min(g[1] for g in group),
+                                     x1=max(g[1] + g[2] for g in group)))
 
     # ---- which rows are header rows? ----------------------------------
     # A row is a header row when its cells are bold AND it sits above every
@@ -248,16 +272,29 @@ def extract(runs: Sequence[Tuple[int, int, int, int, str, float]],
     by_row: Dict[int, List[Cell]] = {}
     for c in tc.cells:
         by_row.setdefault(c.row, []).append(c)
+    # The body face is whichever (font, size) carries most of the table's
+    # text. A header row is one set in a DIFFERENT face, counted from the top.
+    # Boldness alone was wrong: Table 4C-1's headers are not bold, they are
+    # plain HelveticaNeueLTPro against -Md data, so a bold test found none of
+    # them. Comparing against the body face covers both.
+    body_face = collections.Counter()
+    for c in tc.cells:
+        body_face[c.face] += len(c.text)
+    dominant = body_face.most_common(1)[0][0] if body_face else None
+    for c in tc.cells:
+        c.header = c.face != dominant
+
     header_idx: List[int] = []
     for ri in sorted(by_row):
         cells = by_row[ri]
-        if sum(1 for c in cells if c.header) * 2 >= len(cells):
+        if cells and sum(1 for c in cells if c.header) * 2 >= len(cells):
             header_idx.append(ri)
         else:
             break                      # first non-header row ends the head
     tc.header_rows = [[c.text for c in sorted(by_row[ri], key=lambda c: c.col)]
                       for ri in header_idx]
     tc.n_header_rows = len(header_idx)
+    tc.column_labels = _compose_column_labels(tc, by_row, header_idx)
 
     # ---- footnotes ---------------------------------------------------
     # Group note lines into notes: a new note starts at a marker.
@@ -310,6 +347,92 @@ def extract(runs: Sequence[Tuple[int, int, int, int, str, float]],
 # --------------------------------------------------------------------------- #
 
 PDF_TO_HTML_SCALE = 1.5      # pdftohtml renders at 1.5x PDF points
+
+
+def _column_grid(ordered_rows, col_gap: int) -> List[Tuple[int, int]]:
+    """Column edges for the whole table, as [(x0, x1), ...] left to right.
+
+    Built from the row with the most cells (the widest data row defines the
+    grid), then widened by every other row's cells so a narrow header or a
+    long label does not push a column off.
+    """
+    def groups(row):
+        row = sorted(row, key=lambda r: r[1])
+        out, cur = [], [row[0]]
+        for r in row[1:]:
+            prev = cur[-1]
+            if r[1] - (prev[1] + prev[2]) > col_gap:
+                out.append(cur); cur = [r]
+            else:
+                cur.append(r)
+        out.append(cur)
+        return [(min(g[1] for g in grp), max(g[1] + g[2] for g in grp)) for grp in out]
+
+    all_groups = [groups(r) for r in ordered_rows if r]
+    if not all_groups:
+        return []
+    grid = list(max(all_groups, key=len))
+    for gs in all_groups:
+        for lo, hi in gs:
+            hit = [i for i, (a, b) in enumerate(grid) if min(b, hi) - max(a, lo) > 0]
+            if len(hit) == 1:                      # widen the column it lands in
+                i = hit[0]
+                grid[i] = (min(grid[i][0], lo), max(grid[i][1], hi))
+            elif not hit:                          # a column no data row had
+                grid.append((lo, hi))
+    return sorted(grid)
+
+
+def _grid_column(lo: int, hi: int, grid) -> int:
+    """Index of the grid column this cell sits in: most overlap wins."""
+    if not grid:
+        return 0
+    best, score = 0, -1
+    for i, (a, b) in enumerate(grid):
+        ov = min(b, hi) - max(a, lo)
+        if ov > score:
+            best, score = i, ov
+    return best
+
+
+def _compose_column_labels(tc: "TableContent", by_row, header_idx) -> List[str]:
+    """One label per data column, built from every header cell above it.
+
+    Header cells span: Table 2C-3 stacks six header rows, where
+    "Advance Placement Distance" covers the whole table, "Condition B:
+    Deceleration to the listed advisory speed (mph) for the condition"
+    covers eight columns, and only the bottom row names the individual
+    speeds 0, 10, 20 ... 80. A calculator asking for the distance at 55 mph
+    under Condition B with a 40 mph advisory needs all three parts, so the
+    label for that column is the general-to-specific join of them.
+
+    Matching is by horizontal overlap, not by column index: a spanning cell
+    has no single index.
+    """
+    data_rows = [ri for ri in sorted(by_row) if ri not in header_idx]
+    if not data_rows or not header_idx:
+        return []
+    # column extents come from the data rows, which are the real grid
+    spans: Dict[int, List[int]] = {}
+    for ri in data_rows:
+        for c in by_row[ri]:
+            cur = spans.get(c.col)
+            spans[c.col] = [min(cur[0], c.x0), max(cur[1], c.x1)] if cur else [c.x0, c.x1]
+    labels: List[str] = []
+    for col in range(max(spans) + 1 if spans else 0):
+        if col not in spans:
+            labels.append("")
+            continue
+        lo, hi = spans[col]
+        parts: List[str] = []
+        for ri in header_idx:                     # top row first: general -> specific
+            for c in sorted(by_row[ri], key=lambda c: c.x0):
+                overlap = min(c.x1, hi) - max(c.x0, lo)
+                if overlap > 0.5 * min(c.x1 - c.x0, hi - lo):
+                    if c.text not in parts:
+                        parts.append(c.text)
+        labels.append(" — ".join(parts))
+    return labels
 
 
 def extract_for_crop(runs, crop_record: dict, pad: float = 6.0) -> TableContent:
