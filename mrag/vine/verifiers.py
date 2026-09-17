@@ -27,6 +27,15 @@ SECTION_THEN_PARA_RE = re.compile(
     rf"\bSection\s+{_SECTION}\s*,?\s*Paragraphs?\s+(\d{{1,3}})\b", re.I)
 SECTION_RE = re.compile(rf"\bSection\s+{_SECTION}\b", re.I)
 FIGURE_RE = re.compile(r"\b(Figure|Table)\s+([0-9A-Z]+-[0-9]+[A-Za-z]?)\b", re.I)
+# The manual routinely names several at once: Table 9A-1 Note 2 sends a sign
+# that serves motorists and bicyclists "to ... Tables 2B-1, 2C-1, 2D-1, or
+# 8B-1". A pattern anchored on the singular word reads ONE target out of four
+# and silently drops the other three, so an obligation about a bicycle sign
+# resolves against the wrong table roughly three times in four.
+PLURAL_FIGURE_RE = re.compile(
+    r"\b(Figures|Tables)\s+((?:[0-9A-Z]+-[0-9]+[A-Za-z]?)"
+    r"(?:\s*(?:,|,?\s*or|,?\s*and)\s*[0-9A-Z]+-[0-9]+[A-Za-z]?)+)", re.I)
+_ID_RE = re.compile(r"[0-9A-Z]+-[0-9]+[A-Za-z]?", re.I)
 
 
 def parse_references(text: str) -> List[Tuple[str, str, Optional[int]]]:
@@ -49,7 +58,14 @@ def parse_references(text: str) -> List[Tuple[str, str, Optional[int]]]:
         if any(a <= m.start() < b for a, b in claimed):
             continue                       # already captured with its paragraph
         found.append((m.start(), ("section", m.group(1), None)))
+    for m in PLURAL_FIGURE_RE.finditer(text):
+        kind = "Figure" if m.group(1).lower().startswith("figure") else "Table"
+        for i, ident in enumerate(_ID_RE.findall(m.group(2))):
+            found.append((m.start(2) + i, ("figure", f"{kind} {ident}", None)))
+        claimed.append((m.start(), m.end()))
     for m in FIGURE_RE.finditer(text):
+        if any(a <= m.start() < b for a, b in claimed):
+            continue                       # already captured in a plural list
         found.append((m.start(), ("figure", f"{m.group(1).title()} {m.group(2)}", None)))
 
     out, seen = [], set()
