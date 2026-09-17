@@ -114,7 +114,10 @@ class Footnote:
     marker: str                      # "1", "a", "*", "where"
     text: str
     chunk_id: Optional[str] = None   # the TBLNOTE chunk already in the graph
-    applies_to: str = "table"        # table | column:<i> | row:<i> | cell
+    # table | column:<i> | row:<i> | cell. Several scopes may be listed,
+    # comma separated: one marker often heads a group of columns, as the "**"
+    # over "Distance between Signs A, B and C" does in Table 6B-1.
+    applies_to: str = "table"
 
 
 @dataclass
@@ -125,6 +128,12 @@ class Table:
     rows: List[List[Value]]          # data rows only; headers live in column_labels
     sheet: Optional[int] = None
     sheet_of: Optional[int] = None
+    # Some tables print LETTERED SUB-TABLES under one id and one caption:
+    # Table 2C-4 has "A - Determination of the Need for Devices" and
+    # "B - Selection of Devices", with different columns and their own
+    # footnotes. They are separate lookups and must not be merged, but they
+    # are not separate sheets either -- they share a page and a crop.
+    part: Optional[str] = None
     page_printed: str = ""
     title: str = ""
     crop_file: str = ""
@@ -145,15 +154,33 @@ class Table:
                 return i
         return None
 
-    def lookup(self, key: float, column: int) -> Optional[Value]:
+    def lookup(self, key: float, column: int, key_column: Optional[int] = None,
+               unit: Optional[str] = None) -> Optional[Value]:
         """The cell in `column` of the row whose key range contains `key`.
 
-        This is the calculator's entry point: "stopping sight distance at
-        37 mph" is a row-key range lookup, not an exact match.
+        This is the calculator's entry point: "chevron spacing at a 500 foot
+        radius" is a row-key RANGE lookup, not an exact match.
+
+        `key_column` or `unit` must be given when a table has more than one
+        key column. Table 2C-5 is keyed by BOTH advisory speed and curve
+        radius; searching all key columns blindly made an advisory speed of
+        25 mph match "Less than 200 feet" and return the wrong spacing. A
+        number alone does not say what it measures.
         """
+        keys = [key_column] if key_column is not None else list(self.row_key_columns)
+        if key_column is None and unit is None and len(keys) > 1:
+            raise ValueError(
+                f"{self.table_id} has {len(keys)} key columns "
+                f"({[self.column_labels[k] for k in keys]}); pass key_column= or "
+                f"unit= so the lookup knows which one {key!r} refers to")
         for row in self.rows:
-            for kc in self.row_key_columns:
-                if kc < len(row) and row[kc].contains(key):
+            for kc in keys:
+                if kc >= len(row):
+                    continue
+                cell = row[kc]
+                if unit is not None and cell.unit != unit:
+                    continue
+                if cell.contains(key):
                     return row[column] if column < len(row) else None
         return None
 
@@ -161,13 +188,41 @@ class Table:
         return next((f for f in self.footnotes if f.marker == str(marker)), None)
 
     def conditions_on(self, value: Value) -> List[Footnote]:
-        """Every note attached to a cell, plus every table-wide note.
+        """Every note that governs this value: table-wide, on the cell itself,
+        and on its ROW KEY.
 
-        The calculator must surface these with the number. A taper length
-        without the key defining L, W and S is a number with no meaning.
+        The row key matters because the manual often marks the footnote on the
+        row LABEL rather than on each number in that row -- Table 2E-4 prints
+        "Numerals**" and leaves the sizes bare. A calculator reading only the
+        cell would return the number without the condition attached to it,
+        which is the failure this whole schema exists to prevent.
         """
         out = [f for f in self.footnotes if f.applies_to == "table"]
-        for m in value.footnotes:
+        markers = list(value.footnotes)
+        for row in self.rows:
+            if any(cell is value for cell in row):
+                for kc in self.row_key_columns:
+                    if kc < len(row):
+                        markers += row[kc].footnotes
+                    # ...and a marker on the KEY COLUMN'S HEADING, which
+                    # defines what the key means. Table 6B-2 marks "Speed*"
+                    # to say which speed: posted, off-peak 85th-percentile,
+                    # or anticipated operating. A stopping sight distance
+                    # returned without that is a number against an unknown
+                    # input.
+                    out += [f for f in self.footnotes
+                            if _scoped_to(f, kc) and f not in out]
+                # A marker printed on the COLUMN HEADING governs every value
+                # in that column, and the manual uses this often: Table 6B-2
+                # marks "Speed*", Table 4C-2 marks the crash-total headings.
+                # applies_to="column:N" was being declared and then ignored,
+                # so those conditions reached nothing.
+                col = next((i for i, cell in enumerate(row) if cell is value), None)
+                if col is not None:
+                    out += [f for f in self.footnotes
+                            if _scoped_to(f, col) and f not in out]
+                break
+        for m in markers:
             f = self.footnote(m)
             if f and f not in out:
                 out.append(f)
@@ -215,6 +270,11 @@ class Table:
         return Table(rows=rows, footnotes=fns, **kw)
 
 
+def _scoped_to(footnote: "Footnote", column: int) -> bool:
+    """Does this footnote govern `column`? Handles a comma-separated scope."""
+    return f"column:{column}" in [s.strip() for s in footnote.applies_to.split(",")]
+
+
 def _trim(d: Dict[str, Any]) -> Dict[str, Any]:
     """Drop fields left at their default, so a file stays readable."""
     defaults = {"number": None, "unit": None, "minimum": None, "maximum": None,
@@ -260,8 +320,9 @@ def validate(tables: List[Table], crops: Optional[List[dict]] = None,
                 pages.setdefault(c["figure_id"], []).append(c.get("page_pdf"))
 
     for t in tables:
-        where = f"{t.table_id}" + (f" sheet {t.sheet}" if t.sheet else "")
-        key = (t.table_id, t.sheet)
+        where = (f"{t.table_id}" + (f" sheet {t.sheet}" if t.sheet else "")
+                 + (f" part {t.part}" if t.part else ""))
+        key = (t.table_id, t.sheet, t.part)
         if key in seen:
             problems.append(f"{where}: duplicate entry")
         seen.add(key)
