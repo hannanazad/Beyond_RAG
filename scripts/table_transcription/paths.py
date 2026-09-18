@@ -11,6 +11,12 @@ PDF = Path("/content/drive/MyDrive/Beyond_RAG/mutcd11theditionr1hl.pdf")
 # figures.jsonl produced by the ingest.
 FIGURES = Path("/content/drive/MyDrive/Beyond_RAG/mmrag_cache_v3/figures.jsonl")
 
+# chunks.jsonl produced by the ingest.
+CHUNKS = Path("/content/drive/MyDrive/Beyond_RAG/mmrag_cache_v3/chunks.jsonl")
+
+# graph.gpickle produced by the ingest.
+GRAPH = Path("/content/drive/MyDrive/Beyond_RAG/mmrag_cache_v3/graph.gpickle")
+
 # Where the finished table file is written.
 TABLES_OUT = Path("/content/drive/MyDrive/Beyond_RAG/mmrag_cache_v3/mutcd_tables.jsonl")
 
