@@ -16,6 +16,8 @@ from .compile import (CompileError, GuardSpec, MergeSpec, NetworkSpec,
 from .experiments import (ABLATIONS, Result, Scenario, format_table,
                           make_scenario, reference_terminal, run_ablation,
                           run_sequential, run_vine, table3, table5)
+from .faults import (CONFIGURATIONS, Fault, FaultKind, candidate_faults,
+                     containment_rate, run_faulted, table4)
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -30,4 +32,6 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "Scenario", "Result", "ABLATIONS", "make_scenario", "reference_terminal",
            "run_vine", "run_sequential", "run_ablation", "table3", "table5",
            "format_table",
+           "Fault", "FaultKind", "candidate_faults", "run_faulted",
+           "containment_rate", "table4", "CONFIGURATIONS",
            "Table", "Value", "Footnote", "validate_tables"]
