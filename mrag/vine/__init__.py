@@ -23,6 +23,8 @@ from .model_verifiers import (Ask, build_prompt, certificates_for_retrieval,
                               parse_model_reply)
 from .answer import (Answer, answer, build_answer_prompt, compose,
                      supporting_certificates)
+from .parser import (PARSER_CONTRACT, ParseReport, build_parser_prompt,
+                     make_semantic_parser, read_spec)
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -43,4 +45,6 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "build_prompt", "certificates_for_retrieval", "Ask",
            "Answer", "answer", "compose", "build_answer_prompt",
            "supporting_certificates",
+           "make_semantic_parser", "ParseReport", "build_parser_prompt",
+           "read_spec", "PARSER_CONTRACT",
            "Table", "Value", "Footnote", "validate_tables"]

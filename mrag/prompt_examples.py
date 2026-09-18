@@ -27,94 +27,138 @@ from typing import Any, Dict, List
 
 FEWSHOT_EXAMPLES: List[Dict[str, Any]] = [
     # -----------------------------------------------------------------------
-    # Example 1 — Multi-category answer (Standard + Guidance + Option).
-    # Best single example: shows the model how to handle answers that span
-    # all four MUTCD rule types. Used as the one-shot example.
+    # Example 1 — Multi-category answer (Guidance + Standard + Option + Support).
+    # Best single example: shows the model how to handle answers that span all
+    # four MUTCD rule types, and how to carry a Standard whose scope is stated
+    # as an exception. Used as the one-shot example.
+    #
+    # The section is deliberately ADMINISTRATIVE. An example drawn from a
+    # design provision teaches the shape of an answer and, at the same time,
+    # hands the model a substantive rule it may then recite for any question
+    # touching that provision. The previous version of this example was drawn
+    # from 2B.04 and stated the ALL-WAY plaque requirement in full; measured
+    # against the MUTCD-150 gold answers it covered 83% of one and 80% of
+    # another, and five benchmark questions cited the sections it quoted.
+    # Nothing in 1B.08 is an engineering rule, so the format is all it can
+    # teach — which is all an example should teach.
     # -----------------------------------------------------------------------
     {
-        "question": "What supplemental plaques are used with STOP signs?",
+        "question": (
+            "How is a request for an official interpretation or permission to "
+            "experiment submitted to FHWA?"
+        ),
         "chunks": [
             {
-                "section_id": "2B.04",
-                "section_title": "STOP Sign (R1-1) and ALL-WAY Plaque (R1-3P)",
-                "content_type": "Standard",
-                "ordinal": "04",
-                "page_printed": "74",
-                "text": (
-                    "At intersections where all approaches are controlled by STOP signs "
-                    "(see Section 2B.12), an ALL-WAY (R1-3P) supplemental plaque "
-                    "(see Figure 2B-1) shall be mounted below each STOP sign. The ALL-WAY "
-                    "plaque shall have a white legend and border on a red background."
+                "section_id": "1B.08",
+                "section_title": (
+                    "Requesting Official Interpretations, Experiments, Changes "
+                    "to the MUTCD, or Interim Approvals"
                 ),
-            },
-            {
-                "section_id": "2B.04",
-                "section_title": "STOP Sign (R1-1) and ALL-WAY Plaque (R1-3P)",
-                "content_type": "Standard",
-                "ordinal": "05",
-                "page_printed": "74",
-                "text": (
-                    "Supplemental plaques with legends such as 2-WAY, 3-WAY, 4-WAY, or "
-                    "other numbers of ways shall not be used with STOP signs."
-                ),
-            },
-            {
-                "section_id": "2B.04",
-                "section_title": "STOP Sign (R1-1) and ALL-WAY Plaque (R1-3P)",
                 "content_type": "Guidance",
-                "ordinal": "07",
-                "page_printed": "74",
+                "ordinal": "01",
+                "page_printed": "12",
                 "text": (
-                    "The TRAFFIC FROM LEFT (RIGHT) DOES NOT STOP (W4-4aP) plaque or "
-                    "ONCOMING TRAFFIC DOES NOT STOP (W4-4bP) plaque should be used at "
-                    "intersections where STOP signs control all but one approach to the "
-                    "intersection, unless the only non-stopped approach is from a one-way street."
+                    "A local jurisdiction, toll facility operator, or owner of a "
+                    "site roadway open to public travel that is requesting "
+                    "permission to experiment or permission to use a device or "
+                    "application under an existing interim approval should first "
+                    "check for any State laws, regulations, and/or directives "
+                    "covering the application of the MUTCD provisions that might "
+                    "apply."
                 ),
             },
             {
-                "section_id": "2B.04",
-                "section_title": "STOP Sign (R1-1) and ALL-WAY Plaque (R1-3P)",
-                "content_type": "Option",
-                "ordinal": "08",
-                "page_printed": "74",
+                "section_id": "1B.08",
+                "section_title": (
+                    "Requesting Official Interpretations, Experiments, Changes "
+                    "to the MUTCD, or Interim Approvals"
+                ),
+                "content_type": "Standard",
+                "ordinal": "02",
+                "page_printed": "12",
                 "text": (
-                    "The EXCEPT RIGHT TURN (R1-10P) plaque (see Figure 2B-1) may be mounted "
-                    "below the STOP sign if an engineering study determines that a special "
-                    "combination of geometry and traffic volumes is present that makes it "
-                    "possible for right-turning traffic on the approach to be allowed to enter "
-                    "the intersection without stopping."
+                    "Except as provided in Paragraph 3 of this Section, requests "
+                    "for an interpretation, permission to experiment, a change to "
+                    "the MUTCD, granting of an interim approval, or permission to "
+                    "use an existing interim approval shall be submitted "
+                    "electronically to the Federal Highway Administration (FHWA), "
+                    "Office of Transportation Operations, MUTCD team, at the "
+                    "following e-mail address: MUTCDofficialrequest@dot.gov."
+                ),
+            },
+            {
+                "section_id": "1B.08",
+                "section_title": (
+                    "Requesting Official Interpretations, Experiments, Changes "
+                    "to the MUTCD, or Interim Approvals"
+                ),
+                "content_type": "Option",
+                "ordinal": "03",
+                "page_printed": "12",
+                "text": (
+                    "If electronic submittal is not possible, requests for an "
+                    "interpretation, permission to experiment, a change to the "
+                    "MUTCD, granting of an interim approval, or permission to use "
+                    "an existing interim approval may instead be mailed to the "
+                    "Office of Transportation Operations, HOTO-1, Federal Highway "
+                    "Administration, 1200 New Jersey Avenue, SE, Washington, DC "
+                    "20590."
+                ),
+            },
+            {
+                "section_id": "1B.08",
+                "section_title": (
+                    "Requesting Official Interpretations, Experiments, Changes "
+                    "to the MUTCD, or Interim Approvals"
+                ),
+                "content_type": "Support",
+                "ordinal": "05",
+                "page_printed": "12",
+                "text": (
+                    "For additional information concerning interpretations, "
+                    "experimentation, changes, or interim approvals, visit the "
+                    "MUTCD Web site at http://mutcd.fhwa.dot.gov."
                 ),
             },
         ],
         "figures": [],
         "answer": (
-            "Direct Answer: Several plaques may accompany STOP signs. The ALL-WAY (R1-3P) "
-            "plaque is required at all-way stop intersections. Numbered-way plaques such as "
-            "2-WAY, 3-WAY, or 4-WAY are prohibited. The TRAFFIC FROM LEFT/RIGHT DOES NOT "
-            "STOP plaque is recommended where STOP signs control all but one approach. The "
-            "EXCEPT RIGHT TURN plaque is permitted when supported by an engineering study.\n"
+            "Direct Answer: Requests shall be submitted electronically to the "
+            "FHWA Office of Transportation Operations, MUTCD team, except as "
+            "provided in Paragraph 3 of Section 1B.08. Where electronic "
+            "submittal is not possible, the request may be mailed instead. A "
+            "requester should first check for any applicable State laws, "
+            "regulations, or directives.\n"
             "\n"
             "Standards (mandatory):\n"
-            "- At intersections where all approaches are controlled by STOP signs, an ALL-WAY "
-            "(R1-3P) supplemental plaque shall be mounted below each STOP sign, with a white "
-            "legend and border on a red background.\n"
-            "- Supplemental plaques with legends such as 2-WAY, 3-WAY, 4-WAY, or other numbers "
-            "of ways shall not be used with STOP signs.\n"
+            "- Except as provided in Paragraph 3 of Section 1B.08, requests for "
+            "an interpretation, permission to experiment, a change to the MUTCD, "
+            "granting of an interim approval, or permission to use an existing "
+            "interim approval shall be submitted electronically to the Federal "
+            "Highway Administration, Office of Transportation Operations, MUTCD "
+            "team.\n"
             "\n"
             "Guidance (recommended):\n"
-            "- The TRAFFIC FROM LEFT (RIGHT) DOES NOT STOP (W4-4aP) or ONCOMING TRAFFIC DOES "
-            "NOT STOP (W4-4bP) plaque should be used at intersections where STOP signs control "
-            "all but one approach, unless the only non-stopped approach is from a one-way street.\n"
+            "- A local jurisdiction, toll facility operator, or owner of a site "
+            "roadway open to public travel that is requesting permission to "
+            "experiment, or permission to use a device under an existing interim "
+            "approval, should first check for any State laws, regulations, or "
+            "directives that might apply.\n"
             "\n"
             "Options (permitted):\n"
-            "- The EXCEPT RIGHT TURN (R1-10P) plaque may be mounted below the STOP sign when "
-            "an engineering study supports it based on geometry and traffic volumes.\n"
+            "- If electronic submittal is not possible, the request may instead "
+            "be mailed to the Office of Transportation Operations, HOTO-1, "
+            "Federal Highway Administration, Washington, DC.\n"
+            "\n"
+            "Support (explanatory, not enforceable):\n"
+            "- Further information on interpretations, experimentation, changes "
+            "and interim approvals is available on the MUTCD Web site.\n"
             "\n"
             "Citations:\n"
-            "- Section 2B.04 Standard §04 (p.74)\n"
-            "- Section 2B.04 Standard §05 (p.74)\n"
-            "- Section 2B.04 Guidance §07 (p.74)\n"
-            "- Section 2B.04 Option §08 (p.74)"
+            "- Section 1B.08 Guidance §01 (p.12)\n"
+            "- Section 1B.08 Standard §02 (p.12)\n"
+            "- Section 1B.08 Option §03 (p.12)\n"
+            "- Section 1B.08 Support §05 (p.12)"
         ),
     },
 
@@ -193,15 +237,109 @@ FEWSHOT_EXAMPLES: List[Dict[str, Any]] = [
                 "ordinal": "07",
                 "page_printed": "84",
                 "text": (
-                    "Among the factors that should be considered when conducting an engineering "
-                    "study for establishing or reevaluating speed limits within speed zones are "
-                    "the following: roadway environment and functional classification; roadway "
-                    "characteristics such as lane widths, grade, alignment, median type, and "
-                    "sight distance; geographic context; reported crash experience for at least "
-                    "a 12-month period; speed distribution of free-flowing vehicles including "
-                    "the pace, median, and 85th-percentile speeds; and a review of past speed "
-                    "studies to identify trends in operating speeds."
+                    "A. Roadway environment (such as roadside development, number and "
+                    "frequency of driveways and access points, and land use), functional "
+                    "classification, public transit volume and location or frequency of "
+                    "stops, parking practices, and pedestrian and bicycle facilities and "
+                    "activity;"
                 ),
+                "lead_in": (
+                    "Among the factors that should be considered when conducting "
+                    "an engineering study for establishing or reevaluating speed "
+                    "limits within speed zones are the following:"
+                ),
+                "source": "list_item",
+                "item": "A",
+            },
+            {
+                "section_id": "2B.21",
+                "section_title": "Speed Limit Sign (R2-1)",
+                "content_type": "Guidance",
+                "ordinal": "07",
+                "page_printed": "84",
+                "text": (
+                    "B. Roadway characteristics (such as lane widths, shoulder condition, "
+                    "grade, alignment, median type, and sight distance);"
+                ),
+                "lead_in": (
+                    "Among the factors that should be considered when conducting "
+                    "an engineering study for establishing or reevaluating speed "
+                    "limits within speed zones are the following:"
+                ),
+                "source": "list_item",
+                "item": "B",
+            },
+            {
+                "section_id": "2B.21",
+                "section_title": "Speed Limit Sign (R2-1)",
+                "content_type": "Guidance",
+                "ordinal": "07",
+                "page_printed": "84",
+                "text": (
+                    "C. Geographic context (such as an urban district, rural town center, "
+                    "non-urbanized rural area, or suburban area), and multi-modal trip "
+                    "generation;"
+                ),
+                "lead_in": (
+                    "Among the factors that should be considered when conducting "
+                    "an engineering study for establishing or reevaluating speed "
+                    "limits within speed zones are the following:"
+                ),
+                "source": "list_item",
+                "item": "C",
+            },
+            {
+                "section_id": "2B.21",
+                "section_title": "Speed Limit Sign (R2-1)",
+                "content_type": "Guidance",
+                "ordinal": "07",
+                "page_printed": "84",
+                "text": (
+                    "D. Reported crash experience for at least a 12-month period;"
+                ),
+                "lead_in": (
+                    "Among the factors that should be considered when conducting "
+                    "an engineering study for establishing or reevaluating speed "
+                    "limits within speed zones are the following:"
+                ),
+                "source": "list_item",
+                "item": "D",
+            },
+            {
+                "section_id": "2B.21",
+                "section_title": "Speed Limit Sign (R2-1)",
+                "content_type": "Guidance",
+                "ordinal": "07",
+                "page_printed": "84",
+                "text": (
+                    "E. Speed distribution of free-flowing vehicles including the pace, "
+                    "median (50th-percentile), and 85th-percentile speeds; and"
+                ),
+                "lead_in": (
+                    "Among the factors that should be considered when conducting "
+                    "an engineering study for establishing or reevaluating speed "
+                    "limits within speed zones are the following:"
+                ),
+                "source": "list_item",
+                "item": "E",
+            },
+            {
+                "section_id": "2B.21",
+                "section_title": "Speed Limit Sign (R2-1)",
+                "content_type": "Guidance",
+                "ordinal": "07",
+                "page_printed": "84",
+                "text": (
+                    "F. A review of past speed studies to identify any trends in "
+                    "operating speeds."
+                ),
+                "lead_in": (
+                    "Among the factors that should be considered when conducting "
+                    "an engineering study for establishing or reevaluating speed "
+                    "limits within speed zones are the following:"
+                ),
+                "source": "list_item",
+                "item": "F",
             },
         ],
         "figures": [],
@@ -217,15 +355,19 @@ FEWSHOT_EXAMPLES: List[Dict[str, Any]] = [
             "practices, and the study shall consider the roadway context.\n"
             "\n"
             "Guidance (recommended):\n"
-            "- The engineering study should consider roadway environment and functional "
-            "classification; roadway characteristics (lane widths, grade, alignment, median "
-            "type, sight distance); geographic context; reported crash experience for at least "
-            "12 months; speed distribution of free-flowing vehicles (pace, median, and "
-            "85th-percentile speeds); and a review of past speed studies for trends.\n"
+            "- Among the factors that should be considered when conducting the "
+            "engineering study are: roadway environment and functional "
+            "classification (item A); roadway characteristics such as lane widths, "
+            "shoulder condition, grade, alignment, median type and sight distance "
+            "(item B); geographic context and multi-modal trip generation (item C); "
+            "reported crash experience for at least a 12-month period (item D); the "
+            "speed distribution of free-flowing vehicles, including the pace, median "
+            "and 85th-percentile speeds (item E); and a review of past speed studies "
+            "to identify trends in operating speeds (item F).\n"
             "\n"
             "Citations:\n"
             "- Section 2B.21 Standard §06 (p.84)\n"
-            "- Section 2B.21 Guidance §07 (p.84)"
+            "- Section 2B.21 Guidance \u00a707 items A-F (p.84)"
         ),
     },
 ]
