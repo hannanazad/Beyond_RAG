@@ -13,6 +13,9 @@ from .symbolic import (evaluate_rule, facts_from_store, make_rule_evaluator,
 from .compile import (CompileError, GuardSpec, MergeSpec, NetworkSpec,
                       Obligation, assign_verifier, compile_section,
                       instantiate, repair_request)
+from .experiments import (ABLATIONS, Result, Scenario, format_table,
+                          make_scenario, reference_terminal, run_ablation,
+                          run_sequential, run_vine, table3, table5)
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -24,4 +27,7 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "make_rule_evaluator", "parse_rule", "evaluate_rule", "facts_from_store",
            "NetworkSpec", "Obligation", "MergeSpec", "GuardSpec", "CompileError",
            "instantiate", "assign_verifier", "repair_request", "compile_section",
+           "Scenario", "Result", "ABLATIONS", "make_scenario", "reference_terminal",
+           "run_vine", "run_sequential", "run_ablation", "table3", "table5",
+           "format_table",
            "Table", "Value", "Footnote", "validate_tables"]
