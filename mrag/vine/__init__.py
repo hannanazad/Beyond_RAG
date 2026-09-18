@@ -8,6 +8,8 @@ from .verifiers import (make_cross_reference_resolver,
 from .calculator import (ConditionKind, FormulaError, classify_condition,
                          evaluate_formula, extract_footnote_formulas,
                          make_calculator)
+from .symbolic import (evaluate_rule, facts_from_store, make_rule_evaluator,
+                       parse_rule)
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -16,4 +18,5 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "make_cross_reference_resolver", "parse_references",
            "make_calculator", "evaluate_formula", "extract_footnote_formulas",
            "classify_condition", "ConditionKind", "FormulaError",
+           "make_rule_evaluator", "parse_rule", "evaluate_rule", "facts_from_store",
            "Table", "Value", "Footnote", "validate_tables"]
