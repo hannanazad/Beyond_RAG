@@ -10,6 +10,9 @@ from .calculator import (ConditionKind, FormulaError, classify_condition,
                          make_calculator)
 from .symbolic import (evaluate_rule, facts_from_store, make_rule_evaluator,
                        parse_rule)
+from .compile import (CompileError, GuardSpec, MergeSpec, NetworkSpec,
+                      Obligation, assign_verifier, compile_section,
+                      instantiate, repair_request)
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -19,4 +22,6 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "make_calculator", "evaluate_formula", "extract_footnote_formulas",
            "classify_condition", "ConditionKind", "FormulaError",
            "make_rule_evaluator", "parse_rule", "evaluate_rule", "facts_from_store",
+           "NetworkSpec", "Obligation", "MergeSpec", "GuardSpec", "CompileError",
+           "instantiate", "assign_verifier", "repair_request", "compile_section",
            "Table", "Value", "Footnote", "validate_tables"]
