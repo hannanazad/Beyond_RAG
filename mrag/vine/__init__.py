@@ -18,6 +18,11 @@ from .experiments import (ABLATIONS, Result, Scenario, format_table,
                           run_sequential, run_vine, table3, table5)
 from .faults import (CONFIGURATIONS, Fault, FaultKind, candidate_faults,
                      containment_rate, run_faulted, table4)
+from .model_verifiers import (Ask, build_prompt, certificates_for_retrieval,
+                              make_llm_verifier, make_vlm_verifier,
+                              parse_model_reply)
+from .answer import (Answer, answer, build_answer_prompt, compose,
+                     supporting_certificates)
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -34,4 +39,8 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "format_table",
            "Fault", "FaultKind", "candidate_faults", "run_faulted",
            "containment_rate", "table4", "CONFIGURATIONS",
+           "make_llm_verifier", "make_vlm_verifier", "parse_model_reply",
+           "build_prompt", "certificates_for_retrieval", "Ask",
+           "Answer", "answer", "compose", "build_answer_prompt",
+           "supporting_certificates",
            "Table", "Value", "Footnote", "validate_tables"]

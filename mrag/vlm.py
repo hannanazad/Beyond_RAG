@@ -1281,10 +1281,24 @@ class VLM:
             image_paths.append(per_figure[fi][si])
             # One used_visuals entry per image: _format_visual_lines numbers
             # them positionally, so the two lists must stay 1:1.
-            used_visuals.append(("Figure", {
+            #
+            # `_sheet_of` is the figure's REAL sheet count, not the number of
+            # sheets that survived the image budget. Reporting the kept count
+            # told the model "sheet 1 of 2" for a six-sheet table whose other
+            # four sheets were dropped, so it answered about a table it
+            # believed it had seen in full. Table 4 injects exactly that as a
+            # visual fault ("withholding of a required figure"); a system that
+            # cannot tell a partial view from a complete one cannot contain it,
+            # and the abstract's evidence-aware abstention needs the
+            # difference. `_sheets_shown` carries the kept count so the
+            # shortfall is visible rather than merely absent.
+            total = int(figures[fi].get("n_sheets")
+                        or figures[fi].get("sheet_of") or 1)
+            used_visuals.append((("Figure"), {
                 **figures[fi],
                 "_sheet": si + 1,
-                "_sheet_of": kept_per_figure[fi],
+                "_sheet_of": max(total, kept_per_figure[fi]),
+                "_sheets_shown": kept_per_figure[fi],
             }))
 
         for ip in page_paths:
@@ -1352,7 +1366,13 @@ class VLM:
         for i, (kind, v) in enumerate(used_visuals, 1):
             if kind == "Figure":
                 of = int(v.get("_sheet_of", 1) or 1)
+                shown = int(v.get("_sheets_shown", of) or of)
                 sheet = f" [sheet {v.get('_sheet', 1)} of {of}]" if of > 1 else ""
+                # An omission the model is not told about is an omission it
+                # cannot reason around. Saying so lets it abstain instead of
+                # answering from a fragment it took for the whole.
+                if of > 1 and shown < of:
+                    sheet += f" [only {shown} of {of} sheets shown]"
                 visual_lines.append(
                     f"[Image {i}] {v.get('figure_id','?')}{sheet} (p.{v.get('page_printed','?')}): "
                     f"{(v.get('caption','') or '')[:160]}"
