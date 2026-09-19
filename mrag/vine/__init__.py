@@ -25,6 +25,7 @@ from .answer import (Answer, answer, build_answer_prompt, compose,
                      supporting_certificates)
 from .parser import (PARSER_CONTRACT, ParseReport, build_parser_prompt,
                      make_semantic_parser, read_spec)
+from .run import VineResult, ask_vine, build_verifiers, make_ask
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -47,4 +48,5 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "supporting_certificates",
            "make_semantic_parser", "ParseReport", "build_parser_prompt",
            "read_spec", "PARSER_CONTRACT",
+           "ask_vine", "VineResult", "build_verifiers", "make_ask",
            "Table", "Value", "Footnote", "validate_tables"]
