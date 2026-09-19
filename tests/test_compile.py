@@ -113,11 +113,22 @@ def v(**kw):
 
 assert v(type="cross_reference") == "cross_reference_resolver"
 assert v(type="visual") == "vlm"
-assert v(evidence_hint=[{"type": "table", "id": "Table 6B-4"}]) == "calculator"
+# the TYPE decides the tool; a hint only says where the evidence is
+assert v(type="numerical",
+         evidence_hint=[{"type": "table", "id": "Table 6B-4"}]) == "calculator"
+assert v(type="numerical") == "symbolic"
 assert v(evidence_hint=[{"type": "figure", "id": "Figure 2C-1"}]) == "vlm"
-# a table beats a figure: the lookup is the more constrained mechanism
-assert v(evidence_hint=[{"type": "figure", "id": "Figure 2C-1"},
-                        {"type": "table", "id": "Table 2C-4"}]) == "calculator"
+# A classification that cites a table is still a classification. Sending it to
+# the calculator, as an earlier rule did, guaranteed an abstention: a lookup
+# cannot decide "the sign installed in advance of the curve is a Curve sign".
+assert v(type="classification",
+         evidence_hint=[{"type": "figure", "id": "Figure 2C-1"},
+                        {"type": "table", "id": "Table 2C-4"}]) == "llm"
+# bare ids are normalised to what the verifiers actually look up
+from mrag.vine.compile import Obligation as _Ob
+_o = _Ob.from_dict({**OK, "evidence_hint": [{"type": "table", "id": "2C-4"},
+                                            {"type": "figure", "id": "2C-1"}]})
+assert [h["id"] for h in _o.evidence_hint] == ["Table 2C-4", "Figure 2C-1"]
 assert v(claim="the major-street speed exceeds 40 mph") == "symbolic"
 assert v(claim="the design is appropriate for the site") == "llm"
 # a whole paragraph that CONTAINS a comparison is not the comparison

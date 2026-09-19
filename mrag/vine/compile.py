@@ -124,6 +124,30 @@ class GuardSpec:
         return "(" + joiner.join(p.describe() for p in self.parts) + ")"
 
 
+_BARE_ID = re.compile(r"^\d+[A-Z]-\d+[A-Za-z]?$", re.I)
+
+
+def _normalise_hint(h: Dict[str, Any]) -> Dict[str, str]:
+    """Give an evidence hint the id the verifiers actually look up.
+
+    A model writes what the manual prints inside a sentence -- "Table 2C-4"
+    becomes `{"type": "table", "id": "2C-4"}` -- but `mutcd_tables.jsonl` is
+    keyed on "Table 2C-4" and the graph on "Figure 2C-1". A bare id therefore
+    resolves to nothing, and the calculator abstains with "2C-4 is not in the
+    table data" on an obligation it could have answered. The baseline compiler
+    already prefixed these; the parser path did not, so it is done here where
+    both meet.
+    """
+    kind = str(h.get("type", "")).lower()
+    ident = str(h.get("id", "")).strip()
+    if _BARE_ID.match(ident):
+        if kind == "table":
+            ident = f"Table {ident}"
+        elif kind == "figure":
+            ident = f"Figure {ident}"
+    return {**{k: str(v) for k, v in h.items()}, "type": kind, "id": ident}
+
+
 @dataclass
 class Obligation:
     """One atomic check. The parser emits these; it does not emit states."""
@@ -151,7 +175,8 @@ class Obligation:
             authority=str(d.get("authority", "STANDARD")).upper(),
             requires=[str(r) for r in (d.get("requires") or [])],
             guard=guard,
-            evidence_hint=[dict(h) for h in (d.get("evidence_hint") or [])],
+            evidence_hint=[_normalise_hint(h)
+                           for h in (d.get("evidence_hint") or [])],
             verifier=(str(d["verifier"]) if d.get("verifier") else None),
             mandatory=bool(d.get("mandatory", True)),
             source_chunk=str(d.get("source_chunk", "")))
@@ -314,12 +339,17 @@ def assign_verifier(o: Obligation) -> str:
     # 2C-1) is required" is decided by the table, and the figure only shows
     # what the sign looks like. Sending it to a model to look at a picture
     # would replace a lookup with a judgement.
-    if "table" in kinds:
-        return "calculator"
-    if "figure" in kinds:
-        return "vlm"
+    # A hint says WHERE the evidence is, not which tool can decide the claim.
+    # Treating a table hint as "send it to the calculator" routed
+    # "The sign installed in advance of the curve is a Curve (W1-2) sign" --
+    # a classification that happens to cite Table 2C-4 -- to a deterministic
+    # lookup, which can only abstain. So the TYPE decides the tool, and the
+    # hint only chooses between tools that could serve that type.
     if o.type == ObligationType.NUMERICAL.value:
-        return "symbolic"
+        return "calculator" if "table" in kinds else "symbolic"
+    if "figure" in kinds and "table" not in kinds:
+        # a classification whose only evidence is a figure has to be looked at
+        return "vlm"
     # "the major-street speed exceeds 40 mph" is a comparison wearing the word
     # applicability, and a model should not be spent on it. But a whole
     # printed paragraph is never a bare comparison: "A Turn sign should be
