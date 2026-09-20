@@ -346,9 +346,30 @@ def assign_verifier(o: Obligation) -> str:
     # lookup, which can only abstain. So the TYPE decides the tool, and the
     # hint only chooses between tools that could serve that type.
     if o.type == ObligationType.NUMERICAL.value:
-        return "calculator" if "table" in kinds else "symbolic"
-    if "figure" in kinds and "table" not in kinds:
-        # a classification whose only evidence is a figure has to be looked at
+        if "table" in kinds:
+            return "calculator"
+        # A comparison with a RECOMMENDATION bolted onto it is not a
+        # comparison. "The curve's advisory speed is 30 mph or less, so a Turn
+        # (W1-1) sign should be used instead of a Curve (W1-2) sign" parses to
+        # `speed <= 30`, and the symbolic evaluator would return TRUE -- for a
+        # claim that also asserts which sign to install. The arithmetic
+        # supports the first half and nothing else. Only a claim that stops at
+        # the comparison may go to a verifier that can only compare.
+        return "llm" if _CONSEQUENCE_RE.search(o.claim) else "symbolic"
+    if ("figure" in kinds and "table" not in kinds
+            and o.type in (ObligationType.CLASSIFICATION.value,
+                           ObligationType.APPLICABILITY.value)):
+        # A figure hint sends the check to a VLM only when the claim is about
+        # what something IS or LOOKS LIKE. On an exception it usually is not:
+        # "if the curve has a change of 135 degrees or more, a Hairpin Curve
+        # sign may be used" is a geometric condition and a recommendation, and
+        # Figure 2C-1 is cited because it pictures the signs, not because the
+        # answer is in it. One run routed five such conditions to the VLM,
+        # which would have been asked to read a threshold off a picture.
+        #
+        # A table cited alongside the figure also disqualifies it: the table
+        # is the more constrained evidence, and a claim resting on both is
+        # being decided by the table with the figure as illustration.
         return "vlm"
     # "the major-street speed exceeds 40 mph" is a comparison wearing the word
     # applicability, and a model should not be spent on it. But a whole
@@ -359,6 +380,7 @@ def assign_verifier(o: Obligation) -> str:
     # 30 <= 30, which is a far stronger claim than the arithmetic supports.
     # The length test is what separates an atomic obligation from a paragraph.
     if (len(o.claim.split()) <= _ATOMIC_WORDS
+            and not _CONSEQUENCE_RE.search(o.claim)
             and _reduces_to_comparison(parse_rule(o.claim))):
         return "symbolic"
     return "llm"
@@ -366,6 +388,14 @@ def assign_verifier(o: Obligation) -> str:
 
 # A claim this short that parses cleanly to a comparison IS the comparison.
 _ATOMIC_WORDS = 15
+
+# The manual states a condition and its consequence in one sentence far more
+# often than it states either alone. A verifier that can only decide the
+# condition must not be handed the pair.
+_CONSEQUENCE_RE = re.compile(
+    r"\b(shall|should|may|must)\s+(not\s+)?(be\s+)?"
+    r"(used|installed|placed|provided|applied|omitted|required|displayed)\b"
+    r"|,\s*so\b|\binstead of\b|\bin lieu of\b", re.I)
 
 
 def _reduces_to_comparison(expr) -> bool:

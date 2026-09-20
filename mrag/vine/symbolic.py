@@ -189,9 +189,9 @@ _UNIT_ALT = (r"mph|feet|foot|ft|inches|inch|in|mm|millimeters|meters|metres|m|vp
 # number from one clause bolted onto the subject of another.
 _COMPARATORS: List[Tuple[re.Pattern, str, str]] = [
     (re.compile(rf"(?:of\s+)?([\d,]+\.?\d*)\s*({_UNIT_ALT})?\s+or\s+"
-                rf"(?:less|lower|fewer|below)\b(?!\s*[\d,])", re.I), "<=", "after"),
+                rf"(?:less|lower|fewer|below)\b(?!\s*\d)", re.I), "<=", "after"),
     (re.compile(rf"(?:of\s+)?([\d,]+\.?\d*)\s*({_UNIT_ALT})?\s+or\s+"
-                rf"(?:more|greater|higher|above)\b(?!\s*[\d,])", re.I), ">=", "after"),
+                rf"(?:more|greater|higher|above)\b(?!\s*\d)", re.I), ">=", "after"),
     (re.compile(r"\b(?:exceeds|exceeding|greater than|more than|above|over)\s+"
                 r"([\d,]+\.?\d*)\s*([A-Za-z]+)?", re.I), ">", "before"),
     (re.compile(r"\b(?:less than|fewer than|below|under)\s+"
@@ -218,12 +218,15 @@ _HAS_NUMBER = re.compile(r"\d")
 # apart, and it is the manual's own punctuation, not a guess.
 _LIST_OR = re.compile(r",\s*or\s+", re.I)
 # "or less" / "or above" belongs to the comparator; "or above 40 mph" starts a
-# new clause. The difference is whether a number follows. One sentence can
+# new clause. The difference is whether a number follows. The lookahead is on
+# a DIGIT only: written as [\d,] it also refused a trailing comma, so
+# "30 mph or less, so a Turn sign should be used" was split at the "or" and
+# came out as `speed == 30` instead of `speed <= 30`. One sentence can
 # hold both: "may be used on low-volume roadways or roadways with speeds of
 # 25 mph or less" has a real choice AND a comparator suffix. Masking the
 # suffix first is what lets the real one be found.
 _OR_SUFFIX = re.compile(
-    r"\s+or\s+(less|lower|fewer|below|more|greater|higher|above)\b(?!\s*[\d,])", re.I)
+    r"\s+or\s+(less|lower|fewer|below|more|greater|higher|above)\b(?!\s*\d)", re.I)
 _MASK = "\x00OR\x00"
 
 
