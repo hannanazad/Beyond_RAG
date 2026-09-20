@@ -72,7 +72,8 @@ def supporting_certificates(net: Network, trace: ExecutionTrace
             return
         seen.add(state)
         op = producer[state]
-        for upstream in list(op.merge_inputs or []) + list(op.requires or []):
+        for upstream in (list(op.merge_inputs or []) + list(op.requires or [])
+                         + list(op.guard_states or [])):
             walk(upstream)
         order.append(state)
 

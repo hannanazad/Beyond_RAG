@@ -137,6 +137,7 @@ def _states_feeding_terminal(net: Network) -> set:
         op = producer[state]
         stack.extend(op.merge_inputs or [])
         stack.extend(op.requires or [])
+        stack.extend(op.guard_states or [])
     return seen
 
 

@@ -234,6 +234,7 @@ def _proof_completeness(net: Network, trace: ExecutionTrace) -> float:
         op = producer[state]
         stack.extend(op.merge_inputs or [])
         stack.extend(op.requires or [])
+        stack.extend(op.guard_states or [])
     if not needed:
         return 0.0
     have = sum(1 for s in needed if trace.store.latest(s) is not None)

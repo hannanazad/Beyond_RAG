@@ -49,6 +49,15 @@ class Operation:
     normative_authority: Authority = Authority.STANDARD
     guard: Optional[Callable[[CertificateStore], bool]] = None   # g_o
     guard_desc: str = ""
+    # The states the guard reads. Eq 4 evaluates g_o against the whole store,
+    # so a guarded state need not be a prerequisite -- but it IS part of why
+    # the branch ran, and S3.4 puts "the certificates that support the
+    # terminal decision" in Pi_q. Without this the states were unrecoverable
+    # from the compiled network (only `guard_desc` survived), so a check that
+    # gated a whole branch was reported as dangling and left out of the audit
+    # trail. Measured on a real run: Chart A of Table 2C-4, the test for
+    # whether any device is needed at all, was certified and then discarded.
+    guard_states: List[str] = field(default_factory=list)
     merge: Optional[MergeType] = None              # set on merge operations
     merge_inputs: List[str] = field(default_factory=list)  # states being merged
     evidence_hint: List[Dict[str, str]] = field(default_factory=list)

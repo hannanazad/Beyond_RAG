@@ -476,6 +476,7 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             normative_authority=Authority(o.authority),
             guard=_build_guard(o.guard) if o.guard else None,
             guard_desc=o.guard.describe() if o.guard else "",
+            guard_states=[_state_of(x) for x in o.guard.states()] if o.guard else [],
             evidence_hint=list(o.evidence_hint),
             mandatory=o.mandatory))
 
@@ -494,6 +495,7 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             normative_authority=Authority(m.authority),
             guard=_build_guard(m.guard) if m.guard else None,
             guard_desc=m.guard.describe() if m.guard else "",
+            guard_states=[_state_of(x) for x in m.guard.states()] if m.guard else [],
             merge=MergeType(m.kind), merge_inputs=inputs))
 
     net.states = states
