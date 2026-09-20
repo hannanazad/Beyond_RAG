@@ -831,11 +831,17 @@ class VLM:
                 self._gemini_reasoning_effort(model_id)
             )
 
-        response = self._client_for(
-            model_id
-        ).chat.completions.create(
-            **request_arguments
-        )
+        create = self._client_for(model_id).chat.completions.create
+        try:
+            response = create(**request_arguments)
+        except TypeError as exc:
+            if "temperature" not in str(exc):
+                raise
+            log.warning("this client rejects `temperature`; the call will run "
+                        "at the provider default, so the compiled network may "
+                        "differ between runs of the same question")
+            request_arguments.pop("temperature", None)
+            response = create(**request_arguments)
 
         return self._parse_openai_response(
             response,
@@ -855,13 +861,10 @@ class VLM:
         token_limit: int,
         retry_number: int,
     ) -> str:
-        response = self._anthropic_client_for(
-            model_id
-        ).messages.create(
-            model=model_id,
-            max_tokens=token_limit,
-            temperature=float(getattr(CFG, "vlm_temperature", 0.0) or 0.0),
-            messages=[
+        request_arguments: Dict[str, Any] = {
+            "model": model_id,
+            "max_tokens": token_limit,
+            "messages": [
                 {
                     "role": "user",
                     "content": self._anthropic_content(
@@ -870,7 +873,28 @@ class VLM:
                     ),
                 }
             ],
-        )
+        }
+        temperature = getattr(CFG, "vlm_temperature", None)
+        if temperature is not None:
+            request_arguments["temperature"] = float(temperature)
+
+        create = self._anthropic_client_for(model_id).messages.create
+        try:
+            response = create(**request_arguments)
+        except TypeError as exc:
+            # Not every client here is the raw SDK; some wrappers accept only
+            # model, max_tokens and messages. Losing the call over a decoding
+            # setting would be worse than losing the setting, so drop it and
+            # say so -- silently falling back to the provider default of 1.0
+            # is how the compiled network came out different on every run in
+            # the first place.
+            if "temperature" not in str(exc):
+                raise
+            log.warning("this client rejects `temperature`; the call will run "
+                        "at the provider default, so the compiled network may "
+                        "differ between runs of the same question")
+            request_arguments.pop("temperature", None)
+            response = create(**request_arguments)
 
         return self._parse_anthropic_response(
             response,
