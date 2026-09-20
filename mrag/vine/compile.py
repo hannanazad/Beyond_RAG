@@ -357,6 +357,7 @@ def assign_verifier(o: Obligation) -> str:
         # the comparison may go to a verifier that can only compare.
         return "llm" if _CONSEQUENCE_RE.search(o.claim) else "symbolic"
     if ("figure" in kinds and "table" not in kinds
+            and not _CONSEQUENCE_RE.search(o.claim)
             and o.type in (ObligationType.CLASSIFICATION.value,
                            ObligationType.APPLICABILITY.value)):
         # A figure hint sends the check to a VLM only when the claim is about
@@ -370,6 +371,13 @@ def assign_verifier(o: Obligation) -> str:
         # A table cited alongside the figure also disqualifies it: the table
         # is the more constrained evidence, and a claim resting on both is
         # being decided by the table with the figure as illustration.
+        #
+        # And a claim carrying a RECOMMENDATION is not a visual question
+        # whatever its type says. One run typed six of these `classification`
+        # -- "a Turn (W1-1) sign should be used instead of a Curve (W1-2) sign
+        # because the advisory speed is 30 mph or less" -- and a figure hint
+        # then sent all six to a vision model, which would have been asked to
+        # read a speed threshold off a picture of signs.
         return "vlm"
     # "the major-street speed exceeds 40 mph" is a comparison wearing the word
     # applicability, and a model should not be spent on it. But a whole

@@ -26,6 +26,7 @@ from .answer import (Answer, answer, build_answer_prompt, compose,
 from .parser import (PARSER_CONTRACT, ParseReport, build_parser_prompt,
                      make_semantic_parser, read_spec)
 from .run import VineResult, ask_vine, build_verifiers, make_ask
+from .review import RELAXES, MODIFIES, classify_provision, review_spec
 from .execute import ExecutionTrace, enabled, execute, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
@@ -49,4 +50,5 @@ __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "make_semantic_parser", "ParseReport", "build_parser_prompt",
            "read_spec", "PARSER_CONTRACT",
            "ask_vine", "VineResult", "build_verifiers", "make_ask",
+           "review_spec", "classify_provision",
            "Table", "Value", "Footnote", "validate_tables"]

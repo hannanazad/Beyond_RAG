@@ -303,6 +303,12 @@ class Config:
     # and notes run the full closure_max_depth, because a paragraph pointer
     # names a specific rule while a section pointer means 'related'.
     section_chain_depth: int = 2
+
+    # Decoding temperature for every API model call. 0.0 = greedy, matching
+    # the local path's do_sample=False. It was never set before, so calls ran
+    # at the provider default of 1.0 and the compiled network differed on
+    # every run of the same question.
+    vlm_temperature: float = 0.0
     # How many top-ranked sections count as the SUBJECT of the question, whose
     # remaining normative paragraphs are pulled in whole. A provision that
     # defers to "the provisions of this Section" cites no paragraph, so its

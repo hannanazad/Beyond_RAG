@@ -814,6 +814,18 @@ class VLM:
             "max_tokens": token_limit,
         }
 
+        # No temperature was ever sent, so every API call ran at the
+        # provider default of 1.0 -- full sampling. The local path has always
+        # used do_sample=False. Compiling one question four times therefore
+        # produced four different verification networks, and the difference
+        # was read as the model being bad at structure when it was the
+        # decoder being told to pick at random. CFG.vlm_temperature defaults
+        # to 0.0 because a certified decision has to come from the same
+        # network each time.
+        temperature = getattr(CFG, "vlm_temperature", 0.0)
+        if temperature is not None:
+            request_arguments["temperature"] = float(temperature)
+
         if provider == "gemini":
             request_arguments["reasoning_effort"] = (
                 self._gemini_reasoning_effort(model_id)
@@ -848,6 +860,7 @@ class VLM:
         ).messages.create(
             model=model_id,
             max_tokens=token_limit,
+            temperature=float(getattr(CFG, "vlm_temperature", 0.0) or 0.0),
             messages=[
                 {
                     "role": "user",
