@@ -286,8 +286,29 @@ class Config:
     # become an obligation (S3.1) and the terminal state gets certified
     # without it. Closure material is therefore APPENDED in its own budget
     # rather than made to compete with the searched chunks for the same slots.
-    compile_closure_budget: int = 40
-    compile_closure_kinds: tuple = ("cited_section", "note", "definition", "sibling_item")
+    compile_closure_budget: int = 60
+    compile_closure_kinds: tuple = ("cited_section", "cited_paragraph", "note",
+                                    "definition", "sibling_item",
+                                    "anchor_section")
+    # How many hops of reference-following. A chain in this manual is
+    # routinely several steps: a provision defers to a paragraph, that
+    # paragraph to another section, a table note to a third. One hop leaves
+    # the rest of the chain outside Kq entirely.
+    closure_max_depth: int = 3
+    # Past the first hop, a cited section contributes only this many
+    # normative paragraphs. Whole sections at depth 2+ turn a chain
+    # into a chapter.
+    deep_section_chunks: int = 4
+    # Section references are followed only this deep; paragraph references
+    # and notes run the full closure_max_depth, because a paragraph pointer
+    # names a specific rule while a section pointer means 'related'.
+    section_chain_depth: int = 2
+    # How many top-ranked sections count as the SUBJECT of the question, whose
+    # remaining normative paragraphs are pulled in whole. A provision that
+    # defers to "the provisions of this Section" cites no paragraph, so its
+    # siblings arrive no other way.
+    anchor_sections: int = 2
+    anchor_section_chunks: int = 12
     # How many top-ranked chunks contribute their section's citations
     # to cross-reference expansion.
     expansion_source_chunks: int = 10

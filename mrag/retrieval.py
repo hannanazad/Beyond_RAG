@@ -522,77 +522,214 @@ class Retriever:
         return result
 
     # ------------------------------------------------------------------
-    def _close_kq(self, seed, budget, kinds):
+    # ------------------------------------------------------------------
+    # Paragraph-level references. The manual points at paragraphs far more
+    # often than at sections: "except as provided in Paragraphs 3, 5, and 6 of
+    # this Section", "see Paragraph 6 in Section 4K.03". Nothing in the chunk
+    # record captures these -- `section_refs` holds section ids only -- so they
+    # are read from the text here rather than requiring a re-ingest.
+    _PARA_SAME = re.compile(
+        r"\bparagraphs?\s+((?:\d+)(?:\s*(?:,|,?\s*and|,?\s*or|through|-)\s*\d+)*)"
+        r"\s+of\s+this\s+section", re.I)
+    _PARA_OTHER = re.compile(
+        r"\bparagraphs?\s+((?:\d+)(?:\s*(?:,|,?\s*and|,?\s*or|through|-)\s*\d+)*)"
+        r"\s+(?:of|in)\s+section\s+(\d+[A-Z]\.\d+)", re.I)
+
+    @staticmethod
+    def _paragraph_references(chunk: Dict[str, Any]) -> List[Tuple[str, int]]:
+        """(section_id, ordinal) pairs a chunk points at by paragraph."""
+        text = f"{chunk.get('lead_in') or ''} {chunk.get('text') or ''}"
+        own = str(chunk.get("section_id") or "")
+        out: List[Tuple[str, int]] = []
+        for m in Retriever._PARA_OTHER.finditer(text):
+            for n in re.findall(r"\d+", m.group(1)):
+                out.append((m.group(2), int(n)))
+        for m in Retriever._PARA_SAME.finditer(text):
+            if not own:
+                continue
+            for n in re.findall(r"\d+", m.group(1)):
+                out.append((own, int(n)))
+        return list(dict.fromkeys(out))
+
+    # ------------------------------------------------------------------
+    def _close_kq(self, seed, budget, kinds, max_depth: Optional[int] = None):
         """Close the retrieved set under the relations a provision depends on.
 
         Search returns provisions. A provision is not self-contained: its
         threshold sits in a table whose NOTE carries the condition, the class
-        it applies to is a DEFINED TERM, its exception sits in a CITED
-        SECTION, and a split list item's SIBLINGS are the rest of the same
-        rule. None of those wins a relevance ranking against the provision
-        that names them, so they are fetched by following graph edges instead
-        of by scoring.
+        it applies to is a DEFINED TERM, its exception sits in a CITED SECTION
+        or a CITED PARAGRAPH, and a split list item's SIBLINGS are the rest of
+        the same rule. None of those wins a relevance ranking against the
+        provision that names them, so they are fetched by following graph
+        edges instead of by scoring.
 
-        This is what makes Kq a subgraph rather than a top-k list. The
-        compiler decomposes obligations out of Kq (S3.1), so a provision that
-        never arrives can never become an obligation, and the terminal state
-        is then certified without that check.
+        THIS RUNS TO A FIXED POINT, not for one hop.
 
-        Returns extra chunk payloads, each tagged with why it is here.
+        A reference chain in this manual is routinely several steps long:
+        2C.07 P1 defers to its own Section; 2C.06 P1 excepts Paragraphs 3, 5
+        and 6 of itself; Table 2C-4's note 6 points at Section 2C.59; and
+        2C.59 points on again. Expanding once reaches the first of those and
+        stops, so a provision four steps away is simply absent from Kq -- and
+        S3.1 decomposes obligations out of Kq, so a provision that never
+        arrives can never become an obligation and the terminal state is then
+        certified without that check. Following one hop and calling
+        cross-references handled was the bug this replaces.
+
+        Each round expands only what ARRIVED in the previous round, so the
+        cost is bounded by the budget rather than by depth.
+
+        Returns extra chunk payloads, each tagged with why it is here and at
+        what depth it was reached.
         """
-        seen = {c.get("chunk_id") for c in seed}
-        seed_sections = list(dict.fromkeys(
-            c.get("section_id", "") for c in seed if c.get("section_id")))
-        wanted = []
+        # How far the BROAD kinds are followed. Paragraph references are not
+        # bounded by this: see below.
+        depth_cap = int(max_depth if max_depth is not None
+                        else getattr(CFG, "closure_max_depth", 3))
+        seen = {c.get("chunk_id") for c in seed if c.get("chunk_id")}
+        collected: List[Dict[str, Any]] = []
+        frontier = list(seed)
+        depth = 0
 
-        def add(ids, reason):
-            for cid in ids:
-                if cid and cid not in seen:
-                    seen.add(cid)
-                    wanted.append((cid, reason))
+        # The loop runs while ANY kind is still live. A paragraph reference
+        # points at one named rule, so a chain of them ends on its own: the
+        # deepest in this manual is 3 hops, 373 of its 375 chains end within
+        # 2, and `if not wanted: break` stops it the moment nothing new
+        # arrives. Capping it would only ever clip a real chain. The broad
+        # kinds are different -- "see Section X" pulls a whole section, each
+        # of which cites more, so the problem there is fan-out rather than
+        # length, and that is what depth_cap bounds.
+        while frontier and len(collected) < budget:
+            depth += 1
+            broad = depth <= depth_cap
+            wanted: List[Tuple[str, str]] = []
 
-        if "cited_section" in kinds:
-            for sec in seed_sections:
-                for ref in self.kg.sections_cited_by(sec):
-                    add(self.kg.chunks_for_section(ref), "cited_section")
-        if "note" in kinds:
-            for sec in seed_sections:
-                add(self.kg.notes_for_section(sec), "note")
-            for c in seed:
-                for fid in list(c.get("figure_refs") or []) + list(c.get("table_refs") or []):
-                    add(self.kg.note_chunks_for(fid), "note")
-        if "definition" in kinds:
-            for c in seed:
-                text = f"{c.get('lead_in') or ''} {c.get('text') or ''}"
-                for term in self.kg.terms_defined_in(text):
-                    add([self.kg.definition_chunk(term)], "definition")
-        if "sibling_item" in kinds:
-            for c in seed:
-                add(self.kg.paragraph_items(c.get("chunk_id", "")), "sibling_item")
+            def add(ids, reason):
+                for cid in ids:
+                    if cid and cid not in seen:
+                        seen.add(cid)
+                        wanted.append((cid, reason))
 
-        if not wanted:
-            return []
-        # spread the budget across reasons; otherwise cited_section, which is
-        # by far the largest, consumes all of it and the notes never arrive
-        by_reason = {}
-        for cid, reason in wanted:
-            by_reason.setdefault(reason, []).append(cid)
-        picked = []
-        while len(picked) < budget and any(by_reason.values()):
-            for reason in list(by_reason):
-                if len(picked) >= budget:
-                    break
-                if by_reason[reason]:
-                    picked.append((by_reason[reason].pop(0), reason))
-        reason_of = dict(picked)
-        hits = self.store.fetch_chunks_by_ids(
-            CFG.coll_chunks, [cid for cid, _ in picked],
-            default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
-        )
-        return [{**(h["payload"] or {}), "score": float(h.get("score", 0.0)),
-                 "source": reason_of.get((h["payload"] or {}).get("chunk_id"), "closure")}
-                for h in hits]
+            sections = list(dict.fromkeys(
+                c.get("section_id", "") for c in frontier if c.get("section_id")))
 
+            # FIRST, before the broad kinds. `add` skips anything already
+            # claimed, and when this ran last the cited-section expansion had
+            # already taken most of the anchor section's chunks -- leaving 2
+            # of them for the rule whose whole purpose is to bring the
+            # siblings a provision defers to. Order decides who wins the ids.
+            if "anchor_section" in kinds and depth == 1:
+                # Only on the first round, and only for the sections that
+                # actually ranked: a rule that defers to "the provisions of
+                # this Section" cites no paragraph, so its siblings arrive no
+                # other way. Doing this at every depth would drag in whole
+                # chapters.
+                n_anchor = int(getattr(CFG, "anchor_sections", 2))
+                per_section = int(getattr(CFG, "anchor_section_chunks", 12))
+                for sec in sections[:n_anchor]:
+                    ids = [cid for cid in self.kg.chunks_for_section(sec)
+                           if cid not in seen]
+                    # Normative paragraphs FIRST. A section's chunks come back
+                    # interleaved -- paragraph, figure note, table note -- so a
+                    # flat budget reached only paragraph 4 of 2C.07 and the
+                    # Winding Road and 270-degree Loop provisions fell outside
+                    # it. Only a Standard, Guidance or Option can become an
+                    # obligation, and notes have their own closure kind.
+                    ids.sort(key=self._normative_first)
+                    add(ids[:per_section], "anchor_section")
+
+            # A SECTION reference is followed only near the seed; a PARAGRAPH
+            # reference is followed all the way. The manual points at a
+            # paragraph when it means a specific rule and at a section when it
+            # means "this is related", so precision decays much faster for the
+            # second. At depth 3 the section chain had reached 2A.16 on
+            # sign-support lateral offsets, from a question about curve signs.
+            if ("cited_section" in kinds and broad and depth <= int(
+                    getattr(CFG, "section_chain_depth", 2))):
+                for sec in sections:
+                    for ref in self.kg.sections_cited_by(sec):
+                        ids = self.kg.chunks_for_section(ref)
+                        if depth > 1:
+                            # Relevance decays with distance. At the first hop
+                            # a provision that says "see Section X" means the
+                            # section, so all of it comes. Two hops out, the
+                            # same rule walked from a curve-sign question into
+                            # 2A.16 on sign-support lateral offsets -- 49
+                            # chunks of it. Past the first hop only normative
+                            # paragraphs come, and only a few, so the chain
+                            # stays a chain instead of becoming a chapter.
+                            ids = sorted(ids, key=self._normative_first)[
+                                :int(getattr(CFG, "deep_section_chunks", 4))]
+                        add(ids, "cited_section")
+            if "cited_paragraph" in kinds:
+                # One paragraph, not the twenty-five around it. `4K.04` saying
+                # "see Paragraph 6 in Section 4K.03" means paragraph 6, and
+                # handing a verifier the whole section asks it to guess which
+                # one was meant.
+                for c in frontier:
+                    for sec, ordinal in self._paragraph_references(c):
+                        add(self.kg.chunks_for_paragraph(sec, ordinal),
+                            "cited_paragraph")
+            if "note" in kinds:
+                if broad:
+                    for sec in sections:
+                        add(self.kg.notes_for_section(sec), "note")
+                # A note reached BY NAME -- this provision cites Table 2C-4,
+                # so Table 2C-4's notes come -- is as precise as a paragraph
+                # pointer, so it is not bounded either. Only "every note in
+                # this section" above is broad.
+                for c in frontier:
+                    for fid in (list(c.get("figure_refs") or [])
+                                + list(c.get("table_refs") or [])):
+                        add(self.kg.note_chunks_for(fid), "note")
+            if "definition" in kinds and broad:
+                for c in frontier:
+                    text = f"{c.get('lead_in') or ''} {c.get('text') or ''}"
+                    for term in self.kg.terms_defined_in(text):
+                        add([self.kg.definition_chunk(term)], "definition")
+            if "sibling_item" in kinds and broad:
+                for c in frontier:
+                    add(self.kg.paragraph_items(c.get("chunk_id", "")),
+                        "sibling_item")
+            if not wanted:
+                break
+
+            # Spread what is left of the budget across reasons; otherwise
+            # cited_section, by far the largest, consumes all of it and the
+            # notes never arrive.
+            room = budget - len(collected)
+            by_reason: Dict[str, List[str]] = {}
+            for cid, reason in wanted:
+                by_reason.setdefault(reason, []).append(cid)
+            picked: List[Tuple[str, str]] = []
+            while len(picked) < room and any(by_reason.values()):
+                for reason in list(by_reason):
+                    if len(picked) >= room:
+                        break
+                    if by_reason[reason]:
+                        picked.append((by_reason[reason].pop(0), reason))
+            if not picked:
+                break
+
+            reason_of = dict(picked)
+            hits = self.store.fetch_chunks_by_ids(
+                CFG.coll_chunks, [cid for cid, _ in picked],
+                default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)),
+            )
+            arrived = [{**(h["payload"] or {}),
+                        "score": float(h.get("score", 0.0)),
+                        "source": reason_of.get(
+                            (h["payload"] or {}).get("chunk_id"), "closure"),
+                        "closure_depth": depth}
+                       for h in hits]
+            collected.extend(arrived)
+            frontier = arrived        # expand only what is new
+
+        return collected
+
+    def _normative_first(self, cid: str):
+        node = self.kg.g.nodes.get(f"chunk:{cid}") or {}
+        return (str(node.get("content_type", "")) == "Support",
+                int(node.get("ordinal", 0) or 0))
     def retrieve_for_obligation(
         self,
         query: str,

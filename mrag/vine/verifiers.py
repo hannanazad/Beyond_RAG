@@ -112,7 +112,9 @@ def make_cross_reference_resolver(kg) -> Callable[[Operation, CertificateStore],
                 dangling.append(label)
                 continue
             if kind == "section" and para is not None:
-                cid = kg.chunk_for_paragraph(ident, para)
+                # a split paragraph has no chunk under its bare id; take every item
+                _ids = kg.chunks_for_paragraph(ident, para)
+                cid = _ids[0] if _ids else None
                 if cid is None:
                     # the section exists but has no such paragraph: still a
                     # dangling pointer, and a more precise one to report

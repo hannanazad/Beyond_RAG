@@ -476,6 +476,48 @@ class KG:
         # belong together and pulling it in floods Kq.
         return [] if len(out) > _MAX_SIBLING_ITEMS else out
 
+    def chunks_for_paragraph(self, section_id: str, ordinal: int) -> List[str]:
+        """Every CHUNK making up paragraph `ordinal` of `section_id`.
+
+        `chunk_for_paragraph` returns the paragraph NODE's id when a paragraph
+        was split into lettered items -- and no chunk carries that bare id, so
+        the reference resolved to nothing. Measured on the manual: 92 of its
+        472 paragraph references, 19%, died that way, in the closure and in
+        the cross-reference resolver alike.
+
+        A split paragraph is one provision, so all of its items come back
+        together. Returning one item would hand a verifier item A of a rule
+        whose condition is in item C.
+        """
+        node = f"section:{section_id}"
+        if not self.g.has_node(node):
+            return []
+        para_node = None
+        for _u, v, d in self.g.out_edges(node, data=True):
+            if (d.get("label") == "contains" and v.startswith("paragraph:")
+                    and int(self.g.nodes[v].get("ordinal", -1)) == int(ordinal)):
+                para_node = v
+                break
+
+        out: List[str] = []
+        if para_node is not None:
+            for u, _v, d in self.g.in_edges(para_node, data=True):
+                if d.get("label") == "part_of_paragraph" and u.startswith("chunk:"):
+                    out.append(u.split(":", 1)[1])
+            if out:
+                return sorted(out)
+            # an unsplit paragraph: its own id IS the chunk id
+            bare = para_node.split(":", 1)[1]
+            if self.g.has_node(f"chunk:{bare}"):
+                return [bare]
+
+        for _u, v, d in self.g.out_edges(node, data=True):
+            if d.get("label") != "contains" or not v.startswith("chunk:"):
+                continue
+            if int(self.g.nodes[v].get("ordinal", -1)) == int(ordinal):
+                out.append(v.split(":", 1)[1])
+        return sorted(out)
+
     def chunk_for_paragraph(self, section_id: str, ordinal: int) -> Optional[str]:
         """The chunk holding paragraph `ordinal` of `section_id`.
 
