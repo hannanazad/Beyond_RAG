@@ -32,18 +32,32 @@ from __future__ import annotations
 import math
 import pickle
 import re
-import sys
+import os
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-sys.path.insert(0, '/home/claude/vine/repo')
+from .compile import Obligation, MergeSpec, NetworkSpec, GuardSpec
+from .network import ObligationType, MergeType
+from .parser import ParseReport
 
-from mrag.vine.compile import (Obligation, MergeSpec, NetworkSpec, GuardSpec)
-from mrag.vine.network import ObligationType, MergeType
-from mrag.vine.parser import ParseReport
 
-GRAPH = '/home/claude/vine/graph_cache.pkl'
+def default_graph_path() -> Path:
+    """Where the graph lives, in order of precedence:
+    MUTCD_GRAPH in the environment, then data/mutcd/graph_cache.pkl beside the
+    package, then graph_cache.pkl next to the repository."""
+    env = os.environ.get('MUTCD_GRAPH')
+    if env:
+        return Path(env)
+    here = Path(__file__).resolve()
+    root = here.parent.parent.parent                 # repo root
+    for cand in (root / 'data' / 'mutcd' / 'graph_cache.pkl',
+                 root / 'graph_cache.pkl',
+                 root.parent / 'graph_cache.pkl'):
+        if cand.exists():
+            return cand
+    return root / 'data' / 'mutcd' / 'graph_cache.pkl'
 
 # ---- piece type -> obligation type ---------------------------------------
 _PIECE_TO_TYPE = {
@@ -97,8 +111,15 @@ class Anchor:
 
 
 class GraphParser:
-    def __init__(self, graph_path: str = GRAPH):
-        self.N, self.E, self.C = pickle.load(open(graph_path, 'rb'))
+    def __init__(self, graph_path: 'str | Path | None' = None):
+        path = Path(graph_path) if graph_path else default_graph_path()
+        if not path.exists():
+            raise FileNotFoundError(
+                f'graph not found at {path}. Build it with '
+                f'`python -m mrag.vine.graph_enrich --pdf MUTCD.pdf '
+                f'--in raw.pkl --out {path}`, or set MUTCD_GRAPH.')
+        self.N, self.E, self.C = pickle.load(open(path, 'rb'))
+        self.graph_path = path
         self.out: Dict[str, List] = defaultdict(list)
         self.inn: Dict[str, List] = defaultdict(list)
         for e in self.E:
@@ -419,14 +440,26 @@ class GraphParser:
         return None, report
 
 
-def make_graph_parser(graph_path: str = GRAPH):
+def make_graph_parser(graph_path: 'str | Path | None' = None):
     """Same signature shape as make_semantic_parser, minus the `ask` callable."""
     gp = GraphParser(graph_path)
     return gp.parse
 
 
 if __name__ == '__main__':
-    parse = make_graph_parser()
+    import argparse
+    ap = argparse.ArgumentParser(description='parse a query against the graph')
+    ap.add_argument('query', nargs='*', help='question to parse')
+    ap.add_argument('--graph', type=Path, default=None)
+    args = ap.parse_args()
+    parse = make_graph_parser(args.graph)
+    if args.query:
+        spec, rep = parse(' '.join(args.query))
+        for n in rep.notes:
+            print('   ', n[:160])
+        if spec:
+            print(spec.to_json()[:2000])
+        raise SystemExit(0)
     queries = [
         'What size must a STOP sign be on a conventional road?',
         'When is a Speed Limit sign required to be retroreflective?',
