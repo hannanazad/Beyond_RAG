@@ -32,6 +32,14 @@ from typing import Dict, List, Optional, Tuple
 
 from .graph_links import Node, Edge
 
+# A MUTCD sign designation as printed: R1-1, D9-11bP, M6-1P, I20-5P, W16-18P.
+# The sheet suffix is lower case in the manual and the existing nodes follow
+# that, so the code is matched and stored exactly as printed.
+SIGN_CODE = re.compile(r"^[A-Z]{1,3}\d{1,3}(?:-\d{1,3}[a-zA-Z]{0,2})?[Pp]?$")
+
+# A section id as the sign-size tables print it: 2I.02, 8B.06, 9A.03.
+SECTION_ID = re.compile(r"^\d{1,2}[A-Z]\.\d{2}$")
+
 # Data this module needs, shipped beside the code so a rebuild is self-contained.
 DATA = Path(__file__).resolve().parent.parent.parent / "data" / "mutcd"
 DEFAULT_FIGURE_LOG = DATA / "FIGURE_READING_LOG.md"
@@ -327,10 +335,85 @@ def attach_notices(N: dict, E: list) -> Counter:
     return made
 
 
+def attach_table_signcodes(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
+    """Mint SIGNCODE nodes for codes that appear only inside a sign-size table.
+
+    WHY THIS EXISTS
+    ---------------
+    SIGNCODE nodes were built from `chunk.sign_codes` and from edge targets --
+    both of which come from body text. But 147 sign codes are never named in
+    body text at all. They appear only in the sign-size tables (2D-1, 2H-1,
+    2I-1, 8B-1, 9A-1 and the rest), which are cropped as images, so their text
+    never became a chunk and no node was ever made. A query naming D9-7 or
+    I20-3 landed on nothing, exactly as a query naming "Figure 2C-5" used to.
+
+    The transcription is the better source anyway. A sign-size table row is
+    `name | designation | section | size | size`, so each code arrives with the
+    thing it means and the section that defines it -- more than a body-text
+    mention carries. Those become the node's text and section, plus a
+    DEFINED_IN edge to the section and a LISTED_IN edge to the table.
+
+    Codes already in the graph are left untouched; this only fills absences.
+    Sheet suffixes are printed lower case (D1-2a, not D1-2A) and that is the
+    convention the existing 895 nodes use, so the codes are taken verbatim.
+    """
+    made: Counter = Counter()
+    if not tables_path or not Path(tables_path).exists():
+        return made
+
+    rows = [json.loads(l) for l in Path(tables_path).read_text().splitlines() if l.strip()]
+    seen: Dict[str, dict] = {}
+    for tbl in rows:
+        tid = tbl.get("table_id") or ""
+        for row in tbl.get("rows") or []:
+            cells = [(c.get("text") or "").strip() for c in row]
+            for idx, cell in enumerate(cells):
+                # A designation cell can hold several codes: "M6-1P,2P,2aP".
+                for part in re.split(r"[,/]|\bor\b", cell):
+                    code = part.strip()
+                    if not SIGN_CODE.match(code):
+                        continue
+                    # The name is the row's first cell; the section is the next
+                    # cell that looks like one. Both are absent on some tables,
+                    # and a code with neither is still worth a node.
+                    name = cells[0] if idx > 0 and cells[0] else ""
+                    sect = next((c for c in cells[idx + 1:] if SECTION_ID.match(c)), "")
+                    prev = seen.get(code)
+                    if prev is None or (not prev["sect"] and sect):
+                        seen[code] = {"name": name, "sect": sect, "table": tid}
+
+    for code, info in sorted(seen.items()):
+        key = f"signcode:{code}"
+        if key in N:
+            continue
+        # `text` stays the bare code, exactly as the existing 895 nodes have
+        # it: the parser keys its sign-code lookup on this field, so putting
+        # the legend in here makes the node unfindable by its own code. The
+        # legend goes in `pieces`, where the parser reads it as a word anchor.
+        pieces = ["citations=0", f"from={info['table']}"]
+        if info["name"]:
+            pieces.append(f"name={info['name']}")
+        N[key] = Node(id=key, kind="SIGNCODE", section=info["sect"],
+                      text=code, pieces=pieces)
+        made["SIGNCODE"] += 1
+        tkey = f"figure:{info['table']}"
+        if tkey in N:
+            E.append(Edge(src=key, rel="LISTED_IN", dst=tkey,
+                          why="named in the sign-size table"))
+            made["LISTED_IN"] += 1
+        skey = f"section:{info['sect']}"
+        if info["sect"] and skey in N:
+            E.append(Edge(src=key, rel="DEFINED_IN", dst=skey,
+                          why="the section the table gives for this sign"))
+            made["DEFINED_IN"] += 1
+    return made
+
+
 def enrich(N: dict, E: list, C: list, pdf: Path,
            figure_log: Path = DEFAULT_FIGURE_LOG,
            rules: Path = DEFAULT_RULES,
            reading_log: Path = DEFAULT_READING_LOG,
+           tables: Optional[Path] = None,
            verbose: bool = True) -> Counter:
     """Add every layer, in order. Safe to run twice: nodes are keyed."""
     made: Counter = Counter()
@@ -339,6 +422,8 @@ def enrich(N: dict, E: list, C: list, pdf: Path,
         print(f"  captions      : {len(caps['figures'])} figures, "
               f"{len(caps['tables'])} tables")
     made += add_reference_layer(N, E, C, caps)
+    # After the reference layer, so the TABLE and SECTION nodes it links to exist.
+    made += attach_table_signcodes(N, E, tables)
     made += attach_rulings(N, E, reading_log)          # before rules, which link to them
     if Path(figure_log).exists():
         entries = parse_figure_log(figure_log)
@@ -365,6 +450,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--figure-log", type=Path, default=DEFAULT_FIGURE_LOG)
     ap.add_argument("--rules", type=Path, default=DEFAULT_RULES)
     ap.add_argument("--reading-log", type=Path, default=DEFAULT_READING_LOG)
+    ap.add_argument("--tables", type=Path, default=None,
+                    help="mutcd_tables.jsonl; without it the 147 sign codes "
+                         "that appear only in the sign-size tables get no node")
     a = ap.parse_args(argv)
 
     N, E, C = pickle.load(open(a.src, "rb"))
@@ -373,7 +461,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"in  : {before_n} nodes, {before_e} edges, "
           f"{100 * ok0 / max(1, tot0):.1f}% of edges resolve")
 
-    made = enrich(N, E, C, a.pdf, a.figure_log, a.rules, a.reading_log)
+    made = enrich(N, E, C, a.pdf, a.figure_log, a.rules, a.reading_log, a.tables)
     for kind, n in made.most_common():
         print(f"  + {kind}: {n}")
 

@@ -147,7 +147,12 @@ class GraphParser:
                 self.by_section[v.section].append(k)
         # lookup tables for anchoring
         self.terms = {v.text.lower(): k for k, v in self.N.items() if v.kind == 'TERM'}
-        self.signcodes = {v.text.upper(): k for k, v in self.N.items() if v.kind == 'SIGNCODE'}
+        # Keyed on the node id, not on `text`. The id is what the node is
+        # named by and cannot drift; `text` is a content field, and keying on
+        # it meant one enrichment step writing a legend there silently made
+        # every affected code unfindable.
+        self.signcodes = {k.split(':', 1)[1].upper(): k
+                          for k, v in self.N.items() if v.kind == 'SIGNCODE'}
         self.figures = {k.split(':', 1)[1].lower(): k for k, v in self.N.items()
                         if v.kind in ('FIGURE', 'TABLE')}
         self.signnames = self._sign_names()
@@ -158,7 +163,9 @@ class GraphParser:
 
     def _sign_names(self) -> Dict[str, str]:
         """Word legends people actually type, mapped to the sign code the
-        manual uses. Harvested from sentences that name both."""
+        manual uses. Harvested from sentences that name both, and from the
+        sign-size tables, which name a legend for codes the body text never
+        mentions at all (Busway Crossing, Shared-Use Path Destination, ...)."""
         pat = re.compile(r'\b([A-Z][A-Z \-]{2,28}[A-Z])\s*\(([A-Z]{1,3}\d{1,2}-\d{1,3}[a-zA-Z]?P?)\)')
         names: Dict[str, str] = {}
         for k, v in self.N.items():
@@ -171,6 +178,28 @@ class GraphParser:
                     continue
                 if f'signcode:{code}' in self.N:
                     names.setdefault(legend, f'signcode:{code}')
+        # The table legends are printed in title case, not the small caps the
+        # pattern above needs, so they are read from the node instead. They
+        # are kept in a SEPARATE map: a table's "Sign or Plaque" column holds
+        # a descriptive name, not the legend printed on the sign, and some of
+        # those names are ordinary phrases. Harvesting "Work Zone" (G20-5aP)
+        # into the same map as a real legend sent the heading bonus to 6G.08
+        # "Work Zone and Higher Fines Signs" and pushed 6B.08 "Tapers" off the
+        # top for a taper query. These match, but never win a heading.
+        self.sign_labels: Dict[str, str] = {}
+        for k, v in self.N.items():
+            if v.kind != 'SIGNCODE':
+                continue
+            for piece in (v.pieces or []):
+                if not piece.startswith('name='):
+                    continue
+                legend = re.sub(r'\s*\(plaque\)\s*$', '', piece[5:]).strip()
+                legend = re.sub(r'^(A|AN|THE)\s+', '', legend, flags=re.I)
+                if len(legend) < 4 or legend.upper() in _LEGEND_STOP:
+                    continue
+                if legend.upper() in names:
+                    continue
+                self.sign_labels.setdefault(legend.upper(), k)
         return names
 
     # ------------------------------------------------------------------ #
@@ -211,6 +240,12 @@ class GraphParser:
             if re.search(r'\b' + re.escape(legend) + r'\b', q, re.I):
                 found.append(Anchor('signname', node, legend, 2.5))
 
+        # Table-column names. Weaker than a real legend and, being ordinary
+        # English in places, deliberately barred from the heading bonus.
+        for legend, node in self.sign_labels.items():
+            if re.search(r'\b' + re.escape(legend) + r'\b', q, re.I):
+                found.append(Anchor('signlabel', node, legend, 1.5))
+
         low = q.lower()
         for term, node in self.terms.items():
             if len(term) >= 5 and term in low:
@@ -239,7 +274,18 @@ class GraphParser:
                 score[a.node.split(':', 1)[1]] += a.weight * 4
                 continue
             boost = (3.0 if a.kind in ('figure', 'signname', 'signcode')
+                     else 2.0 if a.kind == 'signlabel'
                      else 1.1 if a.kind == 'caption' else 1.0)
+            # The node may name its own governing section. A SIGNCODE built
+            # from a sign-size table carries the Section column the manual
+            # printed beside it -- the manual saying where that sign is
+            # defined. That is a stronger signal than "some section cites
+            # this node", and for a code the body text never mentions it is
+            # the only signal there is: nothing points into such a node, so
+            # the loop below would score nothing at all.
+            own = self.N.get(a.node)
+            if own is not None and own.section and own.section in self.by_section:
+                score[own.section] += a.weight * boost * 2.0
             for e in self.inn.get(a.node, []):
                 v = self.N.get(str(e.src))
                 if v is not None and v.section:
