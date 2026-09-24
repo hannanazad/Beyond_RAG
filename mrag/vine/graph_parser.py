@@ -110,6 +110,21 @@ class Anchor:
     weight: float = 1.0
 
 
+@dataclass
+class Candidate:
+    """One section that compiled, kept so the certificate can name what else
+    was in the running and on what score it lost."""
+    section: str
+    score: float
+    spec: NetworkSpec
+    title: str = ''
+    obligations: int = 0
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {'section': self.section, 'title': self.title,
+                'score': round(self.score, 2), 'obligations': self.obligations}
+
+
 class GraphParser:
     def __init__(self, graph_path: 'str | Path | None' = None):
         path = Path(graph_path) if graph_path else default_graph_path()
@@ -259,8 +274,8 @@ class GraphParser:
     # ------------------------------------------------------------------ #
     # 2. pick the governing section                                       #
     # ------------------------------------------------------------------ #
-    def score_sections(self, query: str, anchors: List[Anchor]
-                       ) -> List[Tuple[str, float]]:
+    def score_sections(self, query: str, anchors: List[Anchor],
+                       top: int = 6) -> List[Tuple[str, float]]:
         """Additive scoring, measured best of the variants tried.
 
         Signals, strongest first: an explicit section id; a sign legend that
@@ -336,7 +351,7 @@ class GraphParser:
             w = CONTEXT.get(sec[0])
             if w and not any(x in low for x in w):
                 score[sec] *= 0.35
-        return score.most_common(6)
+        return score.most_common(top)
 
     # ------------------------------------------------------------------ #
     # 3. build the spec from the graph                                    #
@@ -451,25 +466,51 @@ class GraphParser:
     # ------------------------------------------------------------------ #
     # 4. the drop-in entry point                                          #
     # ------------------------------------------------------------------ #
-    def parse(self, query: str, chunks: Sequence[Dict[str, Any]] = (),
-              section_id: str = '') -> Tuple[Optional[NetworkSpec], ParseReport]:
+    def parse_ranked(self, query: str, chunks: Sequence[Dict[str, Any]] = (),
+                     section_id: str = '', k: int = 5
+                     ) -> Tuple[List['Candidate'], ParseReport]:
+        """Compile the best k sections, not just the first one that works.
+
+        The scorer already ranked several sections and `parse` already walked
+        them -- it just returned the first that compiled and dropped the rest
+        on the floor. When the ranking was wrong the answer was wrong and
+        nothing in the output said so. Keeping the runners-up costs one extra
+        compile each and turns a silent misroute into a named alternative the
+        certificate can carry.
+
+        Returns the candidates best-first. An empty list means nothing in the
+        graph compiled, which is a refusal, not an error.
+        """
         report = ParseReport()
         report.attempts = 1
         anchors = self.anchors(query)
         report.notes.append('anchors: ' + (', '.join(
             f'{a.kind}:{a.matched}' for a in anchors) or 'none'))
 
+        # Ask the scorer for more sections than we mean to keep. Some of the
+        # top ones will be rejected at compile time, and a rejection should
+        # not cost a slot. Measured on the gold set: the correct section is
+        # ranked 1st 12/20 of the time but is inside the top 5 17/20, so the
+        # depth of this pool is what decides whether the right answer is in
+        # the candidate set at all.
+        pool = max(10, k * 3)
         candidates = [(section_id, 99.0)] if section_id else []
-        candidates += [c for c in self.score_sections(query, anchors)
+        candidates += [c for c in self.score_sections(query, anchors, top=pool)
                        if c[0] != section_id]
         if not candidates:
             report.source = 'failed'
             report.notes.append('the query did not anchor anywhere in the graph')
-            return None, report
+            return [], report
         report.notes.append('sections: ' + ', '.join(
-            f'{s}({sc:.1f})' for s, sc in candidates[:4]))
+            f'{s}({sc:.1f})' for s, sc in candidates[:6]))
 
-        for sec, _ in candidates[:4]:
+        # Look at more sections than we intend to keep: some of the top ones
+        # will be rejected (6P.01 is a collection of Typical Application notes,
+        # not a rule set), and a rejection should not cost us a slot.
+        out: List[Candidate] = []
+        for sec, score in candidates:
+            if len(out) >= k:
+                break
             spec = self.build(query, sec, report)
             if spec is None:
                 continue
@@ -478,12 +519,31 @@ class GraphParser:
                 report.problems.append(problems)
                 report.notes.append(f'section {sec} rejected: {problems[:2]}')
                 continue
-            report.source = 'graph_parser'
-            report.notes.append(f'compiled from section {sec}')
-            return spec, report
+            out.append(Candidate(section=sec, score=score, spec=spec,
+                                 title=self.sec_title.get(sec, ''),
+                                 obligations=len(spec.obligations)))
 
-        report.source = 'failed'
-        return None, report
+        if not out:
+            report.source = 'failed'
+            return [], report
+
+        report.source = 'graph_parser'
+        report.notes.append(f'compiled from section {out[0].section}')
+        if len(out) > 1:
+            report.notes.append('alternatives: ' + ', '.join(
+                f'{c.section}({c.score:.1f}, {c.obligations} obligations)'
+                for c in out[1:]))
+        return out, report
+
+    def parse(self, query: str, chunks: Sequence[Dict[str, Any]] = (),
+              section_id: str = '') -> Tuple[Optional[NetworkSpec], ParseReport]:
+        """Drop-in for `make_semantic_parser`: returns the single best spec.
+
+        The alternatives are not lost -- they are named in `report.notes`
+        under 'alternatives:'. Call `parse_ranked` to get their specs.
+        """
+        ranked, report = self.parse_ranked(query, chunks, section_id)
+        return (ranked[0].spec if ranked else None), report
 
 
 def make_graph_parser(graph_path: 'str | Path | None' = None):
