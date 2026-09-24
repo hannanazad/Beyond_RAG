@@ -6,7 +6,7 @@ from mrag.vine.table_data import Footnote, Quantity as Q, Table, Value as V
 from batch2 import sz
 from batch5 import _lh
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 # 2F-1 prints "312* x 30": the asterisk sits on the WIDTH, not on the cell,

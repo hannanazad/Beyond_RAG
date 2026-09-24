@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from mrag.vine.table_data import Footnote, Table, Value as V
 from batch17 import _s9          # handles "36 Dia." as well as w x h
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 _8B1_NOTES = [

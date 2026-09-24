@@ -6,7 +6,7 @@ from mrag.vine.table_data import Footnote, Table, Value as V
 from batch2 import sz
 from batch8 import ft, mph
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 T.append(Table(

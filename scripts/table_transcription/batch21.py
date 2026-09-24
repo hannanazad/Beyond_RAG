@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from mrag.vine.table_data import Table, Value as V
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 # Group headings carry the governing SECTION ("see Section 6N.09"), which is

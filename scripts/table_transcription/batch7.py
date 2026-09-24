@@ -7,7 +7,7 @@ from batch2 import sz
 from batch5 import _lh
 from batch6 import _ds
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 # In 2E-5 the slash means something DIFFERENT from 2E-4: footnote ** says

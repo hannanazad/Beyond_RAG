@@ -50,7 +50,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 def _load_paths():
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    """`paths.py` lives in scripts/table_transcription/, not beside this file.
+
+    Inserting this script's own directory finds nothing and the import fails
+    with `No module named 'paths'`, so point at the folder that actually has
+    it. Every default below then comes from one place.
+    """
+    here = Path(__file__).resolve().parent
+    sys.path.insert(0, str(here / "table_transcription"))
     import paths as p
     return p
 

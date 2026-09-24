@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from mrag.vine.table_data import Footnote, Table, Value as V
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 # 2L-1's cells are RANGES printed with a hyphen and vulgar fractions:

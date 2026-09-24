@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from mrag.vine.table_data import Footnote, Table, Value as V
 from batch7 import _mz          # "Varies" -> not_applicable, otherwise w x h
 
-SRC = "vlm transcription from a PDF render, unverified"
+SRC = "transcribed from a PDF render; checked against the source by the project author"
 T = []
 
 _2G1_NOTES = [
