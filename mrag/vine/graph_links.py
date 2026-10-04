@@ -35,6 +35,65 @@ from .semantics import tag_sentence, sentences
 # Every speed the manual names, kept apart. "Speed limit" with no qualifier is
 # the legal limit, which may be posted OR statutory; the manual uses the words
 # "posted" and "statutory" when it means one of them specifically.
+# ---------------------------------------------------------------------------
+# THE NON-SPEED QUANTITIES, AND WHY EACH ONE EXISTS
+#
+# The speeds below were hand-written, each anchored to its 1C.02 definition.
+# The other 42 kinds were not: they came out of head-noun matching in
+# semantics.py, and nobody ever asked whether the MUTCD actually draws the
+# distinctions they claim. Measured, it mostly does not.
+#
+# 1C.02 has 215 headwords. It defines Speed, Speed Limit, Posted Speed Limit,
+# Statutory Speed Limit, Interval, and the named clearance times. It defines
+# NOTHING for offset, spacing, mounting height, taper, sight distance, width,
+# letter height, duration or period.
+#
+# So the rule used here, which is the manual's and not ours:
+#   where 1C.02 defines a term  -> the split is real, keep the kinds separate
+#   where it defines nothing    -> we have no authority to split, so merge
+#
+# MERGED says what folded into what. KEPT_BY_JUDGMENT lists the kinds held
+# apart WITHOUT glossary backing, each with the reason. Those are the arguable
+# ones and they are listed so they can be argued with rather than inherited.
+#
+# What this does NOT fix: a sentence put in the wrong kind. "from the ground to
+# the bottom of the sign shall be at least 7 feet" is filed under CLEARANCE and
+# is a mounting height. Merging labels cannot move it. Those need re-reading
+# sentence by sentence.
+# ---------------------------------------------------------------------------
+QUANTITY_MERGED = {
+    # a distance from a reference point. Which reference is already recorded in
+    # the quantity's `referent` field, so the label never carried that meaning.
+    "OFFSET": "DISTANCE", "SETBACK": "DISTANCE",
+    # nothing in the glossary separates these. INTERVAL is excluded on purpose:
+    # 1C.02 defines it as "the part of a signal cycle during which signal
+    # indications do not change".
+    "TIME": "DURATION", "PERIOD": "DURATION", "TIME_WINDOW": "DURATION",
+    "TIME_FROM_EVENT": "DURATION", "HOURS": "DURATION",
+    "DIMENSION": "SIZE",
+    "CHANGE_OF_DIRECTION": "ANGLE", "CHANGE_IN_HORIZONTAL_ALIGNMENT": "ANGLE",
+    # artefacts of table parsing, not measurements of anything
+    "COLUMN_SELECTOR": None, "FRACTION_OF_A_CRITERION": None,
+}
+
+QUANTITY_KEPT_BY_JUDGMENT = {
+    "INTERVAL":       "1C.02 defines it; the one time kind with glossary backing",
+    "MOUNTING_HEIGHT": "2A.15 is titled Mounting Height and states its own rule",
+    "LETTER_HEIGHT":  "a legend dimension, never a sign dimension",
+    "SPACING":        "device spacing is its own recurring rule, not a distance between points",
+    "SIGHT_DISTANCE": "an engineering measure with its own geometry, not a generic distance",
+    "VOLUME_DAILY":   "warrants key on daily separately from hourly",
+    "VOLUME_HOURLY":  "warrants key on hourly separately from daily",
+}
+
+
+def canonical_quantity(kind: Optional[str]) -> Optional[str]:
+    """The kind a label folds into. None means it is not a quantity at all."""
+    if kind is None:
+        return None
+    return QUANTITY_MERGED.get(kind, kind)
+
+
 # Each speed is anchored to the sentence that DEFINES it, and to its parent.
 # source: where the definition lives -- 1C.02 (glossary), a local section, or
 # an FHWA interpretation. Never mixed.
@@ -131,8 +190,46 @@ def canonical_speed(sentence: str, start: int, end: Optional[int] = None,
              ("speed limit", "SPEED_LIMIT")]
     # the nearest named speed wins, but a longer phrase that CONTAINS a shorter
     # one wins over it: "posted speed limit" is POSTED, not merely a speed limit
+    # ---- VOCABULARY WIDENED FOR QUESTION WORDING -------------------------
+    # Everything above was written against the MUTCD, which says a thing one
+    # way and keeps saying it that way: "the posted speed limit is 35 mph".
+    # A question asking about the same road does not. Measured on the same
+    # fact written five ways, only the manual's own phrasing resolved:
+    #
+    #   "the posted speed limit is 35 mph"  -> SPEED_LIMIT_POSTED   correct
+    #   "the road is posted at 35 mph"      -> SPEED_UNRESOLVED
+    #   "the road is signed 35 mph"         -> SPEED_UNRESOLVED
+    #   "a 35 mph road"                     -> SPEED_UNRESOLVED
+    #
+    # The middle three are the same fact. Losing them means a question's
+    # central fact never becomes a fact at all, and routing falls back to
+    # word overlap -- which is the failure this whole layer exists to avoid.
+    #
+    # So these are paraphrases a person writes and the manual does not. They
+    # are additions to the vocabulary, NOT new distinctions: each one maps to
+    # a speed kind the manual already defines. Add here when a question is
+    # found to state something the manual states differently; do not add a
+    # phrase that would introduce a kind the manual itself never draws.
     order = [("posted speed limit", "SPEED_LIMIT_POSTED"),
-             ("statutory speed limit", "SPEED_LIMIT_STATUTORY")] + order
+             ("statutory speed limit", "SPEED_LIMIT_STATUTORY"),
+             # "...is posted at 35 mph", "...posted 35 mph"
+             ("posted at", "SPEED_LIMIT_POSTED"),
+             ("is posted", "SPEED_LIMIT_POSTED"),
+             ("posted", "SPEED_LIMIT_POSTED"),
+             # a signed limit is a posted limit in ordinary speech
+             ("signed at", "SPEED_LIMIT_POSTED"),
+             # NOT added: "speed limit of" / "limit of". Selection here is by
+             # which phrase ENDS latest, so a phrase carrying a trailing "of"
+             # beats "posted speed limit" and loses the distinction. Measured:
+             # it reclassified "a statutory or posted speed limit of 40 mph"
+             # from POSTED to plain LIMIT. The existing "speed limit" entry
+             # already covers "a speed limit of 35 mph" correctly.
+             # "where the 85th-percentile speed is...", "measured 85th percentile"
+             ("85th percentile", "SPEED_85TH"),
+             ("85th-percentile", "SPEED_85TH"),
+             ("anticipated operating", "SPEED_OPERATING"),
+             ("prevailing", "SPEED_PREVAILING"),
+             ] + order
     best = None
     for phrase, kind in order:
         i = low.rfind(phrase)
@@ -174,7 +271,11 @@ def canonical(sentence: str, q, lead_in: Optional[str] = None) -> Tuple[Optional
         return None, None
     if "speed" in q.head or q.head == "difference":
         return canonical_speed(sentence, q.span[0], q.span[1], lead_in)
-    return _OTHER.get(q.head, q.head.upper().replace(" ", "_").replace("-", "_")), None
+    raw = _OTHER.get(q.head, q.head.upper().replace(" ", "_").replace("-", "_"))
+    # One place, so every consumer follows. The head noun decides what was
+    # MATCHED; the merge map decides what it MEANS. Speeds never reach here --
+    # they return above, from the glossary-anchored classifier.
+    return canonical_quantity(raw), None
 
 
 # =========================================================================== #

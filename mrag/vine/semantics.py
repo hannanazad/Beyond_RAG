@@ -234,6 +234,12 @@ QUANTITY_HEADS = [
     "taper", "buffer", "diameter", "pitch", "size", "dimension",
     "stroke width", "letter height", "border", "grade", "angle",
     "change of direction", "change in horizontal alignment", "population",
+    # NOTE: "time", "period", "hours" still appear here because the manual uses
+    # those words; they are matched, then folded to DURATION by
+    # graph_links.canonical_quantity. The head noun decides what was MATCHED,
+    # the merge map decides what it MEANS. Keeping them apart is why
+    # "the pedestrian change interval" and "a 12-month period" stopped being
+    # filed as the same thing as each other and as everything else.
     "lanes", "hours", "time", "duration", "interval", "period", "flash rate",
     "retroreflectivity", "delay", "gap", "queue", "crashes", "pedestrians",
     "clear zone", "median width", "reduction", "depth", "setback", "headway",

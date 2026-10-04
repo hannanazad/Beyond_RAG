@@ -409,6 +409,223 @@ def attach_table_signcodes(N: dict, E: list, tables_path: Optional[Path]) -> Cou
     return made
 
 
+def expand_designations(cell: str) -> List[str]:
+    """`R3-1,2,3,4,18,27` is six signs sharing one row, not one sign.
+
+    The manual compresses a designation cell by writing the series once:
+    R3-1,2,3,4,18,27 means R3-1 R3-2 R3-3 R3-4 R3-18 R3-27, and
+    R3-24,24b,25,25b,26a means R3-24 R3-24b R3-25 R3-25b R3-26a. Reading only
+    the first token is why R3-2 had no section while the manual states one.
+    """
+    cell = re.sub(r"\s+", "", cell or "")
+    if not cell:
+        return []
+    out: List[str] = []
+    series: Optional[str] = None
+    for tok in cell.split(","):
+        if not tok:
+            continue
+        m = re.match(r"^([A-Z]{1,3}\d{1,3})-(.+)$", tok)
+        if m:
+            series = m.group(1)
+            out.append(tok)
+        elif series and re.match(r"^\d{1,3}[a-zA-Z]{0,2}$", tok):
+            out.append(f"{series}-{tok}")
+    return out
+
+
+# A cell holding one of these is the manual saying "not used here", which is a
+# regulatory statement, not missing data. Confirmed with the project author.
+_NOT_PERMITTED = {"—", "-", "–", "N/A", "NA", ""}
+
+
+def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
+    """Put the tables in the graph as rows, classes, and their stated sections.
+
+    WHY THIS IS NOT CALCULATOR WORK
+    -------------------------------
+    Of the 68 tables, 2 contain a formula. The other 66 are reference grids:
+    a row names a device, a column names the situation, and the cell is the
+    answer. Nothing to compute. Filing all of them behind "the calculator will
+    need these" left the manual's most direct answers out of the graph.
+
+    THREE THINGS EACH TABLE CARRIES, ALL PREVIOUSLY UNUSED
+    1. A `Section` column. 33 table records have one, covering 1,099 rows --
+       the manual stating, per sign, which section governs it. Sign codes with
+       a section went from 136 to whatever this produces; the rest had none,
+       including R3-2, whose section the manual prints plainly.
+    2. Column labels. 188 distinct ones, reused across the manual --
+       "Conventional Road - Multi-Lane" appears in 15 tables, "Expressway" in
+       15, "Oversized" in 19. That is the manual's own controlled vocabulary
+       for CLASSIFYING a situation, which is exactly what a question states
+       when it says "a multilane conventional road". A question can now be
+       matched against the manual's classes instead of against its spelling.
+    3. The cells. A value under a class, or a dash meaning not permitted there.
+
+    So a row becomes a node, a column label becomes a CLASS node, a value makes
+    an APPLIES_UNDER edge, and a dash makes a NOT_UNDER edge -- because "this
+    sign is not used on a freeway" is a fact worth being able to state.
+
+    THE NOTES COME BEFORE THE TABLE, NOT AFTER
+    A table's footnotes are not commentary; some of them say how the grid is to
+    be read at all. Table 2B-1 carries "Dimensions in inches are shown as width
+    x height" -- without it every cell is ambiguous and "24 x 36" can be read
+    backwards. Another sends bicycle facilities to a different table entirely,
+    and another permits larger signs than any cell states. A row read without
+    its notes is not a weaker answer, it is possibly the wrong one.
+
+    So every row gets a GOVERNED_BY edge to each of its table's notes. 230
+    footnotes across 77 of the 91 table records, all already in the graph as
+    sentence nodes from the footnote chunks. Anything that reads a row can
+    reach the rules for reading it in one hop, and nothing has to remember to
+    go looking.
+    """
+    made: Counter = Counter()
+    if not tables_path or not Path(tables_path).exists():
+        return made
+
+    recs = [json.loads(l) for l in Path(tables_path).read_text().splitlines() if l.strip()]
+    for rec in recs:
+        tid = rec.get("table_id") or ""
+        sheet = rec.get("sheet") or 1
+        cols = [(c or "").strip() for c in (rec.get("column_labels") or [])]
+        low = [c.lower() for c in cols]
+        i_sec = next((i for i, c in enumerate(low) if c == "section"), None)
+        i_desig = next((i for i, c in enumerate(low)
+                        if "designation" in c or c == "sign code"), None)
+        i_name = 0 if cols else None
+
+        for ri, row in enumerate(rec.get("rows") or []):
+            cells = [(c.get("text") or "").strip() for c in row]
+            if not any(cells):
+                continue
+            rid = f"trow:{tid}#s{sheet}r{ri}"
+            label = cells[i_name] if i_name is not None and i_name < len(cells) else ""
+            sect = (cells[i_sec].strip()
+                    if i_sec is not None and i_sec < len(cells) else "")
+            if not SECTION_ID.match(sect):
+                sect = ""
+            pieces = [f"table={tid}", f"sheet={sheet}"]
+            for ci, c in enumerate(cells):
+                if ci < len(cols) and cols[ci] and c:
+                    pieces.append(f"{cols[ci]}={c}")
+            N[rid] = Node(id=rid, kind="TABLE_ROW", section=sect,
+                          text=label or f"{tid} row {ri}", pieces=pieces)
+            made["TABLE_ROW"] += 1
+
+            tkey = f"figure:{tid}"
+            if tkey in N:
+                E.append(Edge(src=rid, rel="ROW_OF", dst=tkey, why="a row of this table"))
+                made["ROW_OF"] += 1
+            if sect and f"section:{sect}" in N:
+                E.append(Edge(src=rid, rel="DEFINED_IN", dst=f"section:{sect}",
+                              why="the section this table row names"))
+                made["DEFINED_IN"] += 1
+
+            # The notes that govern how this row is read. See the block comment
+            # on _link_table_notes below for why these come first.
+            for fn in (rec.get("footnotes") or []):
+                cid = fn.get("chunk_id")
+                if not cid:
+                    continue
+                for sk in N:
+                    if sk.startswith(f"sent:{cid}#"):
+                        E.append(Edge(src=rid, rel="GOVERNED_BY", dst=sk,
+                                      why=f"table note {fn.get('marker') or ''}".strip()))
+                        made["GOVERNED_BY"] += 1
+
+            # The classes this row does and does not apply under.
+            for ci, c in enumerate(cells):
+                if ci >= len(cols) or not cols[ci]:
+                    continue
+                if ci in (i_sec, i_desig, i_name):
+                    continue
+                ckey = f"class:{cols[ci]}"
+                if ckey not in N:
+                    N[ckey] = Node(id=ckey, kind="CLASS", section="", text=cols[ci],
+                                   pieces=["source=table column label"])
+                    made["CLASS"] += 1
+                if c in _NOT_PERMITTED:
+                    E.append(Edge(src=rid, rel="NOT_UNDER", dst=ckey,
+                                  why="the manual prints a dash here"))
+                    made["NOT_UNDER"] += 1
+                else:
+                    E.append(Edge(src=rid, rel="APPLIES_UNDER", dst=ckey, why=c[:60]))
+                    made["APPLIES_UNDER"] += 1
+
+            # Every sign the row covers, including the compressed ones.
+            if i_desig is not None and i_desig < len(cells):
+                for code in expand_designations(cells[i_desig]):
+                    skey = f"signcode:{code}"
+                    if skey not in N:
+                        N[skey] = Node(id=skey, kind="SIGNCODE", section=sect, text=code,
+                                       pieces=["citations=0", f"from={tid}"])
+                        made["SIGNCODE"] += 1
+                    elif sect and not N[skey].section:
+                        N[skey].section = sect
+                    E.append(Edge(src=skey, rel="HAS_ROW", dst=rid,
+                                  why="this sign's row in the sign-size table"))
+                    made["HAS_ROW"] += 1
+                    if sect and f"section:{sect}" in N:
+                        E.append(Edge(src=skey, rel="DEFINED_IN", dst=f"section:{sect}",
+                                      why="the section the table gives for this sign"))
+                        made["DEFINED_IN"] += 1
+    return made
+
+
+def attach_quantity_layer(N: dict, E: list) -> Counter:
+    """Give every extracted quantity kind a node, and wire the sentences to it.
+
+    WHAT WAS ALREADY TRUE, AND UNUSED
+    ---------------------------------
+    `semantics.py` already reads a number's meaning out of the sentence that
+    carries it: not "40", but OFFSET 40 feet measured beyond the stop line.
+    1,718 of them, across 55 kinds -- MOUNTING_HEIGHT, SIZE, CLEARANCE, WIDTH,
+    LETTER_HEIGHT, SIGHT_DISTANCE and the rest.
+
+    Only the speeds were ever promoted to QUANTITY nodes, because Ruling 1
+    needed them. The other 40 kinds stayed inside each sentence's `quantities`
+    field, where nothing could reach them: a query asking about mounting
+    height could not find the 27 sentences that measure mounting height,
+    because no edge said they did. The manual's meaning had been extracted and
+    then left in a drawer.
+
+    This mints a node per kind and a MEASURES edge per sentence, so "which
+    sentences measure this thing" becomes a graph question. Routing can then
+    ask what a question is ABOUT rather than which words it shares.
+
+    Existing speed nodes are left exactly as they are -- they carry hand-written
+    notes about pace ranges and train speeds that this must not overwrite.
+    """
+    made: Counter = Counter()
+    seen: Dict[str, int] = {}
+    for nid, node in list(N.items()):
+        if node.kind not in ("SENTENCE", "NOTE"):
+            continue
+        kinds = {q.get("kind") for q in (node.quantities or []) if q.get("kind")}
+        for kind in kinds:
+            seen[kind] = seen.get(kind, 0) + 1
+
+    for kind, count in sorted(seen.items()):
+        key = f"quantity:{kind}"
+        if key in N:
+            continue
+        N[key] = Node(id=key, kind="QUANTITY", section="", text=kind,
+                      pieces=[f"measured_by={count}", "source=extracted"])
+        made["QUANTITY"] += 1
+
+    for nid, node in list(N.items()):
+        if node.kind not in ("SENTENCE", "NOTE"):
+            continue
+        for kind in {q.get("kind") for q in (node.quantities or []) if q.get("kind")}:
+            key = f"quantity:{kind}"
+            if key in N:
+                E.append(Edge(src=nid, rel="MEASURES", dst=key,
+                              why="the sentence states a value of this kind"))
+                made["MEASURES"] += 1
+    return made
+
+
 def enrich(N: dict, E: list, C: list, pdf: Path,
            figure_log: Path = DEFAULT_FIGURE_LOG,
            rules: Path = DEFAULT_RULES,
@@ -423,7 +640,9 @@ def enrich(N: dict, E: list, C: list, pdf: Path,
               f"{len(caps['tables'])} tables")
     made += add_reference_layer(N, E, C, caps)
     # After the reference layer, so the TABLE and SECTION nodes it links to exist.
+    made += attach_table_rows(N, E, tables)      # rows, classes, the Section column
     made += attach_table_signcodes(N, E, tables)
+    made += attach_quantity_layer(N, E)
     made += attach_rulings(N, E, reading_log)          # before rules, which link to them
     if Path(figure_log).exists():
         entries = parse_figure_log(figure_log)

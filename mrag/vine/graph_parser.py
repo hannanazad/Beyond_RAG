@@ -41,6 +41,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from .compile import Obligation, MergeSpec, NetworkSpec, GuardSpec
 from .network import ObligationType, MergeType
 from .parser import ParseReport
+from .semantics import QUANTITY_HEADS
+from .graph_links import canonical_speed
 
 
 def default_graph_path() -> Path:
@@ -110,6 +112,137 @@ class Anchor:
     weight: float = 1.0
 
 
+
+# The manual's own list of things it measures, reused on the question side so
+# both halves are read with one vocabulary. Longest first, so "mounting height"
+# wins over "height" and "sight distance" over "distance".
+_QUANTITY_HEADS_LONGEST_FIRST = sorted(QUANTITY_HEADS, key=len, reverse=True)
+
+# head phrase -> the kind name `semantics.py` stamps on an extracted value.
+_HEAD_TO_KIND = {h: h.upper().replace(' ', '_').replace('-', '_')
+                 for h in QUANTITY_HEADS}
+
+
+# A sign size is written as a pair -- "24 x 24 inches" -- and the first number
+# carries no unit of its own, so a plain number-plus-unit scan sees only the
+# second one and loses the dimension. Table 2B-1's own note says these are
+# "width x height", so the pair is one fact, not two.
+_FACT_DIM = re.compile(
+    r'(\d+(?:\.\d+)?)\s*(?:x|×|by)\s*(\d+(?:\.\d+)?)\s*(inches|inch|in\.|feet|foot|ft\.?)\b',
+    re.I)
+
+# A number with a unit, as a question states it.
+_FACT_NUM = re.compile(
+    r'(\d+(?:\.\d+)?)\s*(mph|feet|foot|ft\.?|inches|inch|in\.|miles|seconds|percent|lanes?)\b',
+    re.I)
+_FACT_UNIT = {'foot': 'feet', 'ft': 'feet', 'ft.': 'feet',
+              'inch': 'inches', 'in.': 'inches', 'lane': 'lanes'}
+
+# HOW A QUESTION SAYS WHAT THE MANUAL SAYS DIFFERENTLY
+#
+# The manual writes "a mounting height of 7 feet". A person writes "its bottom
+# is 7 feet above the sidewalk". Same fact, and the manual's own extractor --
+# which looks backward for a named head like "mounting height" -- finds nothing
+# in the second one. Measured on the sample question: five numbers stated, one
+# typed.
+#
+# So these are question-side paraphrases, each mapping to a kind the manual
+# ALREADY draws. Same rule as the speed vocabulary in graph_links: add a phrase
+# when a question is found to state something the manual states differently;
+# never add one that invents a distinction the manual itself does not make.
+#
+# (patterns are matched against the text just before, and just after, the number)
+_FACT_BEFORE = [
+    (r'\bbottom\s+(?:is|at|sits)?\s*$',            'MOUNTING_HEIGHT'),
+    (r'\bmounted\s+(?:at\s+)?$',                   'MOUNTING_HEIGHT'),
+    (r'\bmounting height\s+(?:of\s+)?$',           'MOUNTING_HEIGHT'),
+    (r'\bheight\s+(?:of\s+)?$',                    'HEIGHT'),
+    (r'\b(?:measur\w+|panel|sign)\s+(?:of\s+)?$',  'SIZE'),
+    (r'\bsize\s+(?:of\s+)?$',                      'SIZE'),
+    (r'\bwidth\s+(?:of\s+)?$',                     'WIDTH'),
+    (r'\bprojects?\s+$',                           'PROJECTION'),
+    (r'\bprojecting\s+$',                          'PROJECTION'),
+    (r'\bclearance\s+(?:of\s+)?$',                 'CLEARANCE'),
+    (r'\b(?:offset|set back|setback)\s+(?:by\s+)?$', 'OFFSET'),
+]
+_FACT_AFTER = [
+    (r'^\s*(?:x|×)\s*\d',                          'SIZE'),      # "24 x 24 inches"
+    (r'^\s*-?\s*high\b',                           'HEIGHT'),    # "12-inch-high"
+    (r'^\s*-?\s*wide\b',                           'WIDTH'),
+    (r'^\s*above\b',                               'MOUNTING_HEIGHT'),
+    (r'^\s*into the (?:walkway|sidewalk)',         'PROJECTION'),
+]
+
+
+import operator as _op
+
+# The comparison a condition's operator means. "?" and "example" are not
+# comparisons and are deliberately absent -- an untestable condition must not
+# be reported as satisfied.
+_CMP = {'<=': _op.le, '<': _op.lt, '>=': _op.ge, '>': _op.gt,
+        '==': _op.eq, '=': _op.eq}
+
+_UNIT_SAME = [{'feet', 'foot', 'ft'}, {'inches', 'inch', 'in'},
+              {'mph'}, {'seconds', 'sec', 's'}, {'lanes', 'lane'},
+              {'miles', 'mile'}, {'percent', '%'}]
+
+
+def _units_comparable(a: Optional[str], b: Optional[str]) -> bool:
+    """Only compare like with like. 7 feet does not satisfy a 7-inch limit."""
+    if not a or not b:
+        return False
+    a, b = a.lower().rstrip('.'), b.lower().rstrip('.')
+    if a == b:
+        return True
+    return any(a in grp and b in grp for grp in _UNIT_SAME)
+
+
+# THE SUBJECT SLOT
+#
+# Zhang & El-Gohary's four-tuple for a regulatory requirement is
+#   <Subject, Attribute, Comparison, Quantity>
+# plus Subject Restriction. We already had the last three: Attribute is the
+# quantity kind, Comparison is the operator, Quantity is the value and unit.
+# Subject was missing, and its absence has a specific, measured cost -- a
+# condition matcher with no Subject fired "The Bicycle Signal sign shall have a
+# minimum size of 24 inches" on a question about a regulatory turn-prohibition
+# sign. The arithmetic was right and the answer was wrong.
+#
+# The MUTCD gives the subject of a sign away in its own code. The series letter
+# is the device family, and it is the same scheme the manual organises its
+# chapters by, so it needs no list to maintain.
+_SIGN_SERIES = {
+    'R': 'regulatory sign', 'W': 'warning sign', 'M': 'route sign',
+    'D': 'guide sign', 'I': 'general service sign', 'E': 'expressway guide sign',
+    'G': 'general information sign', 'OM': 'object marker',
+    'EM': 'emergency management sign',
+}
+
+# Section headings are written ATTRIBUTE of SUBJECT -- "Size of Regulatory
+# Signs", "Mounting Height of Signs". 170 of 953 split this way, and the split
+# is exactly the focus/subject distinction the scorer has been summing together
+# and losing: "size" is what is asked, "regulatory signs" is what it is asked
+# about.
+_TITLE_SPLIT = re.compile(r'\s+of\s+', re.I)
+
+# A heading naming one of these is naming a device, so the heading is a subject.
+# A heading with none of them -- "Mounting Height", "Dimensions" -- is naming an
+# attribute and governs every device.
+_DEVICE_NOUN = re.compile(
+    r'\b(signs?|signals?|markings?|plaques?|devices?|markers?|beacons?|'
+    r'barricades?|cones?|islands?|crossings?|gates?|lights?|arrows?|'
+    r'assemblys?|assemblies|lines?|crosswalks?|legends?|symbols?)\b', re.I)
+
+
+@dataclass
+class Fact:
+    """A measured value a question states, typed the way the manual types it."""
+    kind: str
+    value: float
+    unit: str
+    said: str = ''
+
+
 @dataclass
 class Candidate:
     """One section that compiled, kept so the certificate can name what else
@@ -126,6 +259,41 @@ class Candidate:
 
 
 class GraphParser:
+    # Weight of the cross-reference term in score_sections. Swept on the
+    # 20-query gold set; see the comment at its use. Exposed as a class
+    # attribute so it can be re-fitted, or set to 0.0 to ablate it, without
+    # editing the scorer.
+    W_CROSSREF: float = 1.0
+
+    # Caption anchoring. See the comment at their use in `anchors`.
+    # CAPTION_FLOOR          minimum shared rarity before a caption is considered
+    # CAPTION_COVERAGE_POW   how hard to favour captions that match a large share
+    #                        of themselves; 0.0 reproduces the old sum-only rule
+    # CAPTION_MAX            how many captions may survive, whatever the query length
+    # Weight of the "what is this question about" anchor, scaled by how
+    # specific the matched quantity kind is. 0.0 ablates it.
+    # Weight of the section-heading word-overlap term. This was 9.0 and was
+    # the dominant term by an order of magnitude: on a scenario question a
+    # section scored 198 on its title while the section the manual itself
+    # names for the sign in question scored 40. Every structural signal --
+    # cross-references, the table's Section column, what the question asks
+    # about -- was being outvoted by spelling.
+    # Weight per section whose stated conditions the question's facts satisfy.
+    # 0.0 ablates it.
+    # How much a section's score survives when its stated subject cannot be
+    # the question's subject. 1.0 ablates the Subject slot entirely.
+    W_SUBJECT: float = 0.25
+
+    W_SATISFIED: float = 0.0
+
+    W_HEADING: float = 9.0
+
+    W_ASKS_ABOUT: float = 1.0
+
+    CAPTION_FLOOR: float = 6.0
+    CAPTION_COVERAGE_POW: float = 0.5
+    CAPTION_MAX: int = 8
+
     def __init__(self, graph_path: 'str | Path | None' = None):
         path = Path(graph_path) if graph_path else default_graph_path()
         if not path.exists():
@@ -175,6 +343,17 @@ class GraphParser:
         for k, v in self.N.items():
             if v.kind == 'SENTENCE' and k.startswith('sent:'):
                 self.chunk_of[k] = k[5:].split('#')[0]
+        # The manual's own index: for every node the manual names out loud,
+        # which sections name it and how often. 6,519 REFERS_TO edges, unused
+        # for routing until now.
+        self._subj_cache: Dict[str, set] = {}
+        self.cited_by: Dict[str, Counter] = defaultdict(Counter)
+        for e in self.E:
+            if e.rel != 'REFERS_TO':
+                continue
+            v = self.N.get(str(e.src))
+            if v is not None and v.section:
+                self.cited_by[str(e.dst)][v.section] += 1
 
     def _sign_names(self) -> Dict[str, str]:
         """Word legends people actually type, mapped to the sign code the
@@ -232,14 +411,40 @@ class GraphParser:
 
         qw = _stem_set(q)
         if qw:
+            # WHY THIS IS NOT A PLAIN THRESHOLD ANY MORE
+            #
+            # It used to be: add up the rarity of the words a caption shares
+            # with the query, and keep the caption if the total reached 6.0.
+            # A sum has no notion of how long the query is, so the test got
+            # looser the more the user typed. A four-word query only cleared
+            # 6.0 on a genuinely rare word; a 150-word scenario cleared it by
+            # piling up ordinary ones -- road, sign, inches, curb, sidewalk --
+            # until almost any caption qualified.
+            #
+            # Measured on a real scenario question: 71 anchors fired, 65 of
+            # them captions, and the one anchor that mattered (signcode R3-2)
+            # was 1 in 71 and was outvoted. The same question in 14 words
+            # produced 21 anchors and routed correctly.
+            #
+            # So the test is now about match QUALITY, not accumulated weight.
+            # `coverage` is how much of the caption's own vocabulary was hit,
+            # which a long query cannot inflate -- piling on more query words
+            # does not make a caption match itself any better. And only the
+            # best CAPTION_MAX captions survive, which bounds the flood no
+            # matter how long the query is.
+            cands = []
             for k, cw in self.caption_words.items():
                 shared = qw & cw
                 if not shared:
                     continue
-                # rare words carry the signal; "road" and "sign" carry none
                 wgt = sum(self.idf.get(w, 0.0) for w in shared)
-                if wgt >= 6.0:
-                    found.append(Anchor('caption', k, self.N[k].text[:44], wgt / 4))
+                if wgt < self.CAPTION_FLOOR:
+                    continue
+                coverage = len(shared) / max(1, len(cw))
+                cands.append((wgt * (coverage ** self.CAPTION_COVERAGE_POW), wgt, k))
+            cands.sort(reverse=True)
+            for _, wgt, k in cands[:self.CAPTION_MAX]:
+                found.append(Anchor('caption', k, self.N[k].text[:44], wgt / 4))
 
         for m in re.finditer(r'\b([A-Z]{1,3}\d{1,2}-\d{1,3}[a-zA-Z]?P?)\b', q):
             code = m.group(1).upper()
@@ -265,6 +470,49 @@ class GraphParser:
         for term, node in self.terms.items():
             if len(term) >= 5 and term in low:
                 found.append(Anchor('term', node, term, 1.0 + len(term) / 40))
+
+        # WHAT THE QUESTION IS ASKING ABOUT
+        #
+        # Everything above matches the question by spelling. This matches it by
+        # the same vocabulary the manual was read with: `semantics.QUANTITY_HEADS`
+        # is the list of things the MUTCD measures, and every sentence that
+        # states a value now carries its kind and a MEASURES edge. So asking
+        # "what is this question about" becomes a graph lookup rather than a
+        # word count.
+        #
+        # This is the only anchor that says what the question WANTS rather than
+        # what it MENTIONS. In a scenario question the difference is the whole
+        # problem: "a No Left Turn sign ... evaluate its mounting height" names
+        # a left turn and asks about a height, and only this anchor can tell
+        # those two roles apart.
+        # Longest head wins and shorter ones inside it are suppressed:
+        # "mounting height" must not also fire "height". The manual separates
+        # those two and so must the question -- 27 sentences measure a mounting
+        # height, 66 measure some height, and treating them as the same thing
+        # throws away the distinction the reading was done to capture.
+        #
+        # Weight is by specificity, for the same reason rare words beat common
+        # ones everywhere else here: a kind measured by six sentences points
+        # somewhere, a kind measured by two hundred points nowhere.
+        low = ' ' + q.lower() + ' '
+        claimed: List[Tuple[int, int]] = []
+        for head in _QUANTITY_HEADS_LONGEST_FIRST:
+            kind = _HEAD_TO_KIND.get(head)
+            key = f'quantity:{kind}' if kind else None
+            if not key or key not in self.N:
+                continue
+            for m in re.finditer(r'\b' + re.escape(head) + r's?\b', low):
+                if any(a <= m.start() and m.end() <= b for a, b in claimed):
+                    continue          # inside a longer head already matched
+                claimed.append((m.start(), m.end()))
+                n_meas = len(self.inn.get(key, []))
+                if not n_meas:
+                    continue
+                spec = math.log(len(self.by_section) / n_meas)
+                if spec > 0:
+                    found.append(Anchor('asks_about', key, head,
+                                        self.W_ASKS_ABOUT * spec))
+                break
 
         for m in re.finditer(r'\b(speed|width|height|distance|spacing|length|'
                              r'volume|clearance|offset|taper)\b', low):
@@ -314,7 +562,7 @@ class GraphParser:
             shared = qstem & tw
             if shared:
                 rare = sum(self.tidf.get(w, 0.0) for w in shared)
-                score[sec] += 9.0 * rare * (0.35 + len(shared) / len(tw))
+                score[sec] += self.W_HEADING * rare * (0.35 + len(shared) / len(tw))
             tl = self.sec_title[sec].lower()
             for lg in legends:
                 if lg in tl:
@@ -351,6 +599,90 @@ class GraphParser:
             w = CONTEXT.get(sec[0])
             if w and not any(x in low for x in w):
                 score[sec] *= 0.35
+        # ---- conditions the question's facts actually satisfy ---------------
+        # Evidence, not coincidence. A section earns points here because a
+        # provision it contains demonstrably applies to the situation stated,
+        # checked numerically with units. Scored per satisfied condition and
+        # damped, so a section holding many thresholds cannot win by volume.
+        if self.W_SATISFIED:
+            # A satisfied condition only counts if the provision is about the
+            # same kind of device. "The Bicycle Signal sign shall have a minimum
+            # size of 24 inches" is satisfied by a 24-inch panel and is not
+            # about a regulatory turn-prohibition sign. Without this gate the
+            # arithmetic is right and the answer is wrong -- which is the exact
+            # failure the certificate exists to prevent.
+            #
+            # The subject comes from the question's own anchors: the chapter of
+            # a sign code it names, or of a section/figure it names. If the
+            # question names no subject, no gate is applied and every satisfied
+            # condition counts.
+            subject_chapters = set()
+            for a in anchors:
+                if a.kind not in ('signcode', 'signname', 'section', 'figure'):
+                    continue
+                n = self.N.get(a.node)
+                sec = (n.section if n is not None else '') or ''
+                if sec:
+                    subject_chapters.add(sec.split('.')[0])
+            per_sec: Counter = Counter()
+            for _nid, sec, _why in self.satisfied(self.facts(query)):
+                if not sec:
+                    continue
+                if subject_chapters and sec.split('.')[0] not in subject_chapters:
+                    continue
+                per_sec[sec] += 1
+            for sec, n in per_sec.items():
+                if sec in self.by_section:
+                    score[sec] += self.W_SATISFIED * (1.0 + math.log(n))
+
+        # ---- the manual's own cross-references -----------------------------
+        # A section that names Table 2B-1 eight times is telling you it is
+        # about regulatory sign sizes. This is applied AFTER the size and
+        # context corrections, deliberately: it is a statement about topic,
+        # not about how much text a section happens to contain, so shrinking
+        # it for sprawl would be reading it as the wrong kind of evidence.
+        #
+        # Rarity matters more than count here. Figure 6B-2 is named by dozens
+        # of sections and separates nothing; Table 2B-1 is named by four and
+        # separates everything. So each reference is weighted by how few
+        # sections make it, and the count is damped by a log so one section
+        # citing a figure twenty times cannot swamp the field.
+        #
+        # THE WEIGHT IS NOT PRINCIPLED. Swept on the 20-query gold set:
+        #   0.0 -> 12 best / 13 acceptable   (the term off)
+        #   1.0 -> 14 best / 15 acceptable   <- shipped
+        #   2.0 -> 14 best / 14 acceptable
+        #   4.0 -> 13 best / 13 acceptable
+        #   8.0 -> 10 best / 11 acceptable
+        # Twenty queries cannot separate 1.0 from 2.0 honestly; the gap is one
+        # question. Set W_CROSSREF = 0.0 to ablate. Re-fit on a real dev set
+        # before quoting the number anywhere.
+        n_sections = max(1, len(self.by_section))
+        for a in anchors:
+            if a.kind not in ('figure', 'caption', 'table'):
+                continue
+            citers = self.cited_by.get(a.node)
+            if not citers:
+                continue
+            rare = math.log(n_sections / len(citers))
+            if rare <= 0:
+                continue
+            for sec, n in citers.items():
+                score[sec] += self.W_CROSSREF * rare * math.log(1 + n)
+
+        # ---- the Subject slot -----------------------------------------------
+        # A provision about a bicycle signal face cannot answer a question about
+        # a regulatory turn-prohibition sign, however many words they share.
+        # Applied last, as a damping of sections whose stated subject cannot be
+        # the question's -- not as a hard filter, because the subject is read
+        # off a heading and a heading can be wrong or elliptical.
+        if self.W_SUBJECT < 1.0:
+            qs = self.subjects(query)
+            if qs:
+                for sec in list(score):
+                    if not self.subject_compatible(sec, qs):
+                        score[sec] *= self.W_SUBJECT
+
         return score.most_common(top)
 
     # ------------------------------------------------------------------ #
@@ -466,6 +798,204 @@ class GraphParser:
     # ------------------------------------------------------------------ #
     # 4. the drop-in entry point                                          #
     # ------------------------------------------------------------------ #
+    def _subject_of_section(self, sec: str) -> set:
+        """What a section is ABOUT, as opposed to what it says about it.
+
+        Read off the heading. "Size of Regulatory Signs" is about regulatory
+        signs; "size" is the attribute. Where there is no "of", the whole
+        heading is taken as the subject, which is right for "Movement
+        Prohibition Signs" and harmless for "Mounting Height".
+        """
+        cached = self._subj_cache.get(sec)
+        if cached is not None:
+            return cached
+        title = self.sec_title.get(sec, '') or ''
+        parts = _TITLE_SPLIT.split(title, 1)
+        if len(parts) == 2:
+            subject_text = parts[1]
+        elif _DEVICE_NOUN.search(title):
+            # "Movement Prohibition Signs" -- the whole heading is the subject
+            subject_text = title
+        else:
+            # "Mounting Height", "Dimensions", "Retroreflectivity" -- an
+            # attribute with no device named, so the section governs EVERY
+            # device. Returning an empty set means "no subject stated", and a
+            # section with no subject must never be excluded by a subject test:
+            # 2A.15 Mounting Height applies to a regulatory sign as much as to
+            # a warning one, and is one of the sections our worked example
+            # needs.
+            subject_text = ''
+        # drop the sign codes a heading lists in brackets; they are handled
+        # separately and far more precisely by the code itself
+        subject_text = re.sub(r'\([^)]*\)', ' ', subject_text)
+        words = _stem_set(subject_text)
+        self._subj_cache[sec] = words
+        return words
+
+    def subject_compatible(self, sec: str, q_subjects: set) -> bool:
+        """Could a provision in this section be about what the question is about?
+
+        Deliberately permissive. A section that names no device governs every
+        device, and a question that names none is asking generally -- in both
+        cases there is nothing to contradict, so nothing is excluded. Only a
+        stated subject on BOTH sides, with no overlap, is a mismatch.
+        """
+        if not q_subjects:
+            return True
+        s = self._subject_of_section(sec)
+        if not s:
+            return True
+        return bool(s & q_subjects)
+
+    def subjects(self, q: str) -> set:
+        """What a question is about: the devices it names, however it names them.
+
+        Three sources, in the order the literature extracts them. A sign code is
+        the most precise -- R3-2 names one device and, through the sign-size
+        table, its governing section. A legend ("No Left Turn") names the same
+        device in words. The series letter gives the family, so a question about
+        R3-2 is known to be about a regulatory sign even when it never says so,
+        which is what lets a provision in 2B.03 about regulatory signs apply to
+        it and one in 4H.03 about signal faces not.
+        """
+        found: set = set()
+        for m in re.finditer(r'\b([A-Z]{1,3}\d{1,3}(?:-\d{1,3}[a-zA-Z]{0,2})?P?)\b', q):
+            code = m.group(1).upper()
+            key = f'signcode:{code}'
+            if key not in self.N:
+                continue
+            found.add(code.lower())
+            series = re.match(r'^([A-Z]{1,3})', code).group(1)
+            family = _SIGN_SERIES.get(series) or _SIGN_SERIES.get(series[:1])
+            if family:
+                found |= _stem_set(family)
+            sec = self.N[key].section
+            if sec:
+                found |= self._subject_of_section(sec)
+        for legend, node in list(self.signnames.items()) + list(self.sign_labels.items()):
+            # A single common word is not a device name by itself. "BUSINESS"
+            # is a real legend (M4-3P) and "LEFT" is a real legend (E11-2), but
+            # a question saying "a business area" or "No Left Turn" is naming
+            # neither -- and letting them through put route plaques and
+            # expressway guide signs into the question's subject, which then
+            # excused sections that should have been ruled out.
+            #
+            # But requiring two words threw away "STOP sign", which is the
+            # subject of half the gold set. The distinction is not length, it
+            # is whether the question writes the legend AS a device: "STOP
+            # sign" names one, "a business area" does not.
+            one_word = ' ' not in legend.strip()
+            pat = r'\b' + re.escape(legend) + r'\b'
+            if one_word:
+                pat += r'\s+(?:sign|plaque|marking|signal|beacon|assembly|symbol)s?\b'
+            if re.search(pat, q, re.I):
+                found |= _stem_set(legend)
+                # A legend names a sign, so it names that sign's FAMILY too.
+                # Without this, "STOP sign" gave the subject {stop, plaque} and
+                # 2B.03 "Size of Regulatory Signs" was judged incompatible --
+                # the correct section, excluded, because nothing recorded that
+                # a STOP sign is a regulatory sign. The code says so: R1-1.
+                code = node.split(':', 1)[1] if ':' in node else ''
+                m2 = re.match(r'^([A-Z]{1,3})', code.upper())
+                if m2:
+                    fam = _SIGN_SERIES.get(m2.group(1)) or _SIGN_SERIES.get(m2.group(1)[:1])
+                    if fam:
+                        found |= _stem_set(fam)
+                sec = self.N[node].section if node in self.N else ''
+                if sec:
+                    found |= self._subject_of_section(sec)
+        return found
+
+    def facts(self, q: str) -> List[Fact]:
+        """The measured values a question states, typed like the manual's own.
+
+        This is the half that was missing. The manual's numbers carry their
+        meaning -- not "35" but SPEED_LIMIT_POSTED 35 mph. A question's numbers
+        carried nothing, so a section's condition had nothing to be checked
+        against and routing fell back to counting shared words.
+        """
+        out: List[Fact] = []
+        taken: List[Tuple[int, int]] = []
+        for m in _FACT_DIM.finditer(q):
+            unit = _FACT_UNIT.get(m.group(3).lower(), m.group(3).lower())
+            taken.append((m.start(), m.end()))
+            # width x height, per Table 2B-1's own note. Width is the value a
+            # size condition is keyed on; the pair is kept in `said`.
+            out.append(Fact(kind='SIZE', value=float(m.group(1)), unit=unit,
+                            said=q[max(0, m.start() - 28):m.end()].strip()))
+        for m in _FACT_NUM.finditer(q):
+            if any(a <= m.start() < b for a, b in taken):
+                continue
+            raw_unit = m.group(2).lower()
+            unit = _FACT_UNIT.get(raw_unit, raw_unit)
+            val = float(m.group(1))
+            before = q[max(0, m.start() - 60):m.start()].lower()
+            after = q[m.end():m.end() + 36].lower()
+            kind: Optional[str] = None
+            if unit == 'mph':
+                # the manual's own speed classifier, widened for question wording
+                kind, _alts = canonical_speed(q, m.start(), m.end())
+            if kind is None:
+                for pat, k in _FACT_AFTER:
+                    if re.search(pat, after):
+                        kind = k
+                        break
+            if kind is None:
+                for pat, k in _FACT_BEFORE:
+                    if re.search(pat, before):
+                        kind = k
+                        break
+            if kind is None:
+                # fall back to the manual's noun vocabulary, nearest head wins
+                for head in _QUANTITY_HEADS_LONGEST_FIRST:
+                    if re.search(r'\b' + re.escape(head) + r's?\b', before):
+                        kind = _HEAD_TO_KIND[head]
+                        break
+            if kind:
+                out.append(Fact(kind=kind, value=val, unit=unit,
+                                said=q[max(0, m.start() - 28):m.end() + 12].strip()))
+        return out
+
+    def satisfied(self, facts: List[Fact]) -> List[Tuple[str, str, str]]:
+        """Sentences whose stated condition these facts actually satisfy.
+
+        WHY THIS IS DIFFERENT FROM EVERY OTHER SIGNAL HERE
+        A shared word is not evidence. "Speed" appears in 542 sentences across
+        189 sections carrying 28 distinct meanings, so matching on it tells you
+        almost nothing. A satisfied condition is evidence: the manual said
+        "where the posted speed limit is 35 mph or less", the question said the
+        posted limit is 35, and that provision now demonstrably applies. It can
+        be put on a certificate; a word count cannot.
+
+        Returns (node id, section, why) for each sentence whose condition holds.
+        """
+        if not facts:
+            return []
+        hits: List[Tuple[str, str, str]] = []
+        for nid, node in self.N.items():
+            if node.kind not in ('SENTENCE', 'NOTE'):
+                continue
+            if 'CONDITION' not in (node.pieces or []):
+                continue
+            for cond in (node.quantities or []):
+                kind, num, op = cond.get('kind'), cond.get('number'), cond.get('op')
+                if not kind or num is None or op not in _CMP:
+                    continue
+                try:
+                    threshold = float(str(num).replace(',', ''))
+                except ValueError:
+                    continue
+                for f in facts:
+                    if f.kind != kind:
+                        continue
+                    if not _units_comparable(f.unit, cond.get('unit')):
+                        continue
+                    if _CMP[op](f.value, threshold):
+                        hits.append((nid, node.section,
+                                     f'{kind} {f.value:g} satisfies "{op} {num}"'))
+                    break
+        return hits
+
     def parse_ranked(self, query: str, chunks: Sequence[Dict[str, Any]] = (),
                      section_id: str = '', k: int = 5
                      ) -> Tuple[List['Candidate'], ParseReport]:
