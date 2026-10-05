@@ -55,6 +55,84 @@ UNIT_CANON = {
 }
 
 
+# Where 1C.02 DEFINES a kind, the definition beats a usage example: it says what
+# the thing IS rather than showing one sentence that happens to mention it. It is
+# also the manual's legal basis -- FHWA's own guidance calls the Part 1
+# definitions "of particular significance ... they establish a legal basis".
+#
+# Four kinds had no usable usage example at all (SPEED_AVERAGE,
+# SPEED_LIMIT_STATUTORY, SPEED_PACE, SPEED_PREVAILING) because they are rare in
+# the body text. All four are defined in the glossary.
+GLOSSARY_HEADWORD = {
+    "SPEED_AVERAGE": "Average Speed",
+    "SPEED_85TH": "85th-Percentile Speed",
+    "SPEED_PACE": "Pace",
+    "SPEED_DESIGN": "Design Speed",
+    "SPEED_OPERATING": "Operating Speed",
+    "SPEED_LIMIT": "Speed Limit",
+    "SPEED_LIMIT_POSTED": "Posted Speed Limit",
+    "SPEED_LIMIT_STATUTORY": "Statutory Speed Limit",
+    "INTERVAL": "Interval",
+    "SPEED_PEDESTRIAN": "Walking Speed",
+}
+# Not in 1C.02 at all. FHWA Official Interpretation 2(09)-2 supplies one, and
+# that is recorded rather than left blank.
+NOT_IN_GLOSSARY = {
+    "SPEED_PREVAILING": "not defined in the MUTCD; FHWA 2(09)-2 gives the average "
+                        "of the 85th-percentile speed and the upper limit of the pace",
+    # These two are OURS, not the manual's, and the model cannot guess them from
+    # the name. Measured: on the manual's own sentences it collapsed
+    # SPEED_ALTERNATIVES into a specific speed 4 times and SPEED_UNRESOLVED 5
+    # times -- 9 of 43 disagreements, and the most costly ones, because
+    # SPEED_ALTERNATIVES is precisely the case Ruling 1 exists to settle.
+    "SPEED_ALTERNATIVES":
+        "the sentence names SEVERAL speeds as alternatives and ranks none of "
+        "them -- 'the posted, statutory, or 85th-percentile speed'. Use this "
+        "whenever two or more speed types are offered as alternatives, NEVER "
+        "one of them individually",
+    "SPEED_UNRESOLVED":
+        "a speed the sentence does not say which kind of -- plain 'the speed' "
+        "or 'speeds of 45 mph or higher' with no type named. Use this rather "
+        "than guessing a specific speed type",
+    "SPEED_CHANGE":
+        "a change or reduction IN speed, not a speed itself -- 'a reduction of "
+        "10 mph', 'speeds drop by 15 mph'",
+    "SPEED_TRAIN":
+        "the speed of a TRAIN or light-rail vehicle, never a highway speed "
+        "limit. 1C.02 keeps these apart and they are never comparable",
+    "SPEED_PEDESTRIAN":
+        "a walking speed, normally in feet per second, never a vehicle speed",
+    "SPEED_DIFFERENTIAL":
+        "the difference between two speeds, such as the approach speed minus "
+        "the advisory speed",
+}
+
+
+def glossary_definitions(N) -> dict:
+    """Headword -> the manual's own definition, numbers left in.
+
+    Numbers are NOT stripped here, unlike usage examples. A definition's numbers
+    are part of what the term means -- Pace is "the 10 mph speed range" and that
+    10 is the definition, not a threshold to be copied into an answer. A usage
+    example's numbers are a threshold, which is why those are removed.
+    """
+    out = {}
+    for v in N.values():
+        if v.kind not in ("SENTENCE", "NOTE") or v.section != "1C.02":
+            continue
+        # The separator is a hyphen and so is "85th-Percentile". Require the
+        # separator to be followed by a lowercase word, and allow an internal
+        # hyphen before it, or that entry is lost.
+        # "85th-Percentile Speed" begins with a digit, so a capital-letter-only
+        # start silently lost it -- the one speed term the whole project turns on.
+        m = re.match(r"\s*(?:\([a-z]\)\s*)?([A-Z0-9][A-Za-z0-9 ,/()']+(?:-[A-Z][A-Za-z]+)*"
+                     r"(?:\s+[A-Za-z]+)*?)[-–—](?=[a-z])",
+                     v.text)
+        if m:
+            out[m.group(1).strip().lower()] = re.sub(r"\s+", " ", v.text).strip()
+    return out
+
+
 def strip_numbers(s: str) -> str:
     """Remove anything the model could copy as an answer."""
     s = re.sub(r"\([^)]*\)", " ", s)
@@ -94,6 +172,18 @@ def main(graph: Path | None, per_kind: int) -> None:
     for k, v in cands.items():
         v.sort(reverse=True)
         phrasing[k] = v[0][2][-120:]
+
+    # the glossary wins wherever it speaks
+    gloss = glossary_definitions(N)
+    for kind, headword in GLOSSARY_HEADWORD.items():
+        d = gloss.get(headword.lower())
+        if d:
+            phrasing[kind] = d[:190]
+    # These override any usage example: a one-line fragment from the body text
+    # cannot convey "several speeds, none ranked", and the measurement showed
+    # the model guessing a specific speed instead.
+    for kind, note in NOT_IN_GLOSSARY.items():
+        phrasing[kind] = note
 
     kinds = sorted(k.split(":", 1)[1] for k, v in N.items() if v.kind == "QUANTITY")
     keep_units = sorted(u for u, n in units.most_common() if n >= 2)

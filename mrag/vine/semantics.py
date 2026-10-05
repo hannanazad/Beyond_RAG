@@ -319,11 +319,39 @@ def _attributive(text: str, m) -> Tuple[Optional[str], Optional[str], bool]:
     return None, None, True
 
 
+# The MUTCD routinely names a dimension with a bare adjective AFTER the value --
+# "3 inches wide", "250 feet apart", "6 inches high" -- and `_IN_DIM` above only
+# catches the "in width" form. 98 of the 492 untyped quantities are these, about
+# a fifth of everything the extractor could not name, and they need no new
+# vocabulary: the adjective says which dimension it is, unambiguously.
+#
+# Only unambiguous adjectives are listed. A backward search over a wider window
+# was tried and rejected: it recovered 217 but took the nearest head noun whether
+# or not it governed the number, so "5% grade that is more than 3,000 feet in
+# length" came out as GRADE. That is the same head-noun error that produced the
+# 57-kind vocabulary, and recall is not worth repeating it.
+_POST_ADJ = re.compile(
+    r"^\s*(?:or (?:more|less|greater|wider|higher|longer)\s+)?"
+    r"(?P<h>wide|high|tall|long|deep|thick|apart|in\s+advance|"
+    r"on\s+each\s+side|per\s+day|per\s+week)\b", re.I)
+_POST_ADJ_HEAD = {
+    "wide": "width", "high": "height", "tall": "height", "long": "length",
+    "deep": "depth", "thick": "thickness", "apart": "spacing",
+    "in advance": "distance", "on each side": "offset",
+    "per day": "duration", "per week": "duration",
+}
+
+
 def _forward(text: str, m) -> Tuple[Optional[str], Optional[str]]:
     """The manual also names the reference point AFTER the number:
     "2 inches above the walkway", "within 3 months following completion"."""
     unit = m.group("unit").lower()
     after = text[m.end():m.end() + 80]
+
+    adj = _POST_ADJ.match(after)
+    if adj:
+        head = _POST_ADJ_HEAD[re.sub(r"\s+", " ", adj.group("h").lower())]
+        return text[m.start():m.end() + adj.end()].strip(), head
     if _WXH.search(text[max(0, m.start() - 8):m.end() + 12]):
         return text[max(0, m.start() - 8):m.end() + 12].strip(), "size"
     if unit.startswith("degree"):
@@ -492,8 +520,26 @@ def tag_sentence(text: str) -> SentenceTags:
         if not attrib:
             floor = cond_end if m.start() >= cond_end else 0
             ref, head = _referent(text, m.start(), floor)
-            if head is None:
-                ref, head = _forward(text, m)
+            # An adjective AFTER the value is better evidence than a noun before
+            # it. "The gap is typically 8 inches wide": the backward search
+            # returns "gap", which is the thing being measured and not the
+            # measurement, so the kind came out None -- and because _referent
+            # had returned something, the forward path was never asked. "wide"
+            # says width, unambiguously. So forward wins whenever the backward
+            # head is not a recognised quantity head.
+            # `_unit_consistent` later nulls a length bound to a non-length
+            # head -- "gap" is a real head but not a LENGTH head, so "8 inches"
+            # was being unbound AFTER the forward path had already been skipped.
+            # Test the same thing it tests, so the adjective gets its chance
+            # first rather than being discarded for a head that will not survive.
+            unit_l = m.group("unit").lower()
+            doomed = (head is not None
+                      and ((_LEN_UNITS.match(unit_l) and head not in _LEN_HEADS)
+                           or (_TIME_UNITS.match(unit_l) and head not in _TIME_HEADS)))
+            if head is None or doomed:
+                fref, fhead = _forward(text, m)
+                if fhead is not None:
+                    ref, head = fref, fhead
         op = _operator(text, m.start(), m.end())
         if op in (">", "<") and re.match(r"\s*No\b", text) and \
            re.search(r"(?:more|greater|higher|less|lower|fewer) than\s*$", text[max(0, m.start() - 25):m.start()]):

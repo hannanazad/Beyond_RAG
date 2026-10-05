@@ -65,6 +65,12 @@ QUANTITY_MERGED = {
     # a distance from a reference point. Which reference is already recorded in
     # the quantity's `referent` field, so the label never carried that meaning.
     "OFFSET": "DISTANCE", "SETBACK": "DISTANCE",
+    # Measured, not assumed. On 179 MUTCD sentences typed by the graph itself,
+    # the largest single disagreement was SPACING vs DISTANCE -- 8 of 43. The
+    # glossary defines neither, so there was never authority to split them, and
+    # "installed every 40 feet" against "40 feet from the stop line" is one
+    # measurement with two referents. The referent is already recorded.
+    "SPACING": "DISTANCE",
     # nothing in the glossary separates these. INTERVAL is excluded on purpose:
     # 1C.02 defines it as "the part of a signal cycle during which signal
     # indications do not change".
