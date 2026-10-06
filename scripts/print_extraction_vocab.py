@@ -90,10 +90,18 @@ NOT_IN_GLOSSARY = {
         "them -- 'the posted, statutory, or 85th-percentile speed'. Use this "
         "whenever two or more speed types are offered as alternatives, NEVER "
         "one of them individually",
+    # MEASURED OVERCORRECTION. v1 said nothing about this kind and the model
+    # guessed specific speeds; I then wrote "use this rather than guessing a
+    # specific speed type" and it read that as permission -- SPEED_85TH,
+    # SPEED_OPERATING, SPEED_ADVISORY and SPEED_ALTERNATIVES all collapsed into
+    # it, 10 items, including four where the sentence plainly said
+    # "85th-percentile". A boundary, not an invitation.
     "SPEED_UNRESOLVED":
-        "a speed the sentence does not say which kind of -- plain 'the speed' "
-        "or 'speeds of 45 mph or higher' with no type named. Use this rather "
-        "than guessing a specific speed type",
+        "LAST RESORT, and only when the sentence gives a speed and names no "
+        "type at all -- bare 'the speed' or 'speeds of 45 mph or higher'. If "
+        "the sentence says posted, statutory, 85th-percentile, design, "
+        "operating, advisory, pace or average, use THAT kind. Never use this "
+        "as a default when a type is named",
     "SPEED_CHANGE":
         "a change or reduction IN speed, not a speed itself -- 'a reduction of "
         "10 mph', 'speeds drop by 15 mph'",

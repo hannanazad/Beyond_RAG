@@ -132,9 +132,29 @@ _FACT_DIM = re.compile(
     re.I)
 
 # A number with a unit, as a question states it.
+# Four holes closed at once, all found by running one real question end to end
+# and getting ZERO facts out of it:
+#   "20-foot traveled way"   a hyphen between number and unit, not a space
+#   "6,500 vehicles"         a thousands comma, and "vehicles" was not a unit
+#   "two traffic lanes"      a number written as a word
+#   "2 traffic lanes"        a word between the number and its unit
 _FACT_NUM = re.compile(
-    r'(\d+(?:\.\d+)?)\s*(mph|feet|foot|ft\.?|inches|inch|in\.|miles|seconds|percent|lanes?)\b',
+    r'(\d[\d,]*(?:\.\d+)?)\s*[- ]?\s*'
+    r'(mph|miles per hour|feet|foot|ft\.?|inches|inch|in\.|miles|mile|'
+    r'millimeters|mm|seconds|second|minutes|minute|hours|hour|days|day|'
+    r'months|month|years|year|percent|degrees|degree|'
+    r'vehicles per day|vehicles per hour|vehicles|vpd|vph|'
+    r'(?:traffic\s+|through\s+|travel\s+)?lanes?)\b',
     re.I)
+
+# A number written as a word, followed by a unit: "two traffic lanes",
+# "seven feet", "twelve inches". The manual writes digits; people write words.
+_WORD_NUM = {'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,
+             'eight':8,'nine':9,'ten':10,'eleven':11,'twelve':12}
+_FACT_WORD = re.compile(
+    r'\b(' + '|'.join(_WORD_NUM) + r')\s+'
+    r'(?:traffic\s+|through\s+|travel\s+)?'
+    r'(lanes?|feet|foot|inches|inch|seconds|second|miles|mile)\b', re.I)
 _FACT_UNIT = {'foot': 'feet', 'ft': 'feet', 'ft.': 'feet',
               'inch': 'inches', 'in.': 'inches', 'lane': 'lanes'}
 
@@ -234,13 +254,122 @@ _DEVICE_NOUN = re.compile(
     r'assemblys?|assemblies|lines?|crosswalks?|legends?|symbols?)\b', re.I)
 
 
+# What a unit can possibly be measuring. Used to reject a head the backward
+# search found that cannot be right for this unit.
+_UNIT_FAMILY = {
+    'feet':'len','inches':'len','miles':'len','millimeters':'len',
+    'mph':'spd','seconds':'t','minutes':'t','hours':'t','days':'t',
+    'months':'t','years':'t','lanes':'n','vehicles':'veh',
+    'vehicles per day':'vpd','vehicles per hour':'vph',
+    'percent':'p','degrees':'a','per_minute':'f','per_second':'f',
+}
+_KIND_FAMILY = {
+    'len':{'WIDTH','HEIGHT','MOUNTING_HEIGHT','DISTANCE','SIZE','LENGTH','CLEARANCE',
+           'LETTER_HEIGHT','BUFFER','DIAMETER','DEPTH','RADIUS','SIGHT_DISTANCE',
+           'TAPER','BORDER','PROJECTION','OTHER'},
+    'spd':{k for k in () } | {'SPEED_LIMIT','SPEED_LIMIT_POSTED','SPEED_LIMIT_STATUTORY',
+           'SPEED_85TH','SPEED_OPERATING','SPEED_ALTERNATIVES','SPEED_TRAIN',
+           'SPEED_DIFFERENTIAL','SPEED_UNRESOLVED','SPEED_ADVISORY','SPEED_CHANGE',
+           'SPEED_DESIGN','SPEED_PACE','SPEED_AVERAGE','SPEED_PREVAILING','OTHER'},
+    't':{'DURATION','INTERVAL','OTHER'},
+    'n':{'LANES','COUNT_PEOPLE','POPULATION','VOLUME','OTHER'},
+    'veh':{'VOLUME_DAILY','VOLUME_HOURLY','VOLUME','OTHER'},
+    'vpd':{'VOLUME_DAILY','VOLUME','OTHER'},
+    'vph':{'VOLUME_HOURLY','VOLUME','OTHER'},
+    'p':{'PERCENT','REDUCTION','OTHER'},
+    'a':{'ANGLE','OTHER'},
+    'f':{'PITCH','INTERVAL','OTHER'},
+}
+# If the head is unusable, fall back to what the unit alone implies.
+_KIND_BY_UNIT = {'lanes':'LANES','vehicles':'VOLUME_DAILY',
+                 'vehicles per day':'VOLUME_DAILY','vehicles per hour':'VOLUME_HOURLY',
+                 'degrees':'ANGLE','percent':'OTHER'}
+
+
+def _kind_fits_unit(kind: str, unit: str) -> bool:
+    fam = _UNIT_FAMILY.get((unit or '').lower())
+    if fam is None:
+        return True
+    return kind in _KIND_FAMILY.get(fam, set())
+
+
+# A specialisation hierarchy. A mounting height IS a height; a letter height IS
+# a height; a sight distance IS a distance. So a fact read as the general kind
+# must be allowed to satisfy a condition keyed on the specific one, and the
+# other way round.
+#
+# This is structure, not statistics. The classifier offered LANES as the
+# alternate for a 4.5-foot mounting height, which is no use at all, while the
+# condition it needed was keyed on MOUNTING_HEIGHT -- a kind of the very thing
+# the fact already was. The arithmetic and the units still decide; this only
+# puts the right candidate on the table.
+_SPECIALISES = {
+    'HEIGHT':   ('MOUNTING_HEIGHT', 'LETTER_HEIGHT', 'CLEARANCE'),
+    'DISTANCE': ('SIGHT_DISTANCE', 'CLEARANCE', 'LENGTH'),
+    'SIZE':     ('WIDTH', 'HEIGHT', 'DIAMETER', 'LETTER_HEIGHT'),
+    'WIDTH':    ('SIZE', 'BORDER', 'BUFFER'),
+    'LENGTH':   ('DISTANCE', 'TAPER'),
+    'DURATION': ('INTERVAL',),
+    'INTERVAL': ('DURATION',),
+    'VOLUME':   ('VOLUME_DAILY', 'VOLUME_HOURLY'),
+    'SPEED_UNRESOLVED': ('SPEED_LIMIT', 'SPEED_LIMIT_POSTED', 'SPEED_85TH',
+                         'SPEED_OPERATING', 'SPEED_ALTERNATIVES'),
+    'SPEED_LIMIT': ('SPEED_LIMIT_POSTED', 'SPEED_LIMIT_STATUTORY', 'SPEED_ALTERNATIVES'),
+}
+# and the reverse: a specific kind may satisfy a condition on its general one
+_GENERALISES = {}
+for _g, _ss in _SPECIALISES.items():
+    for _sp in _ss:
+        _GENERALISES.setdefault(_sp, set()).add(_g)
+
+
+def _related_kinds(kind: str) -> tuple:
+    return tuple(dict.fromkeys(_SPECIALISES.get(kind, ()) + tuple(_GENERALISES.get(kind, ()))))
+
+
 @dataclass
 class Fact:
-    """A measured value a question states, typed the way the manual types it."""
+    """A measured value a question states, typed the way the manual types it.
+
+    WHY `alternates` EXISTS
+    Three independent methods were measured on the same 167 MUTCD sentences:
+    a 24B generative model reading a prompt (69%), a classifier trained on 989
+    examples (70.7%), and that classifier given the chapter as well (73.1%).
+    All three confused the SAME pairs -- LETTER_HEIGHT with HEIGHT, INTERVAL
+    with DURATION, CLEARANCE with DISTANCE, and the speed types.
+
+    When three unrelated methods hit the same ceiling on the same pairs, the
+    ceiling is not in the method. "shall be at least 7 feet" genuinely does not
+    say whether that is a mounting height, a clearance or a distance; a reader
+    knows from the surrounding engineering, not from those words.
+
+    So a forced single choice turns an honest ambiguity into a silent failure:
+    `satisfied()` matched kinds exactly, and a wrong label meant the condition
+    was never checked at all -- measured, 30 of 30 confused facts reached no
+    condition whatever. Carrying the alternates instead lifts capture from 71%
+    to 80% for 1.6 candidates per fact.
+
+    This is not a guess that something will stick. Every candidate still has to
+    pass the unit check and the arithmetic, so a wrong one fails on its own and
+    cannot make a false condition fire. It can only let a true condition be
+    found that one wrong label would have hidden. The certificate records which
+    kind actually carried the check and what else was considered.
+    """
     kind: str
     value: float
     unit: str
     said: str = ''
+    alternates: Tuple[str, ...] = ()
+
+    @property
+    def kinds(self) -> Tuple[str, ...]:
+        """Every kind this value might be, best first: itself, then the kinds it
+        specialises or generalises, then whatever the classifier proposed."""
+        seen = [self.kind]
+        for k in _related_kinds(self.kind) + tuple(self.alternates):
+            if k not in seen:
+                seen.append(k)
+        return tuple(seen)
 
 
 @dataclass
@@ -286,7 +415,19 @@ class GraphParser:
 
     W_SATISFIED: float = 0.0
 
-    W_HEADING: float = 9.0
+    # Weight of whole-section text similarity. Measured on ten scenario
+    # questions: heading-only routing put a gold section first 3/10, this 10/10.
+    # Swept across all three sets. Text-only scores 10/10 on real scenario
+    # questions but drops MUTCD-150 dev to 60.7%, because that set is 80% short
+    # lookups where a heading match IS the answer. 600 with the heading term
+    # kept at 1.0 wins or holds everywhere: dev 60.7 -> 71.4%, scenarios
+    # 3/10 -> 9/10 first and 10/10 in the top five, smoke unchanged.
+    W_TEXT: float = 600.0
+
+    # Was 9.0 and dominant. With real text similarity available it is a weak
+    # corroborating signal, not the main one -- a heading sharing "left turn"
+    # with a scenario about a No Left Turn sign is a coincidence, not evidence.
+    W_HEADING: float = 1.0
 
     W_ASKS_ABOUT: float = 1.0
 
@@ -347,6 +488,15 @@ class GraphParser:
         # which sections name it and how often. 6,519 REFERS_TO edges, unused
         # for routing until now.
         self._subj_cache: Dict[str, set] = {}
+        self._build_section_index()
+        # how many checkable conditions key on each kind -- used to stop a
+        # specific kind being widened into a catch-all
+        self._cond_count = defaultdict(list)
+        for _v in self.N.values():
+            if _v.kind in ('SENTENCE', 'NOTE') and 'CONDITION' in (_v.pieces or []):
+                for _q in (_v.quantities or []):
+                    if _q.get('kind') and _q.get('number') and _q.get('op') in _CMP:
+                        self._cond_count[_q['kind']].append(1)
         self.cited_by: Dict[str, Counter] = defaultdict(Counter)
         for e in self.E:
             if e.rel != 'REFERS_TO':
@@ -522,6 +672,57 @@ class GraphParser:
     # ------------------------------------------------------------------ #
     # 2. pick the governing section                                       #
     # ------------------------------------------------------------------ #
+    def _build_section_index(self) -> None:
+        """A document-level index of each section's full text.
+
+        WHY THIS EXISTS, AND WHY IT SHOULD HAVE FROM THE START
+        Routing was scored on how many rare words a question shared with a
+        section's HEADING. A heading is three or four words, so the signal is
+        thin and a long question drowns it: measured on ten real scenario
+        questions, heading-based routing put a gold section first on 3 of 10.
+
+        The same ten questions, scored by plain TF-IDF similarity against each
+        section's whole text, put a gold section first on 10 of 10 and found
+        every gold section needed on 9 of 10. No embeddings, no reranker, no
+        model -- the questions are long and specific, which is poor for
+        matching a heading and excellent for matching a document.
+
+        Falls back silently if scikit-learn is absent; the old signals still
+        work, just worse.
+        """
+        self._sec_ids: List[str] = []
+        self._sec_matrix = None
+        self._sec_vec = None
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer
+        except ImportError:
+            return
+        docs = []
+        for sec, nids in sorted(self.by_section.items()):
+            body = ' '.join((self.N[n].text or '') for n in nids)[:6000]
+            # the heading repeated, so it still counts for something
+            docs.append(((self.sec_title.get(sec, '') + ' ') * 3) + body)
+            self._sec_ids.append(sec)
+        if not docs:
+            return
+        try:
+            self._sec_vec = TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True,
+                                            min_df=2, stop_words='english')
+            self._sec_matrix = self._sec_vec.fit_transform(docs)
+        except Exception:
+            self._sec_vec = self._sec_matrix = None
+
+    def _text_similarity(self, query: str) -> Dict[str, float]:
+        """Cosine similarity of the question against every section's text."""
+        if self._sec_matrix is None:
+            return {}
+        try:
+            from sklearn.metrics.pairwise import linear_kernel
+            sims = linear_kernel(self._sec_vec.transform([query]), self._sec_matrix)[0]
+        except Exception:
+            return {}
+        return {s: float(v) for s, v in zip(self._sec_ids, sims) if v > 0}
+
     def score_sections(self, query: str, anchors: List[Anchor],
                        top: int = 6) -> List[Tuple[str, float]]:
         """Additive scoring, measured best of the variants tried.
@@ -599,6 +800,17 @@ class GraphParser:
             w = CONTEXT.get(sec[0])
             if w and not any(x in low for x in w):
                 score[sec] *= 0.35
+        # ---- how much the question looks like the section's actual text -----
+        # The dominant signal, and the one that was missing. Scaled so a strong
+        # text match outweighs a heading coincidence: "ALL TRAFFIC Sign ... RIGHT
+        # (LEFT) TURN ONLY" shares four heading words with a scenario about a No
+        # Left Turn sign and is about something else entirely, which is how it
+        # beat the correct section for three weeks.
+        if self.W_TEXT:
+            for sec, sim in self._text_similarity(query).items():
+                if sec in self.by_section:
+                    score[sec] += self.W_TEXT * sim
+
         # ---- conditions the question's facts actually satisfy ---------------
         # Evidence, not coincidence. A section earns points here because a
         # provision it contains demonstrably applies to the situation stated,
@@ -906,6 +1118,102 @@ class GraphParser:
                     found |= self._subject_of_section(sec)
         return found
 
+    # The kind classifier, trained on 1,156 (sentence, kind) pairs the graph read
+    # out of the MUTCD itself. It is used ONLY to widen a fact's candidate kinds,
+    # never to overrule the pattern rules: those are deterministic and auditable,
+    # and where they fire confidently they are right more often than it is.
+    #
+    # Measured on 167 held-out MUTCD sentences, with zero sentence overlap:
+    #   single best kind            71.3%
+    #   every kind above p=0.10     79.6%,  1.6 candidates per fact
+    #   every kind above p=0.05     86.2%,  3.1 candidates per fact
+    _CLF_FLOOR = 0.10
+    _cond_count: Dict[str, list] = {}
+    _ALT_MAX_CONDS = 60      # DISTANCE has 177, WIDTH 62: both are catch-alls here
+    _clf = None
+    _clf_tried = False
+
+    def _classifier(self):
+        if not GraphParser._clf_tried:
+            GraphParser._clf_tried = True
+            path = default_graph_path().with_name('kind_classifier.pkl')
+            if path.exists():
+                try:
+                    import pickle as _p
+                    GraphParser._clf = _p.load(open(path, 'rb'))
+                except Exception:
+                    GraphParser._clf = None
+        return GraphParser._clf
+
+    def _alternates(self, phrase: str, unit: str, best: str) -> Tuple[str, ...]:
+        """Kinds this phrase might also be, above the probability floor.
+
+        Returns nothing at all when the classifier is absent, so the parser
+        still runs with no model file present -- it simply loses the widening.
+        """
+        clf = self._classifier()
+        if clf is None:
+            return ()
+        try:
+            import numpy as _np
+            row = f'{phrase} || UNIT={unit or ""} || CH='
+            prob = clf.predict_proba([row])[0]
+            keep = [clf.classes_[i] for i in _np.argsort(-prob)
+                    if prob[i] >= self._CLF_FLOOR]
+            # Never widen a specific kind into a catch-all. DISTANCE carries 177
+            # of the 468 checkable conditions, so admitting it as an alternate
+            # let a 7-foot MOUNTING_HEIGHT satisfy "within 300 feet of the
+            # nearest signal" and "within 1,000 feet of blasting caps" -- the
+            # arithmetic passes and the meaning is nonsense. Measured: 15
+            # conditions became 103, and the extra 88 were almost all this.
+            #
+            # An alternate is only useful if it is a SIBLING of comparable
+            # specificity -- MOUNTING_HEIGHT against HEIGHT against CLEARANCE.
+            # A kind carrying far more conditions than the primary is a
+            # different level of the hierarchy, not an alternative reading.
+            n_primary = len(self._cond_count.get(best, ()))
+            out = []
+            for k in keep:
+                if k == best:
+                    continue
+                n_alt = len(self._cond_count.get(k, ()))
+                # Absolute cap as well as the ratio. A kind with no conditions
+                # of its own (PROJECTION, newly added) has nothing to compare
+                # against, so the ratio test never fires and the catch-all slips
+                # back in. Nothing carrying more than an eighth of all checkable
+                # conditions can be an "alternative reading" of anything.
+                if n_alt > self._ALT_MAX_CONDS:
+                    continue
+                if n_primary and n_alt > 3 * max(n_primary, 4):
+                    continue
+                out.append(k)
+            return tuple(out)[:3]
+        except Exception:
+            return ()
+
+    def _best_kind(self, phrase: str, unit: str) -> Optional[str]:
+        """The classifier's own first choice, with no widening filters.
+
+        `_alternates` deliberately refuses catch-all kinds, because widening a
+        specific kind into DISTANCE produces nonsense. But when the pattern
+        rules have no usable answer at all, a catch-all IS the answer -- "a
+        20-foot traveled way" is a width or a distance and refusing both leaves
+        the fact dropped entirely, which is worse than imprecise.
+        """
+        clf = self._classifier()
+        if clf is None:
+            return None
+        try:
+            import numpy as _np
+            prob = clf.predict_proba([f'{phrase} || UNIT={unit or ""} || CH='])[0]
+            for i in _np.argsort(-prob):
+                k = clf.classes_[i]
+                if _kind_fits_unit(k, unit):
+                    return str(k)
+        except Exception:
+            pass
+        return None
+
     def facts(self, q: str) -> List[Fact]:
         """The measured values a question states, typed like the manual's own.
 
@@ -921,14 +1229,34 @@ class GraphParser:
             taken.append((m.start(), m.end()))
             # width x height, per Table 2B-1's own note. Width is the value a
             # size condition is keyed on; the pair is kept in `said`.
-            out.append(Fact(kind='SIZE', value=float(m.group(1)), unit=unit,
-                            said=q[max(0, m.start() - 28):m.end()].strip()))
+            said = q[max(0, m.start() - 28):m.end()].strip()
+            out.append(Fact(kind='SIZE', value=float(m.group(1)), unit=unit, said=said,
+                            alternates=self._alternates(
+                                q[max(0, m.start()-90):m.end()+45], unit, 'SIZE')))
+        for m in _FACT_WORD.finditer(q):
+            unit = _FACT_UNIT.get(m.group(2).lower(), m.group(2).lower())
+            taken.append((m.start(), m.end()))
+            before = q[max(0, m.start() - 60):m.start()].lower()
+            kind = None
+            for pat, k in _FACT_BEFORE:
+                if re.search(pat, before):
+                    kind = k
+                    break
+            if kind is None and unit == 'lanes':
+                kind = 'LANES'
+            if kind:
+                out.append(Fact(kind=kind, value=float(_WORD_NUM[m.group(1).lower()]),
+                                unit=unit, said=m.group(0),
+                                alternates=self._alternates(
+                                    q[max(0, m.start()-90):m.end()+45], unit, kind)))
+
         for m in _FACT_NUM.finditer(q):
             if any(a <= m.start() < b for a, b in taken):
                 continue
-            raw_unit = m.group(2).lower()
+            raw_unit = re.sub(r'^(?:traffic|through|travel)\s+', '',
+                              m.group(2).lower())
             unit = _FACT_UNIT.get(raw_unit, raw_unit)
-            val = float(m.group(1))
+            val = float(m.group(1).replace(',', ''))
             before = q[max(0, m.start() - 60):m.start()].lower()
             after = q[m.end():m.end() + 36].lower()
             kind: Optional[str] = None
@@ -951,9 +1279,26 @@ class GraphParser:
                     if re.search(r'\b' + re.escape(head) + r's?\b', before):
                         kind = _HEAD_TO_KIND[head]
                         break
+            if kind is None:
+                kind = self._best_kind(q[max(0, m.start()-90):m.end()+45], unit)
+            # A kind must be consistent with its own unit. The backward head
+            # search grabbed "lanes" from earlier in the sentence and labelled
+            # BOTH "a 20-foot traveled way" and "an ADT of 6,500 vehicles" as
+            # LANES -- the same precedence error that put a mounting height
+            # under CLEARANCE. A value in feet is not a lane count, whatever
+            # noun happens to sit nearest.
+            if kind and not _kind_fits_unit(kind, unit):
+                # Ask the classifier instead of dropping the fact. It was
+                # trained on the manual and is right ~71% alone; a lookup table
+                # keyed on the unit threw "a 20-foot traveled way" away entirely
+                # because no table entry covers feet.
+                kind = (self._best_kind(q[max(0, m.start()-90):m.end()+45], unit)
+                        or _KIND_BY_UNIT.get(unit))
             if kind:
                 out.append(Fact(kind=kind, value=val, unit=unit,
-                                said=q[max(0, m.start() - 28):m.end() + 12].strip()))
+                                said=q[max(0, m.start() - 28):m.end() + 12].strip(),
+                                alternates=self._alternates(
+                                    q[max(0, m.start()-90):m.end()+45], unit, kind)))
         return out
 
     def satisfied(self, facts: List[Fact]) -> List[Tuple[str, str, str]]:
@@ -986,13 +1331,16 @@ class GraphParser:
                 except ValueError:
                     continue
                 for f in facts:
-                    if f.kind != kind:
+                    # Any candidate kind may match. The units and the arithmetic
+                    # still have to pass, so a wrong candidate fails on its own.
+                    if kind not in f.kinds:
                         continue
                     if not _units_comparable(f.unit, cond.get('unit')):
                         continue
                     if _CMP[op](f.value, threshold):
+                        as_alt = '' if kind == f.kind else f' (read as {f.kind}, also {kind})'
                         hits.append((nid, node.section,
-                                     f'{kind} {f.value:g} satisfies "{op} {num}"'))
+                                     f'{kind} {f.value:g} satisfies "{op} {num}"{as_alt}'))
                     break
         return hits
 
