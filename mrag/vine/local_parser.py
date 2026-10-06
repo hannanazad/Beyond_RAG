@@ -113,3 +113,68 @@ def parse_question(gp, question: str, ask=None, k_sections: int = 1):
     parse = make_semantic_parser(ask or make_ask())
     spec, report = parse(question, chunks, sections[0])
     return spec, report, sections
+
+
+# ---------------------------------------------------------------------------
+# API-backed parsers.
+#
+# Same contract as make_ask: a callable taking (prompt, images) and returning
+# the reply as text. The point is not convenience -- it is S3.3. A framework
+# that only works on one model family has not been shown to be model-agnostic,
+# and two families agreeing is the evidence for that claim.
+#
+# These are not reproducible in the way the local path is. A hosted model can
+# be updated underneath a result without notice, so record the date and the
+# exact model string with any number taken from them.
+# ---------------------------------------------------------------------------
+
+def make_ask_anthropic(model: str = 'claude-sonnet-4-5', max_tokens: int = 4096,
+                       timeout: int = 300):
+    """An `ask` backed by the Anthropic API. Needs ANTHROPIC_API_KEY."""
+    key = os.environ.get('ANTHROPIC_API_KEY')
+    if not key:
+        raise RuntimeError('ANTHROPIC_API_KEY is not set')
+
+    def ask(prompt: str, images: Optional[Sequence] = None) -> str:
+        r = requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={'x-api-key': key, 'anthropic-version': '2023-06-01',
+                     'content-type': 'application/json'},
+            json={'model': model, 'max_tokens': max_tokens,
+                  'temperature': 0,
+                  'messages': [{'role': 'user', 'content': prompt}]},
+            timeout=timeout)
+        r.raise_for_status()
+        blocks = r.json().get('content', [])
+        return '\n'.join(b.get('text', '') for b in blocks if b.get('type') == 'text')
+
+    return ask
+
+
+def make_ask_dashscope(model: str = 'qwen-max', max_tokens: int = 4096,
+                       timeout: int = 300):
+    """An `ask` backed by DashScope (Qwen). Needs DASHSCOPE_API_KEY.
+
+    Uses the OpenAI-compatible endpoint, so the same function serves any
+    provider that speaks that shape by changing `base`.
+    """
+    key = os.environ.get('DASHSCOPE_API_KEY')
+    if not key:
+        raise RuntimeError('DASHSCOPE_API_KEY is not set')
+    base = os.environ.get(
+        'VINE_DASHSCOPE_BASE',
+        'https://dashscope-intl.aliyuncs.com/compatible-mode/v1')
+
+    def ask(prompt: str, images: Optional[Sequence] = None) -> str:
+        r = requests.post(
+            f'{base}/chat/completions',
+            headers={'Authorization': f'Bearer {key}',
+                     'Content-Type': 'application/json'},
+            json={'model': model, 'max_tokens': max_tokens,
+                  'temperature': 0, 'seed': SEED,
+                  'messages': [{'role': 'user', 'content': prompt}]},
+            timeout=timeout)
+        r.raise_for_status()
+        return r.json()['choices'][0]['message']['content'] or ''
+
+    return ask

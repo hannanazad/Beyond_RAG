@@ -116,9 +116,25 @@ Support material is never an obligation.
 
 DEPENDENCIES
 `requires` lists obligations that must be established BEFORE this one can be
-checked. Use it for real prerequisites only. Two checks that could be done in
-either order must NOT depend on each other -- independence is what lets them
-run in parallel, and inventing an order destroys that.
+checked. Most standards reasoning is dependent, so look for these four patterns
+in every provision -- they are the usual shape, not the exception:
+
+  applicability first   "does this provision apply here at all" comes before
+                        every check that provision governs
+  classify, then check  a threshold that differs by category needs the category
+                        settled first: the road class, the device type, the
+                        area type
+  compute, then compare "the controlling value is max(A, B)" is one obligation;
+                        "the measured value is below the controlling value" is
+                        a second that REQUIRES the first
+  look up, then compare reading a table or figure for the applicable value comes
+                        before comparing anything against it
+
+Two checks that could genuinely be done in either order must NOT depend on each
+other -- independence is what lets them run in parallel, and inventing an order
+destroys that. But a check that cannot even be stated until an earlier one has
+resolved is a real prerequisite, and leaving it out makes the process a list
+when it is a network.
 
 GUARDS
 A guard says when a branch is relevant at all. It is one of:
