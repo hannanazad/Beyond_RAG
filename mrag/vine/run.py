@@ -253,10 +253,12 @@ def ask_vine(question: str,
     # ---- Eq 1, first half: Kq -------------------------------------------
     t0 = clock()
     material = list(chunks or [])
+    figures: List[Dict[str, Any]] = []
     if not material and retriever is not None:
         try:
             got = retriever.retrieve_for_compile(question, top_k=top_k)
             material = list(got.chunks)
+            figures = list(got.figures)
             result.evidence = {"chunks": len(got.chunks),
                                "figures": len(got.figures)}
         except Exception as e:                                # noqa: BLE001
@@ -277,10 +279,17 @@ def ask_vine(question: str,
     # ---- Eq 1, second half: Nq ------------------------------------------
     t0 = clock()
     if ask is not None and use_semantic_parser:
+        # The plan's references to the manual are checked against the graph
+        # and the table transcriptions when they are at hand.
+        by_table: Dict[str, List[Table]] = {}
+        for t in tables or ():
+            by_table.setdefault(t.table_id, []).append(t)
         parse = make_semantic_parser(
             ask, max_attempts=max_parse_attempts,
-            fall_back_to_baseline=fall_back_to_baseline)
-        spec, report = parse(question, material, section_id)
+            fall_back_to_baseline=fall_back_to_baseline,
+            check_ref=getattr(kg, "is_known_citation", None),
+            tables=by_table or None)
+        spec, report = parse(question, material, section_id, figures)
     else:
         # No model: the printed structure. Not a degraded mode -- it compiles
         # 915 of 953 sections and validates all of them.

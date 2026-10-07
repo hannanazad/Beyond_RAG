@@ -73,9 +73,10 @@ def replies(*payloads):
 prompt = build_parser_prompt(QUERY, CHUNKS, "2C.07")
 assert QUERY in prompt and "2C.07" in prompt
 assert "[c1]" in prompt and "[c3]" in prompt
-assert "Support: context only, never an obligation" in prompt
-assert "cites tables: 2C-4" in prompt
-assert "Do not name a verifier" in prompt
+assert "information only; never an obligation" in prompt
+assert "cites: Table 2C-4; Figure 2C-1" in prompt
+assert "Do not name a checker" in prompt
+assert "usual shape" not in prompt and "max(A, B)" not in prompt
 print("1. the prompt lists the provisions, their citations, and marks Support")
 
 # ---- 2. a good reply becomes a valid spec ---------------------------------
@@ -104,15 +105,19 @@ assert net.op("o1").verifier == "calculator"
 assert any("proposed verifier was discarded" in n for n in report.notes)
 print("4. a model trying to name its own verifier is overruled")
 
-# ---- 5. an invented source_chunk is dropped ------------------------------
+# ---- 5. an invented source_chunk is sent back for repair -----------------
 fake = json.loads(json.dumps(GOOD))
 fake["obligations"][1]["source_chunk"] = "c99"
-spec, report = make_semantic_parser(say(fake))(QUERY, CHUNKS, "2C.07")
-assert spec.obligations[1].source_chunk == ""
-assert any("c99" in n for n in report.notes)
-print("5. provenance pointing at a chunk that was never supplied is dropped")
+ask = replies(fake, GOOD)
+spec, report = make_semantic_parser(ask)(QUERY, CHUNKS, "2C.07")
+assert report.source == "semantic_parser" and report.attempts == 2
+assert any("'c99' is not one of the provisions shown" in p
+           for group in report.problems for p in group)
+assert "'c99'" in ask.box["last_prompt"]
+print("5. provenance pointing at a chunk that was never supplied is sent back")
 
 # ---- 6. the guard became a real function ---------------------------------
+spec, report = make_semantic_parser(say(GOOD))(QUERY, CHUNKS, "2C.07")
 net, _ = instantiate(spec)
 assert net.op("o2").guard is not None
 assert net.op("o2").guard_desc == "o1 is TRUE"
@@ -126,7 +131,7 @@ spec, report = make_semantic_parser(ask)(QUERY, CHUNKS, "2C.07")
 assert report.attempts == 2 and report.source == "semantic_parser"
 assert any("o9" in p for group in report.problems for p in group)
 # the repair prompt must name the ids the model itself wrote
-assert "YOUR PREVIOUS ATTEMPT WAS REJECTED" in ask.box["last_prompt"]
+assert "YOUR PREVIOUS PLAN WAS REJECTED" in ask.box["last_prompt"]
 assert "'o9'" in ask.box["last_prompt"]
 assert "s_o9" not in ask.box["last_prompt"]      # not internal state names
 print("7. a dangling reference is sent back with the id the model wrote, and "
@@ -219,5 +224,102 @@ print("13. the parsed network executes, gate first and the two branches "
 assert report.as_dict()["source"] == "semantic_parser"
 assert isinstance(report.raw[0], str) and report.raw[0]
 print("14. the report records the source, the attempts and the raw replies")
+
+# ---- 15. a plan must point at the manual's real provisions ----------------
+def one_problem(mutate, **kw):
+    bad = json.loads(json.dumps(GOOD))
+    mutate(bad)
+    _spec, rep = make_semantic_parser(say(bad), max_attempts=1,
+                                      fall_back_to_baseline=False, **kw)(
+        QUERY, CHUNKS, "2C.07")
+    assert rep.source == "failed", rep.as_dict()
+    return [p for group in rep.problems for p in group]
+
+
+probs = one_problem(lambda d: d["obligations"][2].update(source_chunk="c3"))
+assert any("Support text" in p for p in probs), probs
+probs = one_problem(lambda d: d["obligations"][1].update(authority="STANDARD"))
+assert any("printed as Guidance" in p for p in probs), probs
+probs = one_problem(lambda d: d["obligations"][2].update(source_chunk=""))
+assert any("no source_chunk" in p for p in probs), probs
+print("15. a source that is Support, missing, or a heading that is not the "
+      "printed one, is sent back")
+
+# ---- 16. hints must name things the manual has ---------------------------
+known = {("table", "2C-4"), ("figure", "2C-1"), ("section", "2C.07")}
+check = lambda kind, ident: (kind, ident) in known
+spec, report = make_semantic_parser(say(GOOD), check_ref=check)(QUERY, CHUNKS, "2C.07")
+assert report.source == "semantic_parser"
+probs = one_problem(lambda d: d["obligations"][0]["evidence_hint"].__setitem__(
+    0, {"type": "table", "id": "Table 9Z-9"}), check_ref=check)
+assert any("'Table 9Z-9' in evidence_hint is not in the manual" in p for p in probs)
+probs = one_problem(lambda d: d["obligations"][0]["evidence_hint"].__setitem__(
+    0, {"type": "table", "id": "Figure 2C-1"}), check_ref=check)
+assert any("use type 'figure'" in p for p in probs), probs
+probs = one_problem(lambda d: d["merges"][0].update(kind="threshold"))
+assert any("threshold merge" in p for p in probs), probs
+print("16. a table, figure or section the manual does not have is sent back, "
+      "and so is a threshold merge")
+
+probs = one_problem(lambda d: d["obligations"][1].update(
+    requires=[], guard={"not": {"state": "o1", "status": "TRUE"}}))
+assert any("its guard reads ['o1'], which must also be in its requires" in p
+           for p in probs), probs
+print("16b. a guard that reads a result the item does not wait for is sent back")
+
+# ---- 17. a column must be one the table prints ---------------------------
+class FakeTable:
+    def __init__(self, labels, part=None, sheet=None):
+        self.column_labels, self.part, self.sheet = labels, part, sheet
+    def column(self, frag):
+        f = frag.strip().lower()
+        return next((i for i, l in enumerate(self.column_labels) if f in l.lower()), None)
+
+tabs = {"Table 2C-4": [FakeTable(["Roadway Type", "Required"], part="A"),
+                       FakeTable(["Speed", "Recommended"], part="B")]}
+ok = json.loads(json.dumps(GOOD))
+ok["obligations"][0]["evidence_hint"] += [{"type": "column", "id": "required"},
+                                          {"type": "part", "id": "A"}]
+spec, report = make_semantic_parser(say(ok), tables=tabs)(QUERY, CHUNKS, "2C.07")
+assert report.source == "semantic_parser", report.problems
+probs = one_problem(lambda d: d["obligations"][0]["evidence_hint"].append(
+    {"type": "column", "id": "Width"}), tables=tabs)
+assert any("column 'Width' is not a column of Table 2C-4" in p for p in probs), probs
+probs = one_problem(lambda d: d["obligations"][0]["evidence_hint"].append(
+    {"type": "part", "id": "C"}), tables=tabs)
+assert any("part 'C' is not a chart" in p for p in probs), probs
+probs = one_problem(lambda d: d["obligations"][1].update(
+    evidence_hint=[{"type": "column", "id": "Required"}]), tables=tabs)
+assert any("needs a table hint" in p for p in probs), probs
+print("17. a column, chart or sheet must be one the named table has")
+
+# ---- 18. an unreadable reply is retried with a different prompt ----------
+ask = replies("I think the sign is required.", GOOD)
+spec, report = make_semantic_parser(ask)(QUERY, CHUNKS, "2C.07")
+assert report.attempts == 2 and report.source == "semantic_parser"
+assert "COULD NOT BE READ" in ask.box["last_prompt"]
+print("18. a reply with no JSON is retried with a note, not the same prompt")
+
+# ---- 19. table rows and figure descriptions are shown, labelled ----------
+items = CHUNKS + [
+    {"chunk_id": "vine:trow:Table 2C-4#s1r0", "section_id": "2C.07",
+     "content_type": "TableRow", "table_refs": ["Table 2C-4"],
+     "text": "Table 2C-4. Roadway Type: Freeways; Required: Yes"},
+    {"chunk_id": "vine:reading:2C-1#1:Figure 2C-1", "section_id": "2C.07",
+     "content_type": "FigureReading", "figure_refs": ["Figure 2C-1"],
+     "text": "Figure 2C-1 shows curve signs."}]
+p = build_parser_prompt(QUERY, items, figures=[{"figure_id": "Figure 2C-1",
+                                               "caption": "Curve signs"}])
+assert "TABLE ROW of Table 2C-4 -- printed table content, not a provision" in p
+assert "FIGURE DESCRIPTION of Figure 2C-1 -- written by a reader" in p
+assert "[Figure 2C-1] Curve signs" in p
+assert p.index("PROVISIONS") < p.index("QUESTION") < p.index("HOW TO WRITE THE PLAN")
+_s, rep = make_semantic_parser(say(dict(GOOD, obligations=[
+    dict(GOOD["obligations"][0], source_chunk="vine:trow:Table 2C-4#s1r0")]
+    + GOOD["obligations"][1:])), max_attempts=1, fall_back_to_baseline=False)(
+    QUERY, items, "2C.07")
+assert any("a TABLE ROW" in p for g in rep.problems for p in g), rep.problems
+print("19. table rows and figure descriptions are shown and labelled; neither "
+      "can be an obligation's source")
 
 print("\nALL SEMANTIC PARSER TESTS PASSED")
