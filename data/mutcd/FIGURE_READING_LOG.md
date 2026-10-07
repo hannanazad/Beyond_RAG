@@ -1073,7 +1073,11 @@ W4-3R added-lane warning where the auxiliary lane begins; W13-2 advisory exit sp
 Lane (PDF 367)
 - **FIND (wording changes with mounting)**: the overhead sign carries **"EXIT ↗ ONLY"**, while the
   **post-mounted** advance sign carries the word panel **"RIGHT LANE ONLY"** with no arrow, plus a
-  yellow **W9-7 RIGHT LANE FOR EXIT ONLY** warning sign **600 ft** ahead of the gore.
+  yellow **W9-7 RIGHT LANE FOR EXIT ONLY** warning sign placed **600 ft downstream of the ¼-mile
+  advance guide sign** (the ¼ mile is measured from that guide sign to the theoretical gore), so
+  roughly 720 ft before the gore; also shown: a W13-2 EXIT 35 MPH advisory sign (see 2C.12), the
+  E5-1a gore sign, and a W4-3R added-lane sign at the upstream entrance. *(Corrected 6 Oct 2026
+  against the page: this entry first put the W9-7 sign 600 ft ahead of the gore.)*
 
 ### Figure 2E-22 — Guide Signs for an Auxiliary Lane of at Least One-Half Mile in Length (PDF 368)
 Four signs (1 mile, ½ mile, ¼ mile, exit), the **auxiliary lane length marked "½ mile MIN."**, the
@@ -1130,8 +1134,12 @@ individual ramp signing happens **on the C-D roadway**, with alternatives shown 
 "EXITS 102 A-B" sign, or separate A and B signs; pull-through shields on the C-D roadway).
 
 ### Figure 2E-31 — Partial Cloverleaf Interchange (PDF 380, Rev. 1)
-Both directions drawn (opposite-direction signs inverted); exit direction sign, ½- and 1- and 2-mile
-advance signs, exit gore sign, and **optional crossroad shield assemblies** at the ramp terminals.
+Both directions drawn (opposite-direction signs inverted) for EXIT 301 (SR 24, Franklin) on I-47:
+**2-mile and 1-mile advance guide signs**, the exit direction sign at the exit, the exit gore sign,
+an Interstate route confirmation marker beyond the interchange, crossroad direction signs on the
+ramps, and **optional crossroad shield assemblies** at the ramp terminals. Figure note: see Figure
+2D-18 for multi-lane crossroad signing at a partial cloverleaf. *(Corrected 6 Oct 2026 against the
+page: this entry first listed a ½-mile advance sign, which the figure does not show.)*
 
 ### Figure 2E-32 — Successive Interchanges with Collector-Distributor Roadways
 (PDF 381–382, 2 sheets, Rev. 1)
@@ -2142,8 +2150,11 @@ crossing area; note: crosswalk lines are not shown).
 
 ### Figure 3B-28 — Advance Warning Markings for Speed Humps or Speed Tables (PDF 628)
 A fully dimensioned detail: **eight 12-inch white transverse markings within 100 ft** of the hump,
-their **lengths decreasing 8, 7, 6, 5, 4, 3, 2, 1 ft** while the **gaps increase 2, 8, 10, 12, 14, 16,
-18, 20 ft** toward the hump.
+their **lengths 8, 7, 6, 5, 4, 3, 2, 1 ft** and **gaps 2, 8, 10, 12, 14, 16, 18, 20 ft**, both listed
+**from the hump's leading edge outward**: the 8-ft line sits 2 ft from the leading edge and the 1-ft
+line 100 ft away. So the lines get **longer and closer together as a vehicle approaches the hump**,
+as 3B.30 ¶3 states. *(Corrected 6 Oct 2026 against the page: this entry first said the lengths
+decrease and the gaps increase "toward the hump", which is the reverse.)*
 - **FIND (computable)**: the whole pattern is specified in the figure; Guidance adds that advance
   markings should be installed **in each approach lane**.
 

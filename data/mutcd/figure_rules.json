@@ -51,7 +51,7 @@
 {"id":"ADVANCE_SPEED_HUMP_MARKINGS","source":["Figure 3B-28"],"kind":"sequence",
  "out":"eight 12-inch transverse markings within 100 ft of the hump",
  "lengths_ft":[8,7,6,5,4,3,2,1],"gaps_ft":[2,8,10,12,14,16,18,20],
- "note":"lengths shrink and gaps grow toward the hump; installed in each approach lane"},
+ "note":"lengths and gaps are listed from the hump outward: lines get longer and closer together as a vehicle approaches the hump (3B.30 para 3); installed in each approach lane"},
 
 {"id":"SIGNAL_FACE_CONE_OF_VISION","source":["Figure 4D-2"],"kind":"geometry",
  "angle_deg":20,"from":"centre of approach, measured 10 ft beyond the stop line",
