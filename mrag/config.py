@@ -379,6 +379,12 @@ class Config:
     rt_weight_guidance: float = 1.00
     rt_weight_option: float = 0.90
     rt_weight_support: float = 0.70
+    # Items added from the VINE graph (mrag/vine/vector_items.py). A table row
+    # is the manual's printed content and keeps the neutral weight every
+    # unlisted type already had. A figure reading is a description of a
+    # drawing, not the manual's words, so it sits with Support.
+    rt_weight_table_row: float = 1.00
+    rt_weight_figure_reading: float = 0.70
 
     # ----- Generation -------------------------------------------------------
     # max_new_tokens remains the visible-answer/default budget for the
@@ -479,6 +485,8 @@ class Config:
             "Guidance": self.rt_weight_guidance,
             "Option": self.rt_weight_option,
             "Support": self.rt_weight_support,
+            "TableRow": self.rt_weight_table_row,
+            "FigureReading": self.rt_weight_figure_reading,
         }.get(ct, 1.0)
 
     # ────────────────────────────────────────────────────────────────────

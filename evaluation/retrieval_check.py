@@ -69,6 +69,10 @@ def run_case(retriever, case: Dict[str, Any], with_rag: bool = True) -> Dict[str
         out["kq_size"] = len(chunks)
         out["searched_top5"] = searched_secs[:5]
         out["kq_sources"] = dict(_count(c.get("source", "?") for c in chunks))
+        # what kind of item filled the parser's input -- so items added from
+        # the VINE graph (TableRow, FigureReading) can be seen crowding or not
+        out["kq_types"] = dict(_count(c.get("content_type", "?") for c in chunks))
+        out["searched_types"] = dict(_count(c.get("content_type", "?") for c in searched))
     except Exception as e:                                     # noqa: BLE001
         out["error_compile"] = repr(e)
     if with_rag:
@@ -165,6 +169,61 @@ def by_part(results: List[Dict[str, Any]], style: str = "scenario") -> Dict[str,
         p["top5"] += all(v is not None and v <= 5 for v in r["search_rank"].values())
         p["in_kq"] += all(r["in_kq"].values())
     return dict(sorted(out.items()))
+
+
+def _found(r: Dict[str, Any], k: int = 5) -> Optional[bool]:
+    if "search_rank" not in r:
+        return None
+    return all(v is not None and v <= k for v in r["search_rank"].values())
+
+
+def compare(before: List[Dict[str, Any]], after: List[Dict[str, Any]], k: int = 5) -> Dict[str, Any]:
+    """The same cases, two runs: what got better, what got worse.
+
+    `before` and `after` are the `results` lists that CELL 7 saves. Only cases
+    present in both are compared. Nothing is tuned from this: it reports."""
+    b = {r["case_id"]: r for r in before}
+    a = {r["case_id"]: r for r in after}
+    common = [cid for cid in a if cid in b]
+    rows = defaultdict(lambda: {"n": 0, "top_before": 0, "top_after": 0,
+                                "kq_before": 0, "kq_after": 0, "rag_before": 0, "rag_after": 0})
+    gained, lost = [], []
+    for cid in common:
+        rb, ra = b[cid], a[cid]
+        row = rows[ra["style"]]
+        row["n"] += 1
+        fb, fa = bool(_found(rb, k)), bool(_found(ra, k))
+        row["top_before"] += fb
+        row["top_after"] += fa
+        row["kq_before"] += all(rb.get("in_kq", {}).values()) if "in_kq" in rb else 0
+        row["kq_after"] += all(ra.get("in_kq", {}).values()) if "in_kq" in ra else 0
+        row["rag_before"] += all(v is not None for v in rb.get("rag_rank", {"_": None}).values())
+        row["rag_after"] += all(v is not None for v in ra.get("rag_rank", {"_": None}).values())
+        if fa and not fb:
+            gained.append(cid)
+        if fb and not fa:
+            lost.append(cid)
+    vine_share = [sum(v for t, v in (r.get("searched_types") or {}).items()
+                      if t in ("TableRow", "FigureReading")) for r in after]
+    return {"by_style": dict(rows), "gained": gained, "lost": lost, "k": k,
+            "median_vine_items_in_searched": sorted(vine_share)[len(vine_share) // 2] if vine_share else 0}
+
+
+def print_compare(c: Dict[str, Any]) -> None:
+    k = c["k"]
+    print(f"\n  {'style':22s} {'n':>3s}   {'search@'+str(k):>17s}   {'in Kq':>15s}   {'RAG top6':>15s}")
+    for style in STYLE_ORDER + sorted(set(c["by_style"]) - set(STYLE_ORDER)):
+        r = c["by_style"].get(style)
+        if not r:
+            continue
+        n = r["n"]
+        print(f"  {style:22s} {n:>3d}   {_pct(r['top_before'], n)} -> {_pct(r['top_after'], n)}"
+              f"   {_pct(r['kq_before'], n)} -> {_pct(r['kq_after'], n)}"
+              f"   {_pct(r['rag_before'], n)} -> {_pct(r['rag_after'], n)}")
+    print(f"\n  now found in the searched top {k}: {c['gained'] or 'none'}")
+    print(f"  no longer found in the top {k}  : {c['lost'] or 'none'}")
+    print(f"  median number of TableRow/FigureReading items among the searched chunks: "
+          f"{c['median_vine_items_in_searched']}")
 
 
 def misses(results: List[Dict[str, Any]], styles=("plain_words", "scenario",

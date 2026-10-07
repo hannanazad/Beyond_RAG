@@ -206,6 +206,10 @@ def parse_figure_log(path: Path) -> List[dict]:
     out: List[dict] = []
     for block in re.split(r"\n### ", text)[1:]:
         lines = block.split("\n")
+        # 60 headings are wrapped onto a second line ("... Dropped Auxiliary" /
+        # "Lane (PDF 367)"); without this the tail of the title opens the body.
+        if len(lines) > 1 and "(PDF" not in lines[0] and "(PDF" in lines[1] and len(lines[1]) < 160:
+            lines = [lines[0].rstrip() + " " + lines[1].strip()] + lines[2:]
         head, body = lines[0].strip(), "\n".join(lines[1:]).strip()
         if not re.match(r"(Figures?|Tables?)\b", head):
             continue
@@ -221,11 +225,36 @@ def parse_figure_log(path: Path) -> List[dict]:
     return out
 
 
+def heading_kinds(head: str) -> Dict[str, str]:
+    """Which ids in a heading are Figures and which are Tables.
+
+    Figure 2C-4 and Table 2C-4 are different things that share a number.
+    Attaching a reading to both put the speed-feedback sign reading on the
+    curve-device table, and 61 more like it. The word printed before the id
+    decides; an id in a list or range takes the last word seen."""
+    title = head.split("—")[0]
+    kinds: Dict[str, str] = {}
+    current = None
+    for tok in re.finditer(r"\b(Figures?|Tables?)\b|(\d+[A-Z]?-\d+[a-z]?)", title):
+        if tok.group(1):
+            current = "Table" if tok.group(1).startswith("Table") else "Figure"
+        elif current:
+            kinds[tok.group(2)] = current
+    m = re.search(r"(\d+[A-Z]?)-(\d+)\s*(?:to|through|–)\s*(?:\d+[A-Z]?-)?(\d+)", title)
+    if m and current:
+        pre, lo, hi = m.group(1), int(m.group(2)), int(m.group(3))
+        if 0 <= hi - lo < 40:
+            for i in range(lo, hi + 1):
+                kinds.setdefault(f"{pre}-{i}", kinds.get(f"{pre}-{lo}", current))
+    return kinds
+
+
 def attach_readings(N: dict, E: list, entries: List[dict]) -> Counter:
     made: Counter = Counter()
     for i, ent in enumerate(entries):
+        kinds = heading_kinds(ent["head"])
         targets = [f"figure:{p} {fid}" for fid in ent["ids"] for p in ("Figure", "Table")
-                   if f"figure:{p} {fid}" in N]
+                   if f"figure:{p} {fid}" in N and kinds.get(fid, p) == p]
         if not targets:
             continue
         rid = f"reading:{ent['ids'][0]}#{i}"
@@ -310,9 +339,12 @@ def attach_notices(N: dict, E: list) -> Counter:
     cid = "correction:M1-7"
     N[cid] = Node(id=cid, kind="DATA_CORRECTION", section="2D.34",
                   authority="CORRECTION",
-                  text="Forest Route sign is M1-7 (brown with yellow legend), not M1-1. "
-                       "The text-layer extraction recorded M1-1, the Interstate shield. "
-                       "Corrected from Figure 2D-4.")
+                  text="The manual is not consistent on the National Forest Route sign's "
+                       "designation. Table 2A-1 prints 'National Forest Route Sign (M1-1)' "
+                       "(the PDF text layer and the page image agree), while Section 2D.11 "
+                       "paragraph 18 and Figure 2D-4 give M1-7. M1-1 is the Interstate "
+                       "route sign elsewhere in the manual. Both are recorded as printed; "
+                       "a check that depends on the designation should cite both.")
     made["DATA_CORRECTION"] += 1
     if "figure:Figure 2D-4" in N:
         E.append(Edge(src=cid, rel="CORRECTS_FROM", dst="figure:Figure 2D-4",
@@ -485,9 +517,29 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
         return made
 
     recs = [json.loads(l) for l in Path(tables_path).read_text().splitlines() if l.strip()]
+    # Tables 2C-4, 4C-1 and 7B-1 print two charts under one number on one
+    # sheet. Keyed on table + sheet + row alone, chart B's rows took chart A's
+    # ids: 21 rows vanished and the survivors carried both charts' edges
+    # ("5 mph" REQUIRED under every AADT -- that was the Freeways row). The
+    # chart label goes into the id wherever a table + sheet is shared.
+    shared = Counter((r.get("table_id") or "", r.get("sheet") or 1) for r in recs)
+    titles: Dict[str, set] = {}
+    for r in recs:
+        titles.setdefault(r.get("table_id") or "", set()).add(r.get("title") or "")
+
+    def chart_label(title: str) -> str:
+        # the same rule graph_links uses to name its SUBTABLE nodes
+        if "—" not in title:
+            return ""
+        sub = title.split("—", 1)[1].strip()
+        m = re.match(r"(?:Chart\s+|Condition\s+)?([A-Z])\s*(?::|-|–|\s)", sub)
+        return m.group(1) if m else sub.split()[0]
+
     for rec in recs:
         tid = rec.get("table_id") or ""
         sheet = rec.get("sheet") or 1
+        lab = chart_label(rec.get("title") or "") if len(titles.get(tid, ())) > 1 else ""
+        id_part = f"s{sheet}-{lab}" if lab and shared[(tid, sheet)] > 1 else f"s{sheet}"
         cols = [(c or "").strip() for c in (rec.get("column_labels") or [])]
         low = [c.lower() for c in cols]
         i_sec = next((i for i, c in enumerate(low) if c == "section"), None)
@@ -499,7 +551,7 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
             cells = [(c.get("text") or "").strip() for c in row]
             if not any(cells):
                 continue
-            rid = f"trow:{tid}#s{sheet}r{ri}"
+            rid = f"trow:{tid}#{id_part}r{ri}"
             label = cells[i_name] if i_name is not None and i_name < len(cells) else ""
             sect = (cells[i_sec].strip()
                     if i_sec is not None and i_sec < len(cells) else "")
@@ -516,6 +568,10 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
             tkey = f"figure:{tid}"
             if tkey in N:
                 E.append(Edge(src=rid, rel="ROW_OF", dst=tkey, why="a row of this table"))
+                made["ROW_OF"] += 1
+            if lab and f"{tkey}#{lab}" in N:
+                E.append(Edge(src=rid, rel="ROW_OF", dst=f"{tkey}#{lab}",
+                              why="a row of this chart of the table"))
                 made["ROW_OF"] += 1
             if sect and f"section:{sect}" in N:
                 E.append(Edge(src=rid, rel="DEFINED_IN", dst=f"section:{sect}",
