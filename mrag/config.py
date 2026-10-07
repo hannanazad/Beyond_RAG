@@ -200,7 +200,20 @@ class Config:
     chunks_jsonl: Path = field(init=False)
     figures_jsonl: Path = field(init=False)
     sign_codes_json: Path = field(init=False)
-    graph_pickle: Path = field(init=False)
+    graph_pickle: Path = field(init=False)      # the old GEMS-RAG graph; used only if graph_backend == "gems"
+    vine_graph: Path = field(init=False)        # the VINE graph: the pipeline's graph
+    vine_items: Path = field(init=False)        # its table-row and figure-reading items
+    tables_jsonl: Path = field(init=False)
+
+    # ----- Graph ------------------------------------------------------------
+    # "vine": retrieval, the question router and the verifiers read the VINE
+    # graph (mrag/kg_vine.py). "gems": the old graph.gpickle, kept only so an
+    # old result can be reproduced; nothing loads it by default.
+    graph_backend: str = "vine"
+    # When a provision names a table, the closure brings the whole table if
+    # it has at most this many rows (Table 2C-4 has 8). Larger tables are
+    # reached row by row through search.
+    closure_table_rows: int = 15
 
     hf_home: Path = field(init=False)
 
@@ -464,6 +477,9 @@ class Config:
         self.figures_jsonl = self.cache_dir / "figures.jsonl"
         self.sign_codes_json = self.cache_dir / "sign_codes.json"
         self.graph_pickle = self.cache_dir / "graph.gpickle"
+        self.vine_graph = self.base_dir / "vine_data" / "graph_cache.pkl"
+        self.vine_items = self.base_dir / "vine_data" / "vine_items.jsonl"
+        self.tables_jsonl = self.cache_dir / "mutcd_tables.jsonl"
 
         self.hf_home = _default_hf_home(self.environment, self.base_dir)
         os.environ.setdefault("HF_HOME", str(self.hf_home))

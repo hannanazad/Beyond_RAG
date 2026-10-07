@@ -39,6 +39,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+from .graph_enrich import _GENERAL_NOTE, _shown
+
 CONTENT_TYPES = ("FigureReading", "TableRow")
 READING_AUTHORITY = "NOT NORMATIVE: a reading of the figure, not the manual's words"
 ROW_AUTHORITY = "TABLE: printed in the manual"
@@ -67,18 +69,24 @@ def embed_text(item: Dict[str, Any]) -> str:
             f"{item['section_title']}. {item['text']}")
 
 
-def build_items(graph_path, tables_path=None, max_chars: int = 2400) -> List[Dict[str, Any]]:
+def build_items(graph_path, tables_path=None, max_chars: int = 6000) -> List[Dict[str, Any]]:
     """`tables_path` (mutcd_tables.jsonl) supplies clean table titles. Without
     it the caption read from the PDF is used, which on some tables runs on into
     the column headings."""
     N, E, C = pickle.load(open(graph_path, "rb"))
     table_title: Dict[str, str] = {}
+    note_text: Dict[str, str] = {}                      # note chunk id -> "mark text"
     if tables_path and Path(tables_path).exists():
         for l in open(tables_path):
             if l.strip():
                 t = json.loads(l)
                 table_title.setdefault(t.get("table_id") or "",
                                        (t.get("title") or "").split("\u2014")[0].strip())
+                for fn in t.get("footnotes") or []:
+                    if fn.get("chunk_id"):
+                        mark = str(fn.get("marker") or "")
+                        shown = _shown(mark) if not _GENERAL_NOTE.match(mark) else mark
+                        note_text.setdefault(fn["chunk_id"], f"{shown} {fn.get('text') or ''}".strip())
     out_e: Dict[str, List[Any]] = defaultdict(list)
     in_e: Dict[str, List[Any]] = defaultdict(list)
     for e in E:
@@ -193,9 +201,13 @@ def build_items(graph_path, tables_path=None, max_chars: int = 2400) -> List[Dic
         head = table + (f" ({chart})" if chart else "") + (f", sheet {sheet}" if sheet and sheet != "1" else "")
         cap = table_title.get(table) or (tnode.text if tnode is not None else "").strip()[:90]
         sec = t.section or next(iter(citing_sections(f"figure:{table}")), "")
+        # The notes that apply to THIS row -- the graph links each note where
+        # the manual prints its mark (whole table, column, row heading, cell).
         notes = sorted({e.dst.split(":", 1)[1].split("#")[0] for e in out_e.get(tid, [])
                         if e.rel == "GOVERNED_BY"})
-        it = base(f"vine:{tid}", "TableRow", sec, f"{head}. {cap}. {row}", tid)
+        said = "; ".join(note_text[n][:300] for n in notes if n in note_text)
+        body = f"{head}. {cap}. {row}" + (f". Notes that apply to this row: {said}" if said else "")
+        it = base(f"vine:{tid}", "TableRow", sec, body, tid)
         it["table_refs"] = [table] if table else []
         it["section_refs"] = citing_sections(f"figure:{table}")[:8]
         it["page_pdf"] = page_of(tnode) if tnode is not None else None

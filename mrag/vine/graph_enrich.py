@@ -471,6 +471,97 @@ def expand_designations(cell: str) -> List[str]:
 _NOT_PERMITTED = {"—", "-", "–", "N/A", "NA", ""}
 
 
+_SUPER = dict(zip("0123456789abcdef", "⁰¹²³⁴⁵⁶⁷⁸⁹ᵃᵇᶜᵈᵉᶠ"))
+_GENERAL_NOTE = re.compile(r"^(?:Note\b.*|scope|where|[A-Z])$")
+
+
+def _shown(mark: str) -> str:
+    """How a note mark is printed: * ** *** as they are, 1 -> ¹, a -> ᵃ."""
+    if mark and all(ch in _SUPER for ch in mark.lower()):
+        return "".join(_SUPER[ch] for ch in mark.lower())
+    return mark
+
+
+def _mark_in(mark: str, text: str) -> bool:
+    """Is this note mark printed in this piece of text (a heading, a title)?"""
+    text = text or ""
+    if not mark or _GENERAL_NOTE.match(mark):
+        return False
+    if set(mark) == {"*"}:
+        return re.search(r"(?<!\*)" + re.escape(mark) + r"(?!\*)", text) is not None
+    return _shown(mark) in text
+
+
+def note_scopes(rec: dict) -> Dict[str, dict]:
+    """Where each of a table's notes applies, read from where its mark is printed.
+
+    The manual puts a note's mark in one of five places, and the place is the
+    scope -- a reader of the printed table does this without thinking:
+      the title, or no mark at all ("Note 1")   -> the whole table
+      a column heading                          -> every cell of that column
+      a row heading (the row's key cells)       -> that whole row
+      one cell                                  -> that cell
+      nowhere the transcription recorded        -> the whole table, so nothing
+                                                   is dropped
+    Table 4C-1 prints a, b, c, d on its column headings; Table 2M-1 prints * on
+    the symbol name that heads each row; Table 2A-5 prints * inside single
+    cells and 2-4 on the Additional Criteria cell that heads its row.
+    """
+    cols = [(c or "") for c in (rec.get("column_labels") or [])]
+    keys = set(rec.get("row_key_columns") or [0])
+    out: Dict[str, dict] = {}
+    for fn in rec.get("footnotes") or []:
+        m = str(fn.get("marker") or "")
+        applies = str(fn.get("applies_to") or "")
+        col_idx = sorted({i for i, c in enumerate(cols) if _mark_in(m, c)} |
+                         {int(x) for x in re.findall(r"column:(\d+)", applies)})
+        rows: Dict[int, List[str]] = {}
+        for ri, row in enumerate(rec.get("rows") or []):
+            for ci, cell in enumerate(row):
+                if m in (cell.get("footnotes") or []) or (m and not _GENERAL_NOTE.match(m)
+                                                           and set(m) == {"*"} and _mark_in(m, cell.get("text"))):
+                    if ci in col_idx:
+                        continue                      # the heading already carries it
+                    where = "row" if ci in keys else "cell"
+                    label = cols[ci] if ci < len(cols) else f"column {ci}"
+                    rows.setdefault(ri, []).append(where if where == "row" else f"cell '{label}'")
+        if _GENERAL_NOTE.match(m) or _mark_in(m, rec.get("title") or ""):
+            scope = "table"
+        elif col_idx:
+            scope = "column"
+        elif rows:
+            scope = "rows"
+        else:
+            scope = "table-unlocated"
+        out[m] = {"scope": scope, "columns": [cols[i] for i in col_idx if i < len(cols)],
+                  "rows": rows, "chunk_id": fn.get("chunk_id"), "text": fn.get("text") or ""}
+    return out
+
+
+def marked_cells(rec: dict, row: list) -> List[str]:
+    """The row's cell texts with every mark printed back on its cell.
+
+    275 cells carry their mark only in the transcription's `footnotes` field,
+    so the cell text alone reads as if the note did not exist ("Octagon"
+    instead of "Octagon*"). A mark printed in the column heading or the title
+    is not repeated on the cell: the heading already says it."""
+    cols = [(c or "") for c in (rec.get("column_labels") or [])]
+    title = rec.get("title") or ""
+    out = []
+    for ci, cell in enumerate(row):
+        text = (cell.get("text") or "").strip()
+        add = []
+        for m in cell.get("footnotes") or []:
+            if _GENERAL_NOTE.match(m):
+                continue                  # "scope", "Note 1": not a printed mark
+            if _mark_in(m, text) or _mark_in(m, cols[ci] if ci < len(cols) else "") or _mark_in(m, title):
+                continue
+            add.append(_shown(m))
+        # several marks on one cell are kept apart: "6 inches*,**", never "6 inches***"
+        out.append(text + ",".join(add) if add else text)
+    return out
+
+
 def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
     """Put the tables in the graph as rows, classes, and their stated sections.
 
@@ -517,6 +608,10 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
         return made
 
     recs = [json.loads(l) for l in Path(tables_path).read_text().splitlines() if l.strip()]
+    note_sentences: Dict[str, List[str]] = {}
+    for sk in N:
+        if sk.startswith("sent:") and "#" in sk:
+            note_sentences.setdefault(sk[5:].split("#", 1)[0], []).append(sk)
     # Tables 2C-4, 4C-1 and 7B-1 print two charts under one number on one
     # sheet. Keyed on table + sheet + row alone, chart B's rows took chart A's
     # ids: 21 rows vanished and the survivors carried both charts' edges
@@ -547,9 +642,11 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
                         if "designation" in c or c == "sign code"), None)
         i_name = 0 if cols else None
 
+        scopes = note_scopes(rec)
         for ri, row in enumerate(rec.get("rows") or []):
             cells = [(c.get("text") or "").strip() for c in row]
-            if not any(cells):
+            shown = marked_cells(rec, row)
+            if not any(cells) and not any(shown):
                 continue
             rid = f"trow:{tid}#{id_part}r{ri}"
             label = cells[i_name] if i_name is not None and i_name < len(cells) else ""
@@ -558,7 +655,7 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
             if not SECTION_ID.match(sect):
                 sect = ""
             pieces = [f"table={tid}", f"sheet={sheet}"]
-            for ci, c in enumerate(cells):
+            for ci, c in enumerate(shown):
                 if ci < len(cols) and cols[ci] and c:
                     pieces.append(f"{cols[ci]}={c}")
             N[rid] = Node(id=rid, kind="TABLE_ROW", section=sect,
@@ -578,17 +675,30 @@ def attach_table_rows(N: dict, E: list, tables_path: Optional[Path]) -> Counter:
                               why="the section this table row names"))
                 made["DEFINED_IN"] += 1
 
-            # The notes that govern how this row is read. See the block comment
-            # on _link_table_notes below for why these come first.
-            for fn in (rec.get("footnotes") or []):
-                cid = fn.get("chunk_id")
+            # The notes that govern how this row is read -- each where the
+            # manual prints its mark (see note_scopes): the whole table, a
+            # column, this row's heading, or one of this row's cells.
+            for m, sc in scopes.items():
+                cid = sc["chunk_id"]
                 if not cid:
                     continue
-                for sk in N:
-                    if sk.startswith(f"sent:{cid}#"):
-                        E.append(Edge(src=rid, rel="GOVERNED_BY", dst=sk,
-                                      why=f"table note {fn.get('marker') or ''}".strip()))
-                        made["GOVERNED_BY"] += 1
+                if sc["scope"] == "table":
+                    where = "whole table"
+                elif sc["scope"] == "table-unlocated":
+                    where = "whole table (mark not located in the transcription)"
+                elif sc["scope"] == "column":
+                    cs = sc["columns"]
+                    where = ("column " + "; ".join(f"'{c}'" for c in cs) if len(cs) <= 3 else
+                             f"{len(cs)} columns, '{cs[0]}' to '{cs[-1]}'")
+                elif ri in sc["rows"]:
+                    where = "; ".join(dict.fromkeys(
+                        "this row (mark on the row heading)" if w == "row" else w for w in sc["rows"][ri]))
+                else:
+                    continue                          # printed on other rows only
+                for sk in note_sentences.get(cid, []):
+                    E.append(Edge(src=rid, rel="GOVERNED_BY", dst=sk,
+                                  why=f"table note {m}: {where}"))
+                    made["GOVERNED_BY"] += 1
 
             # The classes this row does and does not apply under.
             for ci, c in enumerate(cells):

@@ -678,9 +678,20 @@ class Retriever:
                 # pointer, so it is not bounded either. Only "every note in
                 # this section" above is broad.
                 for c in frontier:
-                    for fid in (list(c.get("figure_refs") or [])
-                                + list(c.get("table_refs") or [])):
+                    # Payloads list bare ids ("2B-1") under figure_refs and
+                    # table_refs. Figure 2B-1 and Table 2B-1 are different
+                    # things, so the kind is put back before the lookup.
+                    named = ([f if str(f).lower().startswith(("figure", "table")) else f"Figure {f}"
+                              for f in (c.get("figure_refs") or [])]
+                             + [t if str(t).lower().startswith(("figure", "table")) else f"Table {t}"
+                                for t in (c.get("table_refs") or [])])
+                    for fid in named:
                         add(self.kg.note_chunks_for(fid), "note")
+                        # The VINE graph also holds what the named figure shows
+                        # and, for a small table, its rows. The old graph has
+                        # neither, so this is a no-op there.
+                        if hasattr(self.kg, "items_for_figure"):
+                            add(self.kg.items_for_figure(fid), "figure_or_table")
             if "definition" in kinds and broad:
                 for c in frontier:
                     text = f"{c.get('lead_in') or ''} {c.get('text') or ''}"

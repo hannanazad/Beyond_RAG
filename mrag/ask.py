@@ -46,8 +46,20 @@ def init_pipeline(load_image_embedder: bool = True, load_vlm: bool = True) -> Pi
     p = Pipeline()
     log.info("Loading Qdrant store @ %s", CFG.qdrant_dir)
     p.store = VectorStore(CFG.qdrant_dir)
-    log.info("Loading KG @ %s", CFG.graph_pickle)
-    p.kg = KG(kg_read(CFG.graph_pickle))
+    if getattr(CFG, "graph_backend", "vine") == "gems":
+        log.info("Loading the OLD GEMS-RAG graph @ %s", CFG.graph_pickle)
+        p.kg = KG(kg_read(CFG.graph_pickle))
+    else:
+        from .kg_vine import VineKG
+        if not Path(CFG.vine_graph).exists():
+            raise FileNotFoundError(
+                f"The VINE graph is not at {CFG.vine_graph}. Build it with "
+                "notebooks/Fresh_Build.ipynb (CELL 3) first.")
+        log.info("Loading the VINE graph @ %s", CFG.vine_graph)
+        p.kg = VineKG(CFG.vine_graph, figures_path=CFG.figures_jsonl,
+                      sign_codes_path=CFG.sign_codes_json, items_path=CFG.vine_items,
+                      tables_path=CFG.tables_jsonl,
+                      table_rows_in_closure=getattr(CFG, "closure_table_rows", 15))
     log.info("Loading text embedder: %s", CFG.bge_m3_model)
     p.text = TextEmbedder(CFG.bge_m3_model).load()
     if load_image_embedder:
