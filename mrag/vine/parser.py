@@ -165,9 +165,12 @@ THE JSON OBJECT
 THE FIELDS
 
 claim
-  A statement about the situation in the question that a checker can find
-  true or false. The checker sees the claim and the manual, not the question,
-  so the claim must carry the facts it is about: copy the values, units and
+  One statement, never a question, about the situation in the question. Write
+  it so that TRUE means the situation meets the provision (or, for a
+  condition, that the condition holds) and FALSE means it does not. Say what
+  the provision means for this case; do not just repeat the provision's
+  sentence. The checker sees the claim and the manual, not the question, so
+  the claim must carry the facts it is about: copy the values, units and
   conditions it needs from the question, as written there. Do not decide
   whether the claim is true. Do not work out a value that a table, figure or
   provision holds; say where it is, in evidence_hint.
@@ -229,16 +232,22 @@ source_chunk: the id, shown in square brackets, of the Standard, Guidance or
 Option provision the obligation comes from. Never a Support item, a TABLE ROW
 or a FIGURE DESCRIPTION.
 
-merges: how results combine. The executor applies them exactly like this:
+merges: how results combine. Every input of a merge, and the merge itself,
+read the same way as a claim: TRUE means met (or holds). A merge's claim says
+what its inputs together establish, in the same direction as its inputs. The
+executor applies merges exactly like this:
   conjunction   holds when every input holds. A GUIDANCE input that fails is
                 recorded as a non-conformance and does not make it fail; an
                 OPTION input that is not taken does not make it fail either. A
                 failed STANDARD input makes it fail.
   alternative   holds when any one input holds.
-  exception     inputs[0] is the base rule; the other inputs are exceptions to
-                it. It holds when the base rule holds, or when the base rule
-                fails and one of the exceptions applies. inputs[0] is never
-                itself an exception.
+  exception     inputs[0] is the base rule, written as a claim that the
+                situation MEETS it, so it is FALSE when the rule is broken. The
+                other inputs each say that an exception covers this situation.
+                It holds when the base rule holds, or when the base rule fails
+                and one of the exceptions applies. inputs[0] is never itself an
+                exception. A claim that a rule APPLIES is not a base rule: it
+                belongs in "requires" or a guard.
 A numeric comparison is a numerical obligation, not a merge.
 The authority of a merge is the heading of the rule it stands for. Leave it
 STANDARD unless the merge combines only GUIDANCE or only OPTION items.
@@ -252,6 +261,7 @@ RULES (a plan that breaks one is sent back to you)
 - Every obligation has a source_chunk from the provisions shown, and its
   authority is that provision's heading.
 - Every table, figure and section in evidence_hint exists in the manual.
+- Every claim is a statement, not a question.
 - Do not name a checker.
 
 Reply with the JSON object only: no text before or after it, and no markdown
@@ -269,6 +279,8 @@ GROUNDING_RULES = [
     "comparison is a numerical obligation",
     "a guard reads only ids that are in the same item's requires (for a merge, "
     "its inputs)",
+    "every claim is a statement that is TRUE when the situation meets the "
+    "provision, never a question",
 ]
 
 
@@ -567,6 +579,10 @@ def grounding_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]],
     out: List[str] = []
     by_id = {str(c.get("chunk_id")): c for c in chunks if c.get("chunk_id")}
 
+    for x in list(spec.obligations) + list(spec.merges):
+        if x.claim.strip().endswith("?"):
+            out.append(f"{x.id}: the claim is a question; write it as a statement "
+                       f"that is TRUE when the situation meets the provision")
     for o in spec.obligations:
         src = (o.source_chunk or "").strip()
         if not src:

@@ -267,6 +267,11 @@ assert any("its guard reads ['o1'], which must also be in its requires" in p
            for p in probs), probs
 print("16b. a guard that reads a result the item does not wait for is sent back")
 
+probs = one_problem(lambda d: d["obligations"][1].update(
+    claim="Is the advisory speed 30 mph or less?"))
+assert any("the claim is a question" in p for p in probs), probs
+print("16c. a claim written as a question is sent back")
+
 # ---- 17. a column must be one the table prints ---------------------------
 class FakeTable:
     def __init__(self, labels, part=None, sheet=None):
