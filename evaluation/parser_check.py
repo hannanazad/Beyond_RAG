@@ -128,7 +128,9 @@ _IDS = re.compile(
     r"|\b[A-Z]{1,3}\d{1,2}-\d+[A-Za-z]*\b"           # W1-2, R1-1, M1-7a
     r"|\b(?i:paragraphs|items|notes|charts|sheets|sections|parts|chapters)\s+" + _ID
     + r"(?:\s*(?:,?\s*and|,?\s*or|through|,)\s*" + _ID + r")*"
-    r"|\b(?i:paragraph|item|note|chart|sheet|section|part|chapter)\s+" + _ID)
+    r"|\b(?i:paragraph|item|note|chart|sheet|section|part|chapter)\s+" + _ID
+    # a paragraph named by its heading and number: "Standard 05", "Option 13"
+    + r"|\b(?:Standard|Guidance|Option|Support)\s+\d{1,2}\b")
 _NUM = re.compile(r"(?<![\w.])\d+(?:,\d{3})*(?:\.\d+)?")
 
 

@@ -133,3 +133,91 @@ The notebook counts how often the plans do this ("plans with a guarded item as a
 4. **If the runtime restarts after CELL 5:** run CELL 1, CELL 4 and CELL 5, then CELL 6 onward.
    - CELL 5 reads the saved retrieval results.
    - CELL 6 stops any model server still holding the GPU.
+
+## Results of the run on 7 October 2026 (Colab A100 40 GB)
+
+**Setup that worked:**
+- vLLM 0.31.0, torch 2.13 (CUDA 13.2), driver 580.82.
+- Model revision `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a`.
+- The model takes 28 GB. There is room for about 75,000 tokens of working memory.
+- It writes about 39 tokens a second.
+
+**Two setup fixes, both in the notebook now:**
+- The model is downloaded to Colab's own disk. Our config had sent the download to Drive.
+- vLLM's FlashInfer sampler is switched off (`VLLM_USE_FLASHINFER_SAMPLER=0`). It failed to build on Colab, and seeded requests never use it anyway.
+
+**Repeat check:** the same input, asked again with no cache, gave an identical plan in 3 of 3 cases.
+
+### DEV runs (11 cases written from MUTCD provisions)
+
+| Run | Instructions | Valid first time | Notes |
+|---|---|---|---|
+| 1 | as first written | 11/11 | In 5 plans, true and false were turned around. For example, a claim said "the rule applies" where it should have said "the rule is met". |
+| 2 | fix3 (commit 32fedfb) | 11/11 | Every claim reads TRUE = the provision is met, in the same direction as the merge it feeds. A claim written as a question is sent back. |
+| 3 | fix4 (commit e7ae691), **frozen** | 10/11, plus 1 after a repair | For questions about what the manual requires or allows, each claim says what the manual requires or allows in that situation. |
+
+In every run, the plan used the target provision whenever it reached the parser (6 of 6).
+
+Each run still has 2 or 3 slips, and they are different each time. Examples:
+- a base rule written as "the rule applies";
+- a gate on a condition the question never states;
+- a wrong type, so the check goes to the wrong checker.
+
+These come from sampling noise, not from a pattern. The instructions were frozen at fix4, so that the DEV cases would not be overfitted.
+
+### TEST run (the 10 sample questions, run once with fix4; not scored against gold)
+
+**Outcome:**
+- All 10 plans were valid: 9 first time, 1 after a repair.
+- The repair came from the check that a guard may read only what its item requires.
+- Every model call finished normally.
+
+**Size and speed:**
+- 235 seconds and 9,200 thinking tokens per question on average.
+- 8.5 obligations per plan on average, with an average depth of 4.5.
+
+**Structure:**
+
+| | Plans |
+|---|---|
+| with dependencies | 8 of 10 |
+| with guards | 6 of 10 |
+| with merges | 10 of 10 |
+
+**Checkers assigned:**
+
+| Checker | Obligations |
+|---|---|
+| language model | 45 |
+| rule evaluator | 32 |
+| vision model | 7 |
+| resolver | 1 |
+
+**Slips that can be seen without gold:**
+- **The parser does arithmetic and writes conclusions into claims.** SAMPLE002 works out the threshold and the legend itself; SAMPLE003 works out 2.5 × 30 = 75. The instructions say not to do this.
+- **True and false still turned around in some claims.** In SAMPLE006, claims are written as "the display does not ..." but feed a merge that means "acceptable".
+- **Some terminal merges are written as a whole narrative answer** rather than one true/false statement (SAMPLE006, SAMPLE009, SAMPLE011).
+- **In 6 of 10 plans, a guarded item is an input to a merge.** In SAMPLE005, when the exception applies, the guarded check never runs, so the merge never runs either. This makes the executor decision in the open question above necessary.
+
+**Counting fix:** the "numbers found in no input" check had counted paragraph references such as "Standard 05" and "Option 13" as quantities. That is fixed in `evaluation/parser_check.py`. After the fix, only 2 numbers were truly worked out by the model: 5.4 and 75.
+
+**Rule from here on:** the 10 sample questions have now been run. Any later change to the parser must be justified by the paper, the manual or the DEV cases, never by these test plans. A final score should come from questions the pipeline has never seen.
+
+### TEST2: 10 more sample questions (SAMPLE012–SAMPLE021), added 7 October 2026
+
+**What is in the notebook:**
+- CELL 4 holds the 10 new question texts, and nothing else about them.
+- CELL 13 parses them once, with the same frozen parser (fix4). The plans are saved to `run_*/test2_plans.json`.
+
+**Retrieval is not redone.** CELL 5 now names its retrieval file after the code that does retrieval and the vector store it reads, not after the whole repo. So:
+- the existing `kq_a75a7c2.json` is reused;
+- only the 10 new questions are retrieved.
+
+**Leak scan:**
+- The new questions' authored text and gold answers were added to the probe set.
+- Result: 0 matches at 5 and 6 words.
+- At 4 words there is 1 match: the plan format's own field names (`"obligations": [{"id": "o1", "claim": ...`). That format comes from `compile.py` and was written before this batch existed.
+
+**Gold check:** the gold answers were checked against the manual, outside the pipeline.
+- All 41 quoted passages match the manual word for word, with the right paragraph numbers and headings.
+- All 10 answers are correct. 3 have small wording points that do not change their results.
