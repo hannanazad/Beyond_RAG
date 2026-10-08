@@ -111,7 +111,8 @@ PARSER_CONTRACT = f"""HOW TO WRITE THE PLAN
 
 Step 1. The terminal proposition. Work out from the question what decision is
 asked for: whether a design, action or condition satisfies the provisions that
-apply. If the question asks for several things, each is its own requirement,
+apply, or what the provisions require, recommend or allow in the situation
+described. If the question asks for several things, each is its own requirement,
 and a merge combines them. The terminal is what the question asks for and
 nothing more: a provision about some other matter gets no obligation.
 
@@ -167,9 +168,12 @@ THE FIELDS
 claim
   One statement, never a question, about the situation in the question. Write
   it so that TRUE means the situation meets the provision (or, for a
-  condition, that the condition holds) and FALSE means it does not. Say what
-  the provision means for this case; do not just repeat the provision's
-  sentence. The checker sees the claim and the manual, not the question, so
+  condition, that the condition holds) and FALSE means it does not. When the
+  question asks what the manual requires, recommends or allows, rather than
+  whether a described design complies, the claim states what the manual
+  requires, recommends or allows in this situation, and TRUE means the manual
+  says so. Say what the provision means for this case; do not just repeat the
+  provision's sentence. The checker sees the claim and the manual, not the question, so
   the claim must carry the facts it is about: copy the values, units and
   conditions it needs from the question, as written there. Do not decide
   whether the claim is true. Do not work out a value that a table, figure or
