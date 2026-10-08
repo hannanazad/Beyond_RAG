@@ -559,6 +559,7 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             guard_eval=_build_gate(o.guard) if o.guard else None,
             guard_spec=_guard_data(o.guard) if o.guard else None,
             evidence_hint=list(o.evidence_hint),
+            source_chunk=o.source_chunk,
             mandatory=o.mandatory))
 
     for m in spec.merges:

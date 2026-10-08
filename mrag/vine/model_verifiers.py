@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
@@ -254,12 +255,39 @@ def _evidence_objects(ids: Sequence[str],
     return out
 
 
+def _merge_by_id(first: Sequence[Dict[str, Any]], then: Sequence[Dict[str, Any]],
+                 key: str) -> List[Dict[str, Any]]:
+    out, seen = [], set()
+    for item in list(first) + list(then):
+        k = item.get(key)
+        if k and k in seen:
+            continue
+        seen.add(k)
+        out.append(item)
+    return out
+
+
 def _make(kind: str, ask: Ask, retriever=None, query: str = "",
-          top_k: Optional[int] = None, with_images: bool = False):
+          top_k: Optional[int] = None, with_images: bool = False,
+          use_pointers: bool = True, max_pointed_chunks: int = 8,
+          max_images: int = 4):
     def verify(op: Operation, store: CertificateStore) -> Certificate:
         chunks: List[Dict[str, Any]] = []
         figures: List[Dict[str, Any]] = []
         debug: Dict[str, Any] = {}
+        pointed: Dict[str, Any] = {"chunks": [], "figures": []}
+
+        # ---- what the plan points to for this obligation, by id ----------
+        if (retriever is not None and use_pointers
+                and (getattr(op, "source_chunk", "") or op.evidence_hint)):
+            try:
+                from .pointers import pointed_evidence
+                pointed = pointed_evidence(retriever, getattr(op, "source_chunk", ""),
+                                           op.evidence_hint,
+                                           max_chunks=max_pointed_chunks)
+                debug["pointed"] = pointed.get("debug", {})
+            except Exception as e:                            # noqa: BLE001
+                debug["pointer_error"] = repr(e)
 
         # ---- Eq 5: evidence for THIS obligation, given what is known ----
         if retriever is not None:
@@ -269,13 +297,19 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
                     certificates=certificates_for_retrieval(store),
                     top_k=top_k)
                 chunks, figures = list(got.chunks), list(got.figures)
-                debug = {k: got.debug.get(k) for k in
-                         ("established_sections", "established_figures",
-                          "established_tables", "established_notes")
-                         if got.debug.get(k)}
+                debug.update({k: got.debug.get(k) for k in
+                              ("established_sections", "established_figures",
+                               "established_tables", "established_notes")
+                              if got.debug.get(k)})
             except Exception as e:                            # noqa: BLE001
                 # Retrieval failing is missing evidence, not a refutation.
-                return _abstain(op, kind, f"retrieval failed: {e!r}")
+                if not pointed["chunks"] and not pointed["figures"]:
+                    return _abstain(op, kind, f"retrieval failed: {e!r}")
+                debug["retrieval_error"] = repr(e)
+
+        # the pointed evidence first, then what the search added
+        chunks = _merge_by_id(pointed["chunks"], chunks, "chunk_id")
+        figures = _merge_by_id(pointed["figures"], figures, "figure_id")
 
         if not chunks and not figures:
             return _abstain(op, kind, "no evidence was retrieved for this "
@@ -285,11 +319,20 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
         prompt, allowed = build_prompt(op, chunks, figures, established)
 
         images: List[str] = []
+        images_left_out: List[str] = []
+        images_missing: List[str] = []
         if with_images:
             for f in figures:
                 for path in (f.get("image_paths") or [f.get("image_path")]):
-                    if path:
+                    if not path:
+                        continue
+                    if not os.path.exists(str(path)):
+                        images_missing.append(str(path))
+                        continue
+                    if len(images) < max_images:
                         images.append(str(path))
+                    else:
+                        images_left_out.append(str(path))
 
         try:
             raw = ask(prompt, images)
@@ -304,7 +347,13 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
             "evidence_offered": allowed,
             "images_shown": len(images),
             "raw_reply": (raw or "")[:2000],   # S3.4: the trace is auditable
+            "pointed_evidence": [c.get("chunk_id") for c in pointed["chunks"]]
+                                + [f.get("figure_id") for f in pointed["figures"]],
         }
+        if images_left_out:
+            provenance["images_left_out"] = images_left_out
+        if images_missing:
+            provenance["images_missing"] = images_missing
         provenance.update(debug)
         if reply.problem:
             provenance["problem"] = reply.problem
@@ -326,7 +375,7 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
                    if int(f.get("_sheets_shown") or 0)
                    and int(f.get("_sheets_shown")) < int(f.get("n_sheets")
                                                          or f.get("sheet_of") or 1)]
-        if partial and status is not Status.UNKNOWN:
+        if (partial or images_left_out or images_missing) and status is not Status.UNKNOWN:
             # Seeing part of a figure is weaker evidence than seeing it whole,
             # and the certificate should say so rather than carry the model's
             # own confidence unchanged.
@@ -354,18 +403,24 @@ def _abstain(op: Operation, kind: str, reason: str) -> Certificate:
 
 
 def make_llm_verifier(ask: Ask, retriever=None, query: str = "",
-                      top_k: Optional[int] = None):
-    """Textual and definitional obligations. Plugs in as verifiers["llm"]."""
-    return _make("llm", ask, retriever, query, top_k, with_images=False)
+                      top_k: Optional[int] = None, **options):
+    """Textual and definitional obligations. Plugs in as verifiers["llm"].
+
+    options: use_pointers (default True), max_pointed_chunks (8)."""
+    options.pop("max_images", None)
+    return _make("llm", ask, retriever, query, top_k, with_images=False, **options)
 
 
 def make_vlm_verifier(ask: Ask, retriever=None, query: str = "",
-                      top_k: Optional[int] = None):
+                      top_k: Optional[int] = None, **options):
     """Obligations that need the figure looked at. verifiers["vlm"].
 
     The only difference from the LLM verifier is that the crops are passed to
     the model and a partial figure caps the confidence. Both use the same
     contract, because a visual certificate and a textual one are the same
     object with the same fields -- which is what Eq 3 says.
+
+    options: use_pointers (default True), max_pointed_chunks (8), max_images
+    (4; images beyond it are left out, recorded, and cap the confidence).
     """
-    return _make("vlm", ask, retriever, query, top_k, with_images=True)
+    return _make("vlm", ask, retriever, query, top_k, with_images=True, **options)

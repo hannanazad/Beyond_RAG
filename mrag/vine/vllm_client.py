@@ -30,6 +30,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -38,7 +39,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 import requests
 
 __all__ = ["QWEN_THINKING", "serve_command", "start_server", "wait_until_ready",
-           "launch", "stop_servers", "log_tail", "make_ask_vllm", "ServerFailed"]
+           "launch", "stop_servers", "log_tail", "make_ask_vllm", "ServerFailed",
+           "NotInCache"]
 
 # The model card's settings for thinking mode (Qwen3.8-27B).
 QWEN_THINKING: Dict[str, float] = {"temperature": 1.0, "top_p": 0.95, "top_k": 20,
@@ -48,6 +50,10 @@ QWEN_THINKING: Dict[str, float] = {"temperature": 1.0, "top_p": 0.95, "top_k": 2
 
 class ServerFailed(RuntimeError):
     """The server process exited or never became ready."""
+
+
+class NotInCache(LookupError):
+    """cache_only=True and the reply is not in the cache."""
 
 
 # --------------------------------------------------------------------------- #
@@ -174,17 +180,31 @@ def stop_servers(say: Callable[[str], None] = print, wait: float = 120) -> None:
     time.sleep(5)                     # let the driver release the memory
 
 
+_MAX_LEN_RE = re.compile(r"estimated maximum model length is (\d+)")
+
+
 def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
            env: Optional[Dict[str, str]] = None, say: Callable[[str], None] = print,
-           **kw) -> Dict[str, Any]:
+           min_model_len: Optional[int] = None, **kw) -> Dict[str, Any]:
     """Start the server and wait for it. Any server already running is
     stopped first, so the one that answers is the one started here. If this
     vLLM does not know `--language-model-only`, start again with the older
-    form of the same setting. Returns {"proc", "base_url", "cmd", "seconds"}."""
+    form of the same setting.
+
+    min_model_len: if the server stops because its working memory cannot hold
+    a request of `max_model_len` tokens, vLLM says the largest length that
+    fits; the server is started again with that (rounded down to 1,024) as
+    long as it is at least `min_model_len`. The length actually used is in the
+    result. Returns {"proc", "base_url", "cmd", "seconds", "max_model_len"}."""
     base_url = f"http://127.0.0.1:{port}"
     stop_servers(say)
-    for mode in ("flag", "limits"):
-        cmd = serve_command(vllm_bin, model, port=port, language_only=mode, **kw)
+    modes = ["flag", "limits"]
+    max_len = int(kw.pop("max_model_len", 40960))
+    i = 0
+    while i < len(modes):
+        mode = modes[i]
+        cmd = serve_command(vllm_bin, model, port=port, language_only=mode,
+                            max_model_len=max_len, **kw)
         say("starting: " + " ".join(cmd))
         proc = start_server(cmd, log_path, env)
         try:
@@ -192,15 +212,27 @@ def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
             if proc.poll() is not None:
                 raise ServerFailed("something answered on the port, but the server "
                                    "started here has exited.\n" + log_tail(log_path))
-            return {"proc": proc, "base_url": base_url, "cmd": cmd, "seconds": secs}
+            return {"proc": proc, "base_url": base_url, "cmd": cmd, "seconds": secs,
+                    "max_model_len": max_len}
         except ServerFailed as e:
             if proc.poll() is None:
                 proc.terminate()
-            unknown_flag = ("--language-model-only" in str(e)
-                            and ("unrecognized" in str(e) or "no such option" in str(e)))
+            text = str(e) + "\n" + log_tail(log_path, 400)
+            unknown_flag = ("--language-model-only" in text
+                            and ("unrecognized" in text or "no such option" in text))
             if mode == "flag" and unknown_flag:
                 say("this vLLM has no --language-model-only; using --limit-mm-per-prompt")
+                i += 1
                 continue
+            m = _MAX_LEN_RE.search(text)
+            if m and min_model_len:
+                fits = (int(m.group(1)) // 1024) * 1024
+                if min_model_len <= fits < max_len:
+                    say(f"the working memory holds {m.group(1)} tokens, not {max_len}; "
+                        f"starting again with max_model_len {fits}")
+                    max_len = fits
+                    stop_servers(say)
+                    continue
             raise
     raise ServerFailed("unreachable")
 
@@ -218,7 +250,8 @@ def make_ask_vllm(base_url: str, served_name: str = "parser", *,
                   sampling: Optional[Dict[str, float]] = None,
                   reasoning_effort: Optional[str] = "medium",
                   enable_thinking: bool = True,
-                  cache_dir: Optional[str] = None, timeout: float = 3600):
+                  cache_dir: Optional[str] = None, timeout: float = 3600,
+                  cache_only: bool = False):
     """`ask(prompt, images) -> str`: the reply's content, with the model's
     reasoning kept out of it (the server's reasoning parser separates them).
 
@@ -226,6 +259,9 @@ def make_ask_vllm(base_url: str, served_name: str = "parser", *,
     came from the cache, token usage, finish reason, seconds); `ask.calls`
     keeps them all. Images are not sent: the server runs the language model
     only, and the parser never passes any.
+
+    cache_only=True: never call the server. A reply not in the cache raises
+    `NotInCache`. Used to read back plans made earlier, exactly as they were.
     """
     sampling = dict(QWEN_THINKING if sampling is None else sampling)
     session = requests.Session()
@@ -250,6 +286,8 @@ def make_ask_vllm(base_url: str, served_name: str = "parser", *,
                 ask.calls.append(ask.last)
                 return rec.get("content") or ""
 
+        if cache_only:
+            raise NotInCache(f"no cached reply for this prompt (key {key[:12]}...)")
         kwargs: Dict[str, Any] = {"enable_thinking": enable_thinking}
         body: Dict[str, Any] = {
             "model": served_name,

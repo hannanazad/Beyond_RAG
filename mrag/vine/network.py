@@ -91,6 +91,10 @@ class Operation:
     merge: Optional[MergeType] = None              # set on merge operations
     merge_inputs: List[str] = field(default_factory=list)  # states being merged
     evidence_hint: List[Dict[str, str]] = field(default_factory=list)
+    # The provision the obligation was written from (the parser's
+    # `source_chunk`). With `evidence_hint`, it is where the checker looks
+    # first: the plan already says where this obligation's evidence is.
+    source_chunk: str = ""
     mandatory: bool = True
 
 

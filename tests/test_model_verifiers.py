@@ -22,8 +22,15 @@ CHUNK = {"chunk_id": "MUTCD11e_2C07_Standard_01", "section_id": "2C.07",
 INFERRED = {"chunk_id": "MUTCD11e_TBLNOTE_4C-1_03", "section_id": "4C.02",
             "content_type": "Option", "text": "May be used above 40 mph.",
             "authority_inferred": True}
+# The image checker sends only crops that exist on disk, so the two sheets are
+# written to a temporary folder.
+import tempfile
+_CROPS = Path(tempfile.mkdtemp())
+SHEETS = [str(_CROPS / "2C-1_s1.png"), str(_CROPS / "2C-1_s2.png")]
+for _p in SHEETS:
+    Path(_p).write_bytes(b"\x89PNG\r\n\x1a\n")
 FIGURE = {"figure_id": "Figure 2C-1", "caption": "Horizontal alignment signs",
-          "image_paths": ["/crops/2C-1_s1.png", "/crops/2C-1_s2.png"],
+          "image_paths": SHEETS,
           "n_sheets": 4, "_sheets_shown": 2}
 
 
@@ -188,7 +195,7 @@ def watch(prompt, images):
 visual = Operation("o3", "the layout matches Figure 2C-1", "s_o3", [], "vlm")
 cert = make_vlm_verifier(watch, FakeRetriever(chunks=(), figures=(FIGURE,))
                          )(visual, CertificateStore())
-assert seen["images"] == ["/crops/2C-1_s1.png", "/crops/2C-1_s2.png"]
+assert seen["images"] == SHEETS
 assert cert.status is Status.TRUE
 # two sheets of four: the model said 1.0, the certificate does not agree
 assert cert.confidence == 0.5

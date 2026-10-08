@@ -63,7 +63,8 @@ from .symbolic import make_rule_evaluator
 from .table_data import Table
 from .verifiers import make_cross_reference_resolver
 
-__all__ = ["VineResult", "ask_vine", "make_ask", "build_verifiers"]
+__all__ = ["VineResult", "ask_vine", "make_ask", "build_verifiers",
+           "hand_over_when_undecided"]
 
 
 # --------------------------------------------------------------------------- #
@@ -187,9 +188,43 @@ def make_ask(vlm, max_tokens: int = 1024) -> Callable[[str, List[str]], str]:
     return ask
 
 
+def hand_over_when_undecided(primary: Callable, interpreter: Callable,
+                             name: str) -> Callable:
+    """A deterministic checker first; if it cannot decide, the interpreter.
+
+    S3.3: "generative models are used where interpretation is necessary,
+    while deterministic or specialized operators are preferred whenever the
+    obligation admits a more constrained verification mechanism." When the
+    calculator or the rule evaluator comes back UNKNOWN -- no table it can
+    read, a condition it cannot parse, a value it cannot find -- the
+    obligation did not admit the constrained mechanism, and interpretation is
+    necessary. The rule evaluator says as much in its own result ("an
+    interpreting verifier must take it"). Without the hand-over, that
+    obligation simply stayed UNKNOWN.
+
+    A definite TRUE or FALSE from the deterministic checker is kept as it is
+    and the interpreter is not asked. The deterministic attempt is recorded in
+    the interpreter's certificate, so the trace shows both.
+    """
+    def verify(op, store):
+        first = primary(op, store)
+        if first.status is not Status.UNKNOWN:
+            return first
+        second = interpreter(op, store)
+        second.provenance = dict(second.provenance or {})
+        second.provenance["handed_over_from"] = {
+            "verifier": name, "status": first.status.value,
+            "reason": (first.provenance or {}).get("reason")
+                      or (first.provenance or {}).get("error") or ""}
+        return second
+    return verify
+
+
 def build_verifiers(tables: Sequence[Table] = (), kg=None, retriever=None,
                     ask: Optional[Callable] = None, query: str = "",
-                    extra: Optional[Dict[str, Callable]] = None
+                    extra: Optional[Dict[str, Callable]] = None,
+                    hand_over: bool = True,
+                    model_options: Optional[Dict[str, Any]] = None,
                     ) -> Dict[str, Callable]:
     """Assemble the verifier dictionary from whatever is available.
 
@@ -197,16 +232,29 @@ def build_verifiers(tables: Sequence[Table] = (), kg=None, retriever=None,
     executor's own rule then applies: a missing verifier yields UNKNOWN, never
     FALSE. Substituting a placeholder that answers would be the one thing this
     architecture exists to prevent.
+
+    hand_over
+        When a model is available, a calculator or rule-evaluator result of
+        UNKNOWN is passed to the text checker (`hand_over_when_undecided`).
+    model_options
+        Passed to the text and image checkers (`use_pointers`,
+        `max_pointed_chunks`, `max_images`).
     """
     verifiers: Dict[str, Callable] = {}
+    opts = dict(model_options or {})
     if tables:
         verifiers["calculator"] = make_calculator(list(tables))
         verifiers["symbolic"] = make_rule_evaluator(list(tables))
     if kg is not None:
         verifiers["cross_reference_resolver"] = make_cross_reference_resolver(kg)
     if ask is not None:
-        verifiers["llm"] = make_llm_verifier(ask, retriever, query=query)
-        verifiers["vlm"] = make_vlm_verifier(ask, retriever, query=query)
+        verifiers["llm"] = make_llm_verifier(ask, retriever, query=query, **opts)
+        verifiers["vlm"] = make_vlm_verifier(ask, retriever, query=query, **opts)
+        if hand_over:
+            for name in ("calculator", "symbolic"):
+                if name in verifiers:
+                    verifiers[name] = hand_over_when_undecided(
+                        verifiers[name], verifiers["llm"], name)
     if extra:
         verifiers.update(extra)
     return verifiers
