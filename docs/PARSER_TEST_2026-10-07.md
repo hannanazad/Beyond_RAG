@@ -115,13 +115,13 @@ If a plan fails a check, it goes back to the model with the problems, written wi
 
 **TEST:** the 10 sample questions, parsed once, in CELL 12. Their plans are saved to `parser_runs/run_*/test_plans.json` and downloaded, so they can be scored outside the pipeline.
 
-## One open question for you (not changed)
+## Closed guards (decided 8 October 2026)
 
-**The problem:** a guard can stay closed. When it does, the executor never runs that item. A merge that lists the item as an input then never runs either, and the answer comes out UNKNOWN.
+**The problem was:** a guard can stay closed. When it did, the executor never ran that item. A merge that listed the item as an input then never ran either, and the answer came out UNKNOWN.
 
-The paper means a closed guard to say "this branch does not apply".
+**Decided:** a closed guard means "this branch does not apply". The executor now marks such a branch NOT_APPLICABLE and merges leave it out (dead-path elimination). A guard that depends on an UNKNOWN result leaves the branch UNKNOWN. See `docs/EXECUTOR_NOT_APPLICABLE_2026-10-08.md`.
 
-The notebook counts how often the plans do this ("plans with a guarded item as a merge input"). This has to be decided before the plans are executed. I have not changed it.
+The notebook still counts how often plans have this shape ("plans with a guarded item as a merge input").
 
 ## How to run
 

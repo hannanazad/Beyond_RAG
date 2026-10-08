@@ -223,6 +223,7 @@ def run_faulted(config: str, net: Network, scenario: Scenario,
         used, fns = _retype_merges(net, _compose_any_true)
         for op in used.operations:
             op.guard, op.guard_desc = None, ""
+            op.guard_eval, op.guard_spec = None, None
         trace = execute(used, _all_verifiers(verifier), threshold_fns=fns)
     else:
         raise ValueError(f"unknown configuration {config!r}")

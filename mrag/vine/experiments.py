@@ -38,6 +38,7 @@ executor would only be measuring the harness.
 from __future__ import annotations
 
 import copy
+import itertools
 import random
 import statistics as stats
 from dataclasses import dataclass, field
@@ -136,32 +137,102 @@ def reference_terminal(net: Network, scenario: Scenario) -> Status:
     no code with wave scheduling, guards, the certificate store or skipping —
     the machinery actually under test. Comparing the executor against itself
     would measure nothing.
+
+    Branches that do not apply are worked out the same way as in the
+    executor, but by brute force: every result is held as the SET of statuses
+    it could have had, had everything been known, and guards and merges are
+    evaluated over every combination. A result is definite when every
+    combination agrees.
     """
     producer: Dict[str, Operation] = {op.produces: op for op in net.operations}
-    cache: Dict[str, Status] = {}
+    cache: Dict[str, Tuple[Status, bool]] = {}     # state -> (status, may not apply)
     visiting: set = set()
+    T, F, U, NA = Status.TRUE, Status.FALSE, Status.UNKNOWN, Status.NOT_APPLICABLE
 
-    def value_of(state: str) -> Status:
+    def could_be(state: str) -> Tuple[Status, ...]:
+        status, may_not_apply = value(state)
+        if status is U:
+            return (T, F, U, NA) if may_not_apply else (T, F, U)
+        return (status,)
+
+    def settle(results: set) -> Tuple[Status, bool]:
+        if len(results) == 1:
+            return next(iter(results)), False
+        return U, NA in results
+
+    def value(state: str) -> Tuple[Status, bool]:
         if state in cache:
             return cache[state]
         op = producer.get(state)
         if op is None or state in visiting:
-            return Status.UNKNOWN
+            return U, False
         visiting.add(state)
-        if op.merge is not None:
-            inputs = [value_of(s) for s in op.merge_inputs]
+        pre = [value(s) for s in op.requires]
+        if pre and all(st is NA for st, _m in pre):
+            result = (NA, False)                       # dead-path elimination
+        elif (op.merge is None and pre
+              and all(st is NA or (st is U and m) for st, m in pre)):
+            result = (U, True)                         # may not apply either
+        elif op.guard_spec and _guard_plain(op.guard_spec, could_be) != "open":
+            result = ((NA, False) if _guard_plain(op.guard_spec, could_be) == "closed"
+                      else (U, True))
+        elif op.merge is not None:
+            # Merges are three-valued already, so a plain UNKNOWN input is
+            # taken as it is; only an input that may not apply is tried both
+            # ways. (Trying TRUE/FALSE/UNKNOWN for every input made a wide
+            # conjunction cost 3^n and stalled the tables.)
             authorities = [_authority_of(producer.get(s)) for s in op.merge_inputs]
-            result = _merge_plain(op.merge, inputs, authorities)
+            ins = [value(s) for s in op.merge_inputs]
+            options = [(U, NA) if (st is U and m) else (st,) for st, m in ins]
+            if sum(len(o) > 1 for o in options) > _MAX_FLAGGED_MERGE_INPUTS:
+                result = (U, True)
+            else:
+                result = settle({_merge_plain(op.merge, list(combo), authorities)
+                                 for combo in itertools.product(*options)})
         else:
-            result = scenario.of(op.id)
+            status = scenario.of(op.id)
             # a check whose prerequisite never resolved cannot itself resolve
-            if op.requires and any(value_of(s) is Status.UNKNOWN for s in op.requires):
-                result = Status.UNKNOWN
+            if any(st is U for st, _m in pre):
+                status = U
+            result = (status, False)
         visiting.discard(state)
         cache[state] = result
         return result
 
-    return value_of(net.terminal) if net.terminal else Status.UNKNOWN
+    return value(net.terminal)[0] if net.terminal else Status.UNKNOWN
+
+
+# the executor's limit too (execute._MAX_UNCERTAIN_MERGE_INPUTS); beyond it
+# both answer UNKNOWN, may-not-apply
+_MAX_FLAGGED_MERGE_INPUTS = 10
+
+
+def _guard_plain(g: Dict[str, Any],
+                 could_be: Callable[[str], Tuple[Status, ...]]) -> str:
+    """A guard as a truth table: "open" if it holds for every combination of
+    the statuses its results could have had, "closed" if it holds for none,
+    "unknown" otherwise. Written apart from compile._build_gate on purpose
+    (see reference_terminal)."""
+    def leaves(node: Dict[str, Any]) -> List[str]:
+        if "state" in node:
+            return [node["state"]]
+        kids = [node["not"]] if "not" in node else node.get("all") or node.get("any") or []
+        return [s for k in kids for s in leaves(k)]
+
+    def holds(node: Dict[str, Any], status: Dict[str, Status]) -> bool:
+        if "state" in node:
+            got, want = status[node["state"]], str(node.get("status", "TRUE")).upper()
+            return got in (Status.TRUE, Status.FALSE) if want == "RESOLVED" else got.value == want
+        if "not" in node:
+            return not holds(node["not"], status)
+        if "all" in node:
+            return all(holds(k, status) for k in node["all"])
+        return any(holds(k, status) for k in node.get("any", []))
+
+    states = sorted(set(leaves(g)))
+    table = {holds(g, dict(zip(states, combo)))
+             for combo in itertools.product(*(could_be(s) for s in states))}
+    return "open" if table == {True} else "closed" if table == {False} else "unknown"
 
 
 def _authority_of(op: Optional[Operation]) -> Authority:
@@ -177,15 +248,21 @@ def _blocking(status: Status, authority: Authority) -> Status:
 
 def _merge_plain(kind: MergeType, inputs: Sequence[Status],
                  authorities: Sequence[Authority]) -> Status:
-    if kind is MergeType.CONJUNCTION:
-        return _kleene_and([_blocking(s, a) for s, a in zip(inputs, authorities)])
-    if kind is MergeType.ALTERNATIVE:
-        return _kleene_or(list(inputs))
+    NA = Status.NOT_APPLICABLE
     if kind is MergeType.EXCEPTION:
+        if not inputs or inputs[0] is NA:
+            return NA                       # no rule to relax
         base = _blocking(inputs[0], authorities[0])
         if base is Status.TRUE:
             return Status.TRUE
-        return _kleene_or([base] + list(inputs[1:]))
+        return _kleene_or([base] + [s for s in inputs[1:] if s is not NA])
+    pairs = [(s, a) for s, a in zip(inputs, authorities) if s is not NA]
+    if not pairs:
+        return NA
+    if kind is MergeType.CONJUNCTION:
+        return _kleene_and([_blocking(s, a) for s, a in pairs])
+    if kind is MergeType.ALTERNATIVE:
+        return _kleene_or([s for s, _a in pairs])
     return Status.UNKNOWN
 
 
@@ -312,6 +389,7 @@ def _strip_guards(net: Network) -> Network:
     out = copy.deepcopy(net)
     for op in out.operations:
         op.guard, op.guard_desc = None, ""
+        op.guard_eval, op.guard_spec = None, None
     return out
 
 

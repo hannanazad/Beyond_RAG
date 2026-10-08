@@ -37,6 +37,28 @@ class MergeType(str, Enum):
     THRESHOLD = "threshold"         # a numeric comparison decides
 
 
+class Gate(str, Enum):
+    """Where a guard stands against the store, and why.
+
+    Eq 4 needs only "open or not" (g_o in {0, 1}). The executor also needs to
+    know WHY a guard is not open, because the reasons call for different
+    results:
+
+        OPEN       open however every UNKNOWN result it reads turns out:
+                   the item runs
+        CLOSED     closed however they turn out: the item does not apply
+                   (NOT_APPLICABLE)
+        UNDECIDED  open for some outcomes and closed for others: whether the
+                   item applies is unknown, so the item is UNKNOWN (S3.2: a
+                   missing fact neither switches a rule off nor on)
+        PENDING    it depends on a result not produced yet: wait
+    """
+    OPEN = "open"
+    CLOSED = "closed"
+    UNDECIDED = "undecided"
+    PENDING = "pending"
+
+
 @dataclass
 class Operation:
     """An element of Oq. Produces a certificate into `produces`."""
@@ -58,6 +80,14 @@ class Operation:
     # trail. Measured on a real run: Chart A of Table 2C-4, the test for
     # whether any device is needed at all, was certified and then discarded.
     guard_states: List[str] = field(default_factory=list)
+    # The same guard, read three ways: `guard` is Eq 4's g_o (open or not);
+    # `guard_eval` also says why it is not open (see Gate); `guard_spec` is the
+    # guard as plain data, for anything that must evaluate it independently of
+    # the executor. The compiler sets all three. A hand-built network may set
+    # `guard` alone; a closed bare predicate then says nothing about why, so
+    # the executor treats it as "not yet" and never as "does not apply".
+    guard_eval: Optional[Callable[[CertificateStore], "Gate"]] = None
+    guard_spec: Optional[Dict[str, Any]] = None
     merge: Optional[MergeType] = None              # set on merge operations
     merge_inputs: List[str] = field(default_factory=list)  # states being merged
     evidence_hint: List[Dict[str, str]] = field(default_factory=list)

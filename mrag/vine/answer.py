@@ -152,9 +152,26 @@ def _facts(net: Network, trace: ExecutionTrace) -> Dict[str, Any]:
     # pass a conjunction -- but it is a finding, and an answer that dropped it
     # would be complete only by omission.
     non_conf = [c.claim for c in upstream if c.non_conformance()]
+    # Checks found not to apply, and the established results that decided
+    # that. Leaving them out would hide why part of the rule was not used.
+    not_applicable = [c.claim for c in upstream
+                      if c.status is Status.NOT_APPLICABLE]
+    deciding: List[str] = []
+    for c in support:
+        if c.status is not Status.NOT_APPLICABLE:
+            continue
+        for state, value in (c.provenance.get("decided_by") or {}).items():
+            src = trace.store.latest(state)
+            # only results actually established (TRUE or FALSE) decided it
+            if src is None or src.status not in (Status.TRUE, Status.FALSE):
+                continue
+            line = f"{src.claim} ({value})"
+            if line not in deciding:
+                deciding.append(line)
     return {
         "terminal": terminal, "support": support,
         "unresolved": unresolved, "non_conformances": non_conf,
+        "not_applicable": not_applicable, "deciding": deciding,
         "citations": _citations(support),
         # A merge is as weak as its weakest input, and the terminal already
         # carries that. But an UNKNOWN terminal is not a weak decision, it is
@@ -184,6 +201,14 @@ def compose(query: str, net: Network, trace: ExecutionTrace) -> Answer:
                 + ("s were" if len(opened) != 1 else " was")
                 + " left unresolved: " + "; ".join(opened[:4])
                 + ("." if len(opened) <= 4 else ", and others."))
+    elif status is Status.NOT_APPLICABLE:
+        # Not a yes and not a no: the provisions checked do not reach this
+        # situation, and the answer says which established results decided it.
+        text = (f"{terminal.claim} — this does not apply to the situation "
+                "described.")
+        if f["deciding"]:
+            text += (" Decided by: " + "; ".join(f["deciding"][:4])
+                     + ("." if len(f["deciding"]) <= 4 else ", and others."))
     else:
         verdict = "holds" if status is Status.TRUE else "does not hold"
         text = f"{terminal.claim} — this {verdict}."
@@ -191,6 +216,10 @@ def compose(query: str, net: Network, trace: ExecutionTrace) -> Answer:
             text += (" Recorded as non-conformance with Guidance, which does "
                      "not refute the decision: "
                      + "; ".join(f["non_conformances"][:3]) + ".")
+        if f["not_applicable"]:
+            text += (" Not applicable here: "
+                     + "; ".join(f["not_applicable"][:3])
+                     + ("." if len(f["not_applicable"]) <= 3 else ", and others."))
 
     return Answer(text=text, status=status, confidence=f["confidence"],
                   citations=f["citations"], unresolved=f["unresolved"],
@@ -216,17 +245,25 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
                      f"  confidence: {cert.confidence:.2f}\n"
                      f"  evidence: {ids}")
 
-    guidance = (
-        "The decision above has already been established by executing a "
-        "verification network. Do not re-decide it, do not soften it, and do "
-        "not add reasoning of your own. Write the answer a reader needs, "
-        "using only the claims and evidence listed."
-        if status != "UNKNOWN" else
-        "No decision was established. Say plainly that the question cannot be "
-        "answered from the available evidence, name the checks that were left "
-        "unresolved, and do not offer a likely answer or a guess. An "
-        "abstention that reads like a cautious yes is wrong."
-    )
+    if status == "UNKNOWN":
+        guidance = (
+            "No decision was established. Say plainly that the question cannot "
+            "be answered from the available evidence, name the checks that were "
+            "left unresolved, and do not offer a likely answer or a guess. An "
+            "abstention that reads like a cautious yes is wrong.")
+    elif status == Status.NOT_APPLICABLE.value:
+        guidance = (
+            "The decision above has already been established by executing a "
+            "verification network: the provisions checked do not apply to the "
+            "situation described. Say so plainly and name the established "
+            "results that decided it. Do not say that the situation meets or "
+            "breaks the provisions, and do not add reasoning of your own.")
+    else:
+        guidance = (
+            "The decision above has already been established by executing a "
+            "verification network. Do not re-decide it, do not soften it, and "
+            "do not add reasoning of your own. Write the answer a reader needs, "
+            "using only the claims and evidence listed.")
 
     parts = [
         f"QUESTION\n{query}",
@@ -242,6 +279,12 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
     if f["non_conformances"]:
         parts += ["", "NON-CONFORMANCE WITH GUIDANCE (does not refute)\n"
                   + "\n".join(f"- {c}" for c in f["non_conformances"])]
+    if f["not_applicable"]:
+        parts += ["", "FOUND NOT TO APPLY HERE\n"
+                  + "\n".join(f"- {c}" for c in f["not_applicable"])]
+    if f["deciding"]:
+        parts += ["", "DECIDED BY (established results)\n"
+                  + "\n".join(f"- {c}" for c in f["deciding"])]
     parts += ["", guidance, "",
               "Cite evidence by the ids shown. Cite nothing else."]
     return "\n".join(parts)

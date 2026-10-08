@@ -100,8 +100,9 @@ def spec_stats(spec, net=None) -> Dict[str, Any]:
         "types": dict(Counter(o.type for o in spec.obligations)),
         "authority": dict(Counter(o.authority for o in spec.obligations)),
         "merge_kinds": dict(Counter(m.kind for m in spec.merges)),
-        # a guarded item used as a merge input: if its guard stays closed the
-        # current executor never runs the merge (an open executor question)
+        # a guarded item used as a merge input: when its guard closes, the
+        # executor marks it NOT_APPLICABLE and the merge leaves it out
+        # (dead-path elimination; see mrag/vine/execute.py)
         "guarded_merge_inputs": sum(1 for m in spec.merges for i in m.inputs
                                     if any(x.id == i and x.guard for x in
                                            list(spec.obligations) + list(spec.merges))),

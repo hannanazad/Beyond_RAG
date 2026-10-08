@@ -115,6 +115,10 @@ class VineResult:
         if self.trace:
             parts.append(f"  execution    : {self.trace.operations_run} operations"
                          f", depth {self.trace.synchronization_depth}")
+            if self.trace.not_applicable:
+                parts.append(f"  not applic.  : {sorted(self.trace.not_applicable)}")
+            if self.trace.undecided:
+                parts.append(f"  undecided    : {sorted(self.trace.undecided)}")
             if self.trace.skipped:
                 parts.append(f"  skipped      : {self.trace.skipped}")
         if self.answer:
@@ -144,6 +148,8 @@ class VineResult:
             out["certificates"] = [c.as_dict() for c in self.trace.store.all()]
             out["waves"] = self.trace.waves
             out["skipped"] = self.trace.skipped
+            out["not_applicable"] = self.trace.not_applicable
+            out["undecided"] = self.trace.undecided
             out["unsupported_certification"] = self.trace.unsupported_certification()
             if self.network:
                 out["supporting_certificates"] = [

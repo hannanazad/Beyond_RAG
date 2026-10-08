@@ -19,10 +19,21 @@ from typing import Any, Dict, List, Optional
 class Status(str, Enum):
     """z_i in Eq 3. UNKNOWN is a first-class outcome, not an error: S3.2 says
     missing evidence is propagated as unresolved verification rather than
-    silently converted into a positive or negative conclusion."""
+    silently converted into a positive or negative conclusion.
+
+    NOT_APPLICABLE says a check does not apply to the situation. S3.2 has
+    guarded branches "determine which branches are relevant after earlier
+    facts become known"; a branch found not relevant needs a result of its
+    own, or every merge waiting for it waits for ever. Only the executor
+    issues it, and only from results already established: a guard closed by
+    TRUE/FALSE results, or every prerequisite itself not applicable (dead-path
+    elimination). A verifier cannot return it, and an UNKNOWN fact never
+    turns into it -- that stays UNKNOWN.
+    """
     TRUE = "TRUE"
     FALSE = "FALSE"
     UNKNOWN = "UNKNOWN"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 
 class Authority(str, Enum):
@@ -79,6 +90,13 @@ class Certificate:
     def non_conformance(self) -> bool:
         """FALSE Guidance: recorded, but the claim is not refuted."""
         return self.status is Status.FALSE and self.normative_authority is Authority.GUIDANCE
+
+    def applicability_unknown(self) -> bool:
+        """UNKNOWN, and it is not even known whether the check applies: had
+        the facts been known it might have come out NOT_APPLICABLE. Set by the
+        executor only. Anything that reads this result must allow for that."""
+        return (self.status is Status.UNKNOWN
+                and self.provenance.get("applicability") == "unknown")
 
     def as_dict(self) -> Dict[str, Any]:
         return {

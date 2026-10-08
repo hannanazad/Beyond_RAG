@@ -151,8 +151,14 @@ def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
     that instead -- which is the single-shot RAG this architecture replaces.
     """
     evidence, allowed = _evidence_block(chunks, figures)
+    # A check found not to apply is shown as such, in words: the checker can
+    # only answer TRUE, FALSE or UNKNOWN, and should not read a fourth status
+    # word as an answer it may give.
     known = "\n".join(
-        f"- {c.claim} => {c.status.value}" for c in established
+        f"- {c.claim} => "
+        + ("DOES NOT APPLY HERE" if c.status is Status.NOT_APPLICABLE
+           else c.status.value)
+        for c in established
         if c.status is not Status.UNKNOWN) or "(nothing yet)"
     parts = [
         "You are checking ONE claim against the evidence below.",

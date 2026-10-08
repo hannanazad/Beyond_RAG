@@ -48,11 +48,12 @@ from __future__ import annotations
 
 import json
 import re
+from itertools import product
 from dataclasses import dataclass, field, asdict
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from .certificate import Authority, CertificateStore, Status
-from .network import MergeType, Network, ObligationType, Operation
+from .certificate import Authority, Certificate, CertificateStore, Status
+from .network import Gate, MergeType, Network, ObligationType, Operation
 from .symbolic import Comparison, Conjunction, Disjunction, Negation, parse_rule
 
 __all__ = ["Obligation", "MergeSpec", "NetworkSpec", "GuardSpec",
@@ -423,31 +424,101 @@ def _state_of(node_id: str) -> str:
     return f"s_{node_id}"
 
 
-def _build_guard(spec: GuardSpec) -> Callable[[CertificateStore], bool]:
-    """Turn guard DATA into the function Eq 4 needs.
+def _holds(spec: GuardSpec, status_of: Callable[[str], Status]) -> bool:
+    """The guard read literally against a full set of statuses. A leaf asks
+    whether a result's STATUS is TRUE, FALSE, UNKNOWN, or RESOLVED (TRUE or
+    FALSE), as the parser is told. NOT_APPLICABLE matches none of these."""
+    if spec.kind == "state":
+        got = status_of(_state_of(spec.state))
+        if spec.status == "RESOLVED":
+            return got in (Status.TRUE, Status.FALSE)
+        return got.value == spec.status
+    if spec.kind == "not":
+        return not _holds(spec.parts[0], status_of)
+    if spec.kind == "all":
+        return all(_holds(p, status_of) for p in spec.parts)
+    if spec.kind == "any":
+        return any(_holds(p, status_of) for p in spec.parts)
+    raise CompileError(f"unknown guard kind {spec.kind!r}")
+
+
+_EVERY = (Status.TRUE, Status.FALSE, Status.UNKNOWN, Status.NOT_APPLICABLE)
+# More uncertain results than this in one guard: do not enumerate. Real
+# guards read one to three results.
+_MAX_UNCERTAIN_IN_GUARD = 8
+
+
+def _possible(cert: Optional[Certificate]) -> Tuple[Status, ...]:
+    """The statuses a result could have, had everything been known.
+
+    An UNKNOWN result could turn out TRUE or FALSE, or stay UNKNOWN; if even
+    its applicability is unknown it could also turn out NOT_APPLICABLE. A
+    result not produced yet could be anything."""
+    if cert is None:
+        return _EVERY
+    if cert.status is Status.UNKNOWN:
+        return _EVERY if cert.applicability_unknown() else \
+            (Status.TRUE, Status.FALSE, Status.UNKNOWN)
+    return (cert.status,)
+
+
+def _build_gate(spec: GuardSpec) -> Callable[[CertificateStore], Gate]:
+    """Turn guard DATA into a function that says whether the guard is open,
+    and if not, why (see Gate).
 
     Every branch here is written in this file. Nothing the parser sent is
     executed; it only selects among these.
-    """
-    if spec.kind == "state":
-        state, want = _state_of(spec.state), spec.status
 
-        def check(store: CertificateStore) -> bool:
-            cert = store.latest(state)
-            if cert is None:
-                return False
-            if want == "RESOLVED":
-                return cert.status is not Status.UNKNOWN
-            return cert.status.value == want
-        return check
-    parts = [_build_guard(p) for p in spec.parts]
-    if spec.kind == "all":
-        return lambda store: all(p(store) for p in parts)
-    if spec.kind == "any":
-        return lambda store: any(p(store) for p in parts)
+    S3.2: "If a mandatory predecessor remains Unknown and the conclusion
+    cannot otherwise be determined, the merged result also remains Unknown."
+    A guard follows the same rule. It is read for every way the results it
+    reads could have turned out (see `_possible`):
+
+        open in every case                     OPEN: the item runs
+        closed in every case                   CLOSED: it does not apply
+        it depends on a result not produced    PENDING: wait
+        it depends on an UNKNOWN result        UNDECIDED: whether the item
+                                               applies is unknown
+
+    So an unknown fact can neither switch a rule off nor switch one on.
+    """
+    names = list(dict.fromkeys(_state_of(s) for s in spec.states()))
+
+    def gate(store: CertificateStore) -> Gate:
+        certs = {s: store.latest(s) for s in names}
+        pending = any(c is None for c in certs.values())
+        options = {s: _possible(c) for s, c in certs.items()}
+        uncertain = [s for s in names if len(options[s]) > 1]
+        if len(uncertain) > _MAX_UNCERTAIN_IN_GUARD:
+            return Gate.PENDING if pending else Gate.UNDECIDED
+        seen = set()
+        for combo in product(*(options[s] for s in uncertain)):
+            filled = dict(zip(uncertain, combo))
+            seen.add(_holds(spec, lambda s: filled.get(s) or options[s][0]))
+            if len(seen) == 2:
+                break
+        if seen == {True}:
+            return Gate.OPEN
+        if pending:
+            return Gate.PENDING
+        return Gate.CLOSED if seen == {False} else Gate.UNDECIDED
+    return gate
+
+
+def _build_guard(spec: GuardSpec) -> Callable[[CertificateStore], bool]:
+    """Eq 4's g_o: open or not. The same reading as `_build_gate`, so the two
+    can never disagree about whether an item may run."""
+    gate = _build_gate(spec)
+    return lambda store: gate(store) is Gate.OPEN
+
+
+def _guard_data(spec: GuardSpec) -> Dict[str, Any]:
+    """The guard as plain data over STATE names, for an independent reader."""
+    if spec.kind == "state":
+        return {"state": _state_of(spec.state), "status": spec.status}
     if spec.kind == "not":
-        return lambda store: not parts[0](store)
-    raise CompileError(f"unknown guard kind {spec.kind!r}")
+        return {"not": _guard_data(spec.parts[0])}
+    return {spec.kind: [_guard_data(p) for p in spec.parts]}
 
 
 def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
@@ -485,6 +556,8 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             guard=_build_guard(o.guard) if o.guard else None,
             guard_desc=o.guard.describe() if o.guard else "",
             guard_states=[_state_of(x) for x in o.guard.states()] if o.guard else [],
+            guard_eval=_build_gate(o.guard) if o.guard else None,
+            guard_spec=_guard_data(o.guard) if o.guard else None,
             evidence_hint=list(o.evidence_hint),
             mandatory=o.mandatory))
 
@@ -504,6 +577,8 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             guard=_build_guard(m.guard) if m.guard else None,
             guard_desc=m.guard.describe() if m.guard else "",
             guard_states=[_state_of(x) for x in m.guard.states()] if m.guard else [],
+            guard_eval=_build_gate(m.guard) if m.guard else None,
+            guard_spec=_guard_data(m.guard) if m.guard else None,
             merge=MergeType(m.kind), merge_inputs=inputs))
 
     net.states = states
