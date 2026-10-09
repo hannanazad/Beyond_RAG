@@ -7,6 +7,10 @@ For each executed plan:
   hand-overs     calculator or rule checks that could not decide and went to
                  the text checker
   pointers       how much of the evidence the plan pointed to reached the checker
+  lookups        what the text and image checkers looked up in the manual
+                 themselves, what they cited that they were not first given
+                 (found_by_checker), and the exceptions handed to them after an
+                 answer that rested on a provision naming them
   terminal       the decision, whether it is certified, and unsupported
                  certification (a definite answer while a required check never
                  resolved)
@@ -57,6 +61,16 @@ def make_exec_record(case_id: str, question: str, spec, net, trace, answer,
             "handed_over_from": prov.get("handed_over_from"),
             "basis": prov.get("basis") or "",
             "authority_from": prov.get("authority_from"),
+            "lookups": prov.get("lookups") or [],
+            "lookup_limit": prov.get("lookup_limit"),
+            "found_by_checker": prov.get("found_by_checker") or [],
+            "named_exceptions": prov.get("named_exceptions") or [],
+            "handed_over_exceptions": prov.get("handed_over_exceptions") or [],
+            "asked_to_look": prov.get("asked_to_look_for_specific_provision") or [],
+            "asked_to_open": prov.get("asked_to_open_sections") or [],
+            "cited_handed_over": prov.get("cited_handed_over_exceptions") or [],
+            "conversation": prov.get("conversation") or {},
+            "first_answer": prov.get("first_answer") or "",
             "applicability_unknown": c.applicability_unknown(),
             "claim": c.claim,
             "provenance": prov,
@@ -92,6 +106,8 @@ def summarize_execution(records: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     calls = [x for r in records for x in r["calls"]]
     pointed = [c for c in checks if c["pointed"]]
     used_pointed = [c for c in pointed if set(c["pointed"]) & set(c["evidence"])]
+    conv = [c for c in checks if c.get("conversation")]
+    looks = [e for c in checks for e in (c.get("lookups") or [])]
     return {
         "plans": len(records),
         "terminal": dict(Counter(r["terminal"] for r in records)),
@@ -111,6 +127,22 @@ def summarize_execution(records: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         "never_settled": sum(len(r["skipped"]) for r in records),
         "checks_given_pointed_evidence": len(pointed),
         "of_which_cited_it": len(used_pointed),
+        "checks_with_lookup_tools": len(conv),
+        "lookups": len(looks),
+        "lookups_by_tool": dict(Counter(e.get("tool") for e in looks)),
+        "lookup_errors": sum(1 for e in looks if e.get("error")),
+        "checks_at_lookup_limit": sum(1 for c in conv if (c["conversation"] or {}).get("refused_lookups")),
+        "conversations_stopped": dict(Counter((c["conversation"] or {}).get("stopped")
+                                              for c in conv if (c["conversation"] or {}).get("stopped"))),
+        "found_by_checker": sum(1 for c in checks if c.get("found_by_checker")),
+        "named_exceptions_given": sum(1 for c in checks if c.get("named_exceptions")),
+        "exceptions_handed_after_answer": sum(1 for c in checks if c.get("handed_over_exceptions")),
+        "asked_to_look_for_specific": sum(1 for c in checks if c.get("asked_to_look")),
+        "asked_to_open_sections": sum(1 for c in checks if c.get("asked_to_open")),
+        "answer_changed_after_exceptions": sum(
+            1 for c in checks if (c.get("handed_over_exceptions") or c.get("asked_to_look")
+                                  or c.get("asked_to_open")) and c.get("first_answer")
+            and c.get("first_answer") != c["status"]),
         "unknown_reasons": reasons.most_common(8),
         "model_calls": len(calls),
         "from_cache": sum(1 for x in calls if x.get("cached")),
@@ -136,6 +168,21 @@ def print_exec_summary(s: Dict[str, Any]) -> None:
           f"heading from the evidence they rest on")
     print(f"  pointed evidence    : {s['checks_given_pointed_evidence']} checks were given it; "
           f"{s['of_which_cited_it']} cited some of it")
+    if s.get("checks_with_lookup_tools"):
+        n = s["checks_with_lookup_tools"]
+        print(f"  lookups             : {s['lookups']} in {n} checks "
+              f"({s['lookups'] / max(n, 1):.1f} per check) {s['lookups_by_tool']}; "
+              f"{s['lookup_errors']} came back with an error")
+        print(f"  at the lookup limit : {s['checks_at_lookup_limit']} checks; conversations stopped: "
+              f"{s['conversations_stopped'] or 0}")
+        print(f"  found by checker    : {s['found_by_checker']} checks cited manual text they were "
+              f"not first given")
+        print(f"  exceptions          : named ones added to the evidence in "
+              f"{s['named_exceptions_given']} checks; after a first answer: handed over in "
+              f"{s['exceptions_handed_after_answer']}, asked to open a named section in "
+              f"{s.get('asked_to_open_sections', 0)}, asked to look for a specific provision in "
+              f"{s['asked_to_look_for_specific']}; the answer then changed in "
+              f"{s.get('answer_changed_after_exceptions', 0)}")
     print(f"given facts           : {s.get('given_facts', 0)} in "
           f"{s.get('plans_with_given_facts', 0)} of {s['plans']} plans (from the question, via the parser)")
     if s["unknown_reasons"]:
@@ -145,6 +192,25 @@ def print_exec_summary(s: Dict[str, Any]) -> None:
     print(f"model calls           : {s['model_calls']} ({s['from_cache']} from the cache), "
           f"finish {s['finish_reasons']}, {s['completion_tokens']:,} new tokens")
     print(f"time                  : {s['seconds']:.0f}s")
+
+
+def _lookup_text(e: Dict[str, Any]) -> str:
+    a = e.get("input") or {}
+    t = e.get("tool", "")
+    if t == "open_section":
+        txt = f"section {a.get('section')}" + (f" from {a['from_paragraph']}"
+                                               if a.get("from_paragraph") else "")
+    elif t == "open_paragraph":
+        txt = f"{a.get('section')} paragraph {a.get('paragraph')}"
+    elif t == "open_table_or_figure":
+        txt = str(a.get("id")) + (f" rows with {a['row_contains']!r}" if a.get("row_contains") else "")
+    elif t == "define_term":
+        txt = f"define {a.get('term')!r}"
+    elif t == "search_manual":
+        txt = f"search {_short(a.get('query'), 50)!r}"
+    else:
+        txt = f"{t} {a}"
+    return txt + (" (error)" if e.get("error") else "")
 
 
 def print_execution(rec: Dict[str, Any], width: int = 110) -> None:
@@ -190,6 +256,29 @@ def print_execution(rec: Dict[str, Any], width: int = 110) -> None:
             h = c["handed_over_from"]
             print(f"     first   : {h['verifier']} said {h.get('status', 'UNKNOWN')}: "
                   f"{_short(h['reason'], width - 40)}")
+        if c.get("lookups"):
+            shown = " · ".join(_lookup_text(e) for e in c["lookups"][:8])
+            more = f" · +{len(c['lookups']) - 8} more" if len(c["lookups"]) > 8 else ""
+            print(f"     looked  : {_short(shown + more, width - 15)}  "
+                  f"[{len(c['lookups'])} of {c.get('lookup_limit') or '-'}]")
+        if c.get("found_by_checker"):
+            print(f"     found   : {', '.join(c['found_by_checker'][:5])} (not in what it was first given)")
+        if c.get("named_exceptions"):
+            print(f"     except. : {', '.join(c['named_exceptions'][:5])} (named by the provisions pointed to)")
+        if c.get("handed_over_exceptions"):
+            print(f"     handed  : {', '.join(c['handed_over_exceptions'][:5])} (exceptions named by "
+                  f"what its first answer rested on; it answered again)")
+        if c.get("asked_to_open"):
+            print(f"     asked   : to open {', '.join('Section ' + x for x in c['asked_to_open'][:4])} "
+                  f"(named whole as exceptions by what its first answer rested on)")
+        if c.get("asked_to_look"):
+            print(f"     asked   : to look for the specific provision, because "
+                  f"{', '.join(c['asked_to_look'][:3])} says an exception exists 'otherwise'")
+        if c.get("first_answer") and c.get("first_answer") != c["status"]:
+            print(f"     changed : first answer {c['first_answer']}, after the exceptions {c['status']}")
+        stop = (c.get("conversation") or {}).get("stopped")
+        if stop:
+            print(f"     stopped : {stop}")
         if c.get("authority_from"):
             a = c["authority_from"]
             why = (f"rests on {a['basis']}" if a.get("basis")

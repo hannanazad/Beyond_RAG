@@ -9,7 +9,7 @@ Everything here is measured against the MANUAL and the run itself:
   repeat       does the same input give the same plan
 
 and, for the development cases only (written from random MUTCD provisions,
-`retrieval_dev/manual_cases_v1.jsonl`), one check against the provision the
+`retrieval_dev/manual_cases_v2.jsonl`), one check against the provision the
 case was written from:
 
   source hit   is there an obligation that comes from that provision
@@ -26,7 +26,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-DEV_FILE = Path(__file__).resolve().parent / "retrieval_dev" / "manual_cases_v1.jsonl"
+DEV_FILE = Path(__file__).resolve().parent / "retrieval_dev" / "manual_cases_v2.jsonl"
 
 
 # --------------------------------------------------------------------------- #

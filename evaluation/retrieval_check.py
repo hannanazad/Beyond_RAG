@@ -1,6 +1,6 @@
 """Does retrieval find the right part of the manual when the question is worded freely?
 
-Runs every case in evaluation/retrieval_dev/manual_cases_v1.jsonl through the
+Runs every case in evaluation/retrieval_dev/manual_cases_v2.jsonl through the
 two retrieval entry points and records where the target section landed.
 
   retrieve_for_compile(q)   what VINE's parser reads (search + cross-reference
@@ -11,6 +11,12 @@ two retrieval entry points and records where the target section landed.
 The cases are written from the MUTCD itself: random provisions, each worded
 three ways (the manual's own words, plain words, a short scenario), plus
 questions that need two sections. No test question and no gold answer is used.
+manual_cases_v2 (9 October 2026) corrects 9 cases found, on an audit against
+their own sections, to describe a situation the provision does not cover (for
+example Section 8A.12, which is only about circular intersections near a grade
+crossing, written as an ordinary intersection). Each corrected case keeps its id
+and carries "previous_text" and "revised" (the reason). v1 is kept unchanged:
+the retrieval test of 7 October 2026 was run on it.
 
 WHAT IS MEASURED, PER CASE
   search_rank     1-based rank of the first SEARCHED chunk from each target
@@ -31,7 +37,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-DEFAULT_CASES = Path(__file__).resolve().parent / "retrieval_dev" / "manual_cases_v1.jsonl"
+DEFAULT_CASES = Path(__file__).resolve().parent / "retrieval_dev" / "manual_cases_v2.jsonl"
 CUTS = (1, 3, 5, 10)
 
 

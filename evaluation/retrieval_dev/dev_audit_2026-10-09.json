@@ -1,0 +1,945 @@
+{
+ "date": "2026-10-09",
+ "what": "each DEV case checked against its own section(s) of the manual: does the case fall within the provision's scope and conditions, would the provision answer it with the same strength, is the target section the one that governs it",
+ "how": "five independent reviewers, each with one batch of cases and the full text of the target sections; every PROBLEM was then checked by hand against the manual",
+ "counts": {
+  "OK": 130,
+  "MINOR": 15,
+  "PROBLEM": 9
+ },
+ "verdicts": [
+  {
+   "case_id": "P01-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 1D.06 ¶3; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P01-plain_words",
+   "verdict": "OK",
+   "reason": "1D.06 ¶3: the public-domain requirement \"shall not apply to individual components used in the assembly or manufacture\" answers the question directly.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P01-scenario",
+   "verdict": "OK",
+   "reason": "A patented internal LED driver board is a component; ¶3 exempts \"individual components\" and ¶4 says the limit \"does not apply to ... internal controls, circuitry, electronics\". Warranty fact is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P02-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 1A.06 ¶2; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P02-plain_words",
+   "verdict": "OK",
+   "reason": "1A.06 ¶2: driver actions \"should be specified by State statute, or in cases not covered by State statute, in local ordinances or resolutions\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P02-scenario",
+   "verdict": "OK",
+   "reason": "State law does not cover the case, so ¶2 points to \"local ordinances or resolutions\" that \"should be consistent with the Uniform Vehicle Code\". Two-language fact is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P03-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 1C.02 ¶1; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P03-plain_words",
+   "verdict": "OK",
+   "reason": "1C.02 ¶1: undefined words \"shall have the meaning(s) as defined in the Uniform Vehicle Code, AASHTO Transportation Glossary ..., or other appropriate publications\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P03-scenario",
+   "verdict": "OK",
+   "reason": "The term appears in the manual and is defined neither in 1C.02 nor another Part, which is exactly the ¶1 condition (\"Unless otherwise defined in this Section, or in other Parts\"). Contract date is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P04-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2F.06 ¶6; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P04-plain_words",
+   "verdict": "MINOR",
+   "reason": "2F.06 ¶6 allows \"an additional W9-6 or W9-6e sign ... approximately 2 miles in advance of a mainline toll plaza\"; since ¶2-¶3 already place signs at 1 mile and 1/2 mile, it is not a \"second\" sign, and \"toll station\" drops \"mainline\" (ramp plazas are ¶7). The answer (about 2 miles) does not change.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P04-scenario",
+   "verdict": "OK",
+   "reason": "Mainline toll plaza with stop-to-pay/take-ticket lanes; ¶6: additional sign \"approximately 2 miles in advance\" and it \"may be either mounted overhead or post-mounted\". Shoulder width is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P05-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2I.02 ¶21; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P05-plain_words",
+   "verdict": "OK",
+   "reason": "2I.02 ¶21: the D9-13 symbol sign \"may be used to identify medical service facilities that have been included in the Emergency Medical Services system under a signing policy\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P05-scenario",
+   "verdict": "MINOR",
+   "reason": "¶21 gives the condition asked for, but the facility is called a \"clinic\", and ¶22 (same section) says the sign \"shall not be used to identify services other than qualified hospitals, ambulance stations, and qualified free-standing emergency medical treatment centers\"; calling it a free-standing emergency medical treatment center would remove the doubt. Target section is still correct.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P06-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2M.02 ¶2; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P06-plain_words",
+   "verdict": "OK",
+   "reason": "2M.02 ¶2: agencies \"should establish a policy with signing criteria for the eligibility\" of services and facilities.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P06-scenario",
+   "verdict": "OK",
+   "reason": "Campgrounds, museums and ski areas are recreational/cultural interest areas; ¶2 answers both parts: establish \"a policy with signing criteria\" and do not use the signs \"where they might be confused with other traffic control signs\". Traffic volume is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P07-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2F.16 ¶3; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P07-plain_words",
+   "verdict": "OK",
+   "reason": "2F.16 ¶3: \"one or two flashing yellow beacons ... may supplement a canopy sign over an ETC Account-Only lane\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P07-scenario",
+   "verdict": "OK",
+   "reason": "Lane requires a registered account and has a canopy sign, matching ¶3's condition; answer is one or two flashing yellow beacons. Number of lanes is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P08-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2A.21 ¶3; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P08-plain_words",
+   "verdict": "OK",
+   "reason": "2A.21 ¶3: signs \"shall be retroreflective or illuminated to show the same shape and similar color by both day and night\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P08-scenario",
+   "verdict": "OK",
+   "reason": "Stop, curve warning and street-name guide signs are regulatory, warning and guide signs, which \"shall be retroreflective or illuminated\"; low night traffic and budget do not change the answer (not allowed).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P09-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2B.43 ¶1; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P09-plain_words",
+   "verdict": "OK",
+   "reason": "\"Paved edge of the road as an extra travel lane\" is the shoulder used \"as a travel lane\" in ¶1; answer R4-17.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P09-scenario",
+   "verdict": "PROBLEM",
+   "reason": "Drivers who \"pass slow traffic on the right by driving on the paved shoulder\" fit 2B.43 ¶2: \"The DO NOT PASS ON SHOULDER (R4-18) sign ... may be installed to inform road users that using the shoulder of a roadway to pass other vehicles is prohibited\", so a careful engineer would answer R4-18, not the source ¶1 sign (R4-17, shoulder used \"as a travel lane\").",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "During rush hour, some drivers on a suburban highway use the paved shoulder as an extra lane and drive along it for long stretches. The shoulder is 8 feet wide and has rumble strips. What sign may the agency install to tell drivers this is not allowed?"
+  },
+  {
+   "case_id": "P10-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2A.09 ¶1; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P10-plain_words",
+   "verdict": "OK",
+   "reason": "2A.09 ¶1: \"Symbol designs shall in all cases be unmistakably similar to those shown in this Manual and in the Standard Highway Signs publication\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P10-scenario",
+   "verdict": "OK",
+   "reason": "A branded symbol that \"looks noticeably different\" fails ¶1's \"unmistakably similar\" Standard; larger panel is harmless.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P11-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2C.35 ¶10; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P11-plain_words",
+   "verdict": "OK",
+   "reason": "A BE PREPARED TO STOP sign with a beacon interconnected with the signal; ¶10: \"should be supplemented with a WHEN FLASHING (W16-13P) plaque\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P11-scenario",
+   "verdict": "OK",
+   "reason": "A beacon that flashes when the signal is about to turn red is \"interconnected with a traffic control signal\", so ¶10 gives the WHEN FLASHING plaque. Speed, crest and mounting height do not change the answer to what is added to the assembly.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P12-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 2B.47 ¶2; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P12-plain_words",
+   "verdict": "OK",
+   "reason": "2B.47 ¶2: WRONG WAY sign \"farther from the crossroad than the DO NOT ENTER sign\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P12-scenario",
+   "verdict": "MINOR",
+   "reason": "2B.47 ¶2 gives the placement (\"farther from the crossroad than the DO NOT ENTER sign\"), but a freeway exit ramp is also governed by 2B.48, where \"At least one WRONG WAY sign shall be placed on the exit ramp\", so the sign is required, not an optional add. Setting the case on a one-way street entered from a cross street would remove the overlap.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P13-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 2B.29 Paragraph 1; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P13-plain_words",
+   "verdict": "OK",
+   "reason": "A sign for a lane where drivers can turn or go straight is the Optional Movement Lane Control sign; 2B.29 Paragraph 1 says it \"shall be mounted overhead over the specific lane to which it applies.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P13-scenario",
+   "verdict": "OK",
+   "reason": "A shared left/through lane sign is an R3-6 sign, so a median pole is not allowed: \"shall be mounted overhead over the specific lane to which it applies\" (2B.29 Paragraph 1). The pole distance is a harmless extra fact.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P14-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 2N.09 Paragraph 4; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P14-plain_words",
+   "verdict": "OK",
+   "reason": "A disaster is an \"incident situation\"; 2N.09 Paragraph 4 says \"the background color may be fluorescent pink\" (white is the normal color under Paragraph 3).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P14-scenario",
+   "verdict": "OK",
+   "reason": "A chemical release is an \"incident situation\", so 2N.09 Paragraph 4 applies: \"the background color may be fluorescent pink\". The stock of blanks is extra detail; the answer is fluorescent pink (white still allowed under Paragraph 3).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P15-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 2C.46 Paragraph 3; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P15-plain_words",
+   "verdict": "OK",
+   "reason": "A ramp that curves before joining a straight road with a new lane fits \"a roadway that curves before converging with another roadway that has a tangent alignment\"; the W4-6 \"should be used\" (2C.46 Paragraph 3).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P15-scenario",
+   "verdict": "OK",
+   "reason": "A loop ramp that curves and then joins a straight arterial with its own added lane fits 2C.46 Paragraph 3 (\"the Entering Roadway Added Lane (W4-6) sign ... should be used\"). The advisory speed is a harmless extra fact.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P16-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 2E.31 Paragraph 5; the wording appears only in 2E.31 and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P16-plain_words",
+   "verdict": "OK",
+   "reason": "2E.31 Paragraph 5: a Stop Ahead or Signal Ahead sign \"may be placed, where engineering judgment indicates a need, along the ramp in advance of the crossroad\". The yes/may answer matches.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P16-scenario",
+   "verdict": "PROBLEM",
+   "reason": "The case says the stop sign is hard to see because of a bridge pier, and that triggers a mandatory rule in another section: 2C.35 Paragraph 1 says Stop Ahead signs \"shall be installed on an approach to a primary traffic control device that is not visible for a sufficient distance\". Paragraph 4 of 2C.35 adds that \"permanent obstructions ... might include ... structures\", and 2B.18 Paragraph 1 says that when \"the sign visibility is restricted, a Stop Ahead sign ... shall be installed\". So the sign is required by 2C.35/2B.18, not just optional under 2E.31 Paragraph 5 (\"may be placed, where engineering judgment indicates a need\").",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "At a diamond interchange, the exit ramp ends at a stop sign at the crossroad. The stop sign is in clear view along the whole ramp, but the engineer judges that drivers need notice of the stop. The ramp is 1,200 feet long and carries mostly trucks. What warning sign may be placed along the ramp?"
+  },
+  {
+   "case_id": "P17-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 2G.15 Paragraph 3; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P17-plain_words",
+   "verdict": "OK",
+   "reason": "2G.15 Paragraph 3: \"Advance Guide and Exit Direction signs for exits to direct access ramps from a preferential lane should be mounted overhead\" (Paragraph 4 also bars vertical post-mounted signs on a median barrier).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P17-scenario",
+   "verdict": "MINOR",
+   "reason": "The answer is correct: \"should be mounted overhead\" plus \"A Pull-Through sign over the preferential lane\" (2G.15 Paragraph 3). But an express toll lane is a priced managed lane, which reaches 2G.15 only through 2G.19 Paragraph 1 (\"guide signs for ... managed lanes shall follow ... Sections 2G.10 through 2G.15\"). 2G.19 Paragraph 13 also sets the legends (\"EXPRESS EXIT\", Pull-Through \"EXPRESS LANE(S)\"), and the case does not say the road is a freeway (2G.10 Paragraph 1). None of this changes the answer.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P18-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 3A.04 Paragraph 3; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P18-plain_words",
+   "verdict": "OK",
+   "reason": "3A.04 Paragraph 3: the space \"should not exceed two times the line width of a single line.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P18-scenario",
+   "verdict": "OK",
+   "reason": "The case tests the condition: with 4-inch stripes the gap should be at most 8 inches, so a 12-inch gap is not acceptable (\"should not exceed two times the line width of a single line\", 3A.04 Paragraph 3). The resurfacing date is a harmless extra fact.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P19-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 3B.09 Paragraph 3; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P19-plain_words",
+   "verdict": "OK",
+   "reason": "3B.09 Paragraph 3: on \"one-way streets\" the left edge line \"shall consist of a normal width solid yellow line.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P19-scenario",
+   "verdict": "OK",
+   "reason": "An off-ramp is covered by \"on any ramp in the direction of travel, left edge line pavement markings shall consist of a normal width solid yellow line\" (3B.09 Paragraph 3), so solid white on the left is wrong. The ramp width is a harmless extra fact.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P20-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 3G.03 Paragraph 11; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P20-plain_words",
+   "verdict": "OK",
+   "reason": "Reflectors on roadside posts are delineators; 3G.03 Paragraph 11: \"Red delineators may be used on the reverse side of any delineator where it would be viewed by a road user traveling in the wrong direction.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P20-scenario",
+   "verdict": "OK",
+   "reason": "The back of ramp delineator posts facing wrong-way drivers is exactly 3G.03 Paragraph 11 (\"Red delineators may be used on the reverse side ... on that particular ramp or roadway\"). 2B.48 deals with signs and pavement arrows, not delineators.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P21-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 3B.05 Paragraph 6; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P21-plain_words",
+   "verdict": "OK",
+   "reason": "3B.05 Paragraph 6: \"Two-way left-turn lane markings should not extend to intersections.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P21-scenario",
+   "verdict": "OK",
+   "reason": "Running the two-way left-turn lane markings up to the crosswalk at the intersection goes against \"should not extend to intersections\" (3B.05 Paragraph 6); Paragraph 7 gives the transition options. The speed limit is a harmless extra fact.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P22-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 3B.21 Paragraph 2; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P22-plain_words",
+   "verdict": "OK",
+   "reason": "3B.21 Paragraph 2: a multi-line message \"should read in the direction of travel. The first word of the message should be nearest to the road user.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P22-scenario",
+   "verdict": "OK",
+   "reason": "SCHOOL is the first word, so it goes nearest to approaching drivers (3B.21 Paragraph 2). The school section 7C.02 only covers the SCHOOL word marking's width and height, and it refers back to Chapter 3B, so it does not change the order rule.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P23-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 3C.02 Paragraph 2; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P23-plain_words",
+   "verdict": "MINOR",
+   "reason": "The yes answer comes from 3C.02 Paragraph 2 (\"may be omitted if engineering judgment indicates they are not needed\"). But \"where people cross\" is broader than that paragraph: Paragraph 5 says markings \"shall be provided at legally established crosswalks at non-intersection locations\". So the full answer has an exception the case does not hint at.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P23-scenario",
+   "verdict": "PROBLEM",
+   "reason": "Paragraph 2 (\"may be omitted\") comes right after Paragraph 1, which covers \"locations controlled by traffic control signals\", so it is the exception to that paragraph. An all-way STOP intersection has its own paragraph, Paragraph 3: \"On approaches controlled by STOP or YIELD signs, crosswalk markings should be installed where engineering judgment indicates they are needed to direct pedestrians to the proper crossing path(s).\" The section (3C.02) and the yes answer stay the same, but a careful engineer would cite Paragraph 3, not the source Paragraph 2.",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "At a signalized intersection of two quiet residential streets, pedestrians already cross along the obvious lines of the sidewalks. The street is 30 feet wide. Can the agency decide not to paint crosswalk markings there?"
+  },
+  {
+   "case_id": "P24-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4E.04 Paragraph 1; stands alone and matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P24-plain_words",
+   "verdict": "OK",
+   "reason": "4E.04 Paragraph 1: red sections \"shall be located above all signal sections that display yellow and green signal indications.\"",
+   "action": "kept"
+  },
+  {
+   "case_id": "P24-scenario",
+   "verdict": "MINOR",
+   "reason": "The answer is correct: a red arrow below a green ball breaks \"all signal sections that display red signal indications shall be located above all signal sections that display yellow and green\" (4E.04 Paragraph 1). The described face (a left-turn RED ARROW together with a CIRCULAR GREEN) is an unusual mix (compare 4F.02 Paragraph 6), but this does not change the position answer.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P25-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4B.04 ¶2: \"The design (including the phasing, operation, and timing) of new traffic control signals should be based on an engineering study\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P25-plain_words",
+   "verdict": "OK",
+   "reason": "Asks what the phasing and timing of a new signal should be based on; 4B.04 ¶2 answers: \"should be based on an engineering study of roadway, traffic, and other conditions\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P25-scenario",
+   "verdict": "OK",
+   "reason": "A new signal whose council wants to copy another timing plan; 4B.04 ¶2 says the design of new signals \"should be based on an engineering study\". Volume and cost facts are harmless extras.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P26-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4J.02 ¶6.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P26-plain_words",
+   "verdict": "MINOR",
+   "reason": "\"Slower street\" drops the decisive number: ¶6 applies to \"speed limits or 85th-percentile speeds of 35 mph or less\", while ¶5 covers \"in excess of 35 mph\". The answer is still ¶6, but adding \"35 mph or less\" would remove the doubt.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P26-scenario",
+   "verdict": "OK",
+   "reason": "Four-lane (multi-lane) street posted 30 mph with a 12-foot median; ¶6: \"either a pedestrian hybrid beacon face should be installed on each side of the approach (if a median of sufficient width exists) or at least one ... over the roadway\", so both faces on the right side is wrong. Fits scope and conditions.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P27-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4I.06 ¶3.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P27-plain_words",
+   "verdict": "OK",
+   "reason": "4I.06 ¶3: WALK \"shall be displayed only when pedestrians are permitted to leave the curb or shoulder\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P27-scenario",
+   "verdict": "PROBLEM",
+   "reason": "The case is about a WALK display at the same time as a protected turn GREEN ARROW across the crosswalk. That conflict is decided by 4F.01 ¶3 Item H.1: a steady GREEN ARROW \"Shall be displayed only to allow vehicular movements ... that are ... not in conflict with pedestrians crossing in compliance with a WALKING PERSON\". 4I.06 ¶3 (\"only when pedestrians are permitted to leave the curb\") does not speak to turning-vehicle conflicts, so a careful engineer would answer from 4F.01, not 4I.06 ¶3.",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "At a signalized intersection, a timing error makes the pedestrian signal show the walking person on one crosswalk while pedestrians are still not permitted to step off the curb there. The crosswalk is 60 feet long. Is that allowed?"
+  },
+  {
+   "case_id": "P28-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4A.08 ¶2.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P28-plain_words",
+   "verdict": "OK",
+   "reason": "4A.08 ¶2 says signs \"should be used at highway traffic signal locations as provided in Part 2 and as specifically provided elsewhere in Part 4\", so normal sign rules still apply.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P28-scenario",
+   "verdict": "OK",
+   "reason": "Asks which parts of the manual govern signs at signalized locations; 4A.08 ¶2 answers \"Part 2 and ... elsewhere in Part 4\". Dual left-turn lanes are a harmless extra (¶3 of the same section points to 2B.27).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P29-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4O.03 ¶2.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P29-plain_words",
+   "verdict": "OK",
+   "reason": "Signal-controlled one-lane, two-way stretch; 4O.03 ¶2: \"Adequate time should be provided to allow traffic to clear the narrow facility ... Engineering judgment should be used to determine the proper timing\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P29-scenario",
+   "verdict": "MINOR",
+   "reason": "4O.03 ¶2 answers it (\"Adequate time should be provided to allow traffic to clear the narrow facility before opposing traffic is allowed to move\"), but 4O.02 ¶1 Item A also covers the same complaint as a Standard: \"The durations of the red clearance intervals shall be adequate to clear the one-lane section of conflicting vehicles\". Target is right; the answer is shared with 4O.02.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P30-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4R.03 ¶3.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P30-plain_words",
+   "verdict": "OK",
+   "reason": "Beacons marking toll booth islands \"may be mounted at a height that is appropriate for viewing in a toll plaza context, even if that height is lower than the normal minimum of 8 feet\" (4R.03 ¶3).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P30-scenario",
+   "verdict": "OK",
+   "reason": "Warning beacons on toll plaza islands at 4 feet; 4R.03 ¶3 allows a height \"lower than the normal minimum of 8 feet above the pavement\". The 8-foot fact elsewhere matches the provision.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P31-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4F.01 ¶6.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P31-plain_words",
+   "verdict": "MINOR",
+   "reason": "Paraphrase of 4F.01 ¶6 is fair, but it drops \"If not otherwise prohibited\". Every all-turn approach has no through movement, and 4F.16 ¶7 says that where a combined left-turn/right-turn lane exists \"the red signal indication ... shall be a CIRCULAR RED\". Answer is still ¶6 (may), with that limit.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P31-scenario",
+   "verdict": "PROBLEM",
+   "reason": "A garage exit that is the stem of a T with traffic turning both left and right is the exact case of 4F.16 (\"apply only to approaches where no through movement exists, such as the stem of a T-intersection\"; 4F.01 ¶7 points there). If the exit has a shared left/right lane, 4F.16 ¶7 says \"the red signal indication used in each of the signal faces on the approach shall be a CIRCULAR RED\", so red arrows are \"otherwise prohibited\" and the 4F.01 ¶6 answer (red, yellow, and green arrows may be used) would be wrong. As written the case does not say there is no shared lane.",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "A parking garage exit forms the stem of a T-intersection, so there is no road straight ahead. It has one lane that must turn left and one lane that must turn right, and no shared left/right lane. The signal faces currently show circular red, yellow and green. The garage has 800 spaces. May turn arrows be used instead?"
+  },
+  {
+   "case_id": "P32-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 4Q.02 ¶7.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P32-plain_words",
+   "verdict": "MINOR",
+   "reason": "4Q.02 ¶7 answers it (\"no more than 50 feet in advance of the movable bridge warning gate\"), but \"drawbridge gate\" does not say warning gate (the section also has resistance gates, ¶21 puts warning gates 100 feet or more from them), and \"can\" asks for a permission where the text is Guidance (\"should\").",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P32-scenario",
+   "verdict": "OK",
+   "reason": "Signals 120 feet before the warning gates tests the ¶7 limit: \"They should be located no more than 50 feet in advance of the movable bridge warning gate\". The visibility reason is handled in the same section (¶10 auxiliary device), so the target is right.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P33-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 5B.01 ¶2.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P33-plain_words",
+   "verdict": "OK",
+   "reason": "5B.01 ¶2: when scanning graphics are used on a sign for driving automation systems, they \"shall not be visible to the human eye\" and the sign \"shall have no apparent loss of resolution or recognition\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P33-scenario",
+   "verdict": "OK",
+   "reason": "A QR-style pattern for automated vehicles that shows as a faint grid breaks 5B.01 ¶2 (\"shall not be visible to the human eye\"). Pilot length is a harmless extra.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P34-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 5A.04 ¶4.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P34-plain_words",
+   "verdict": "OK",
+   "reason": "5A.04 ¶4: engineering judgment for device selection and placement \"should consider uniformity in application and location needed to support both the human driver and driving automation system technology\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P34-scenario",
+   "verdict": "OK",
+   "reason": "Sign placement policy, varied vs. consistent placement; 5A.04 ¶4 answers: consider \"uniformity in application and location\" for both human drivers and automation. Road mileage is a harmless extra.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P35-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 6C.01 ¶1.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P35-plain_words",
+   "verdict": "OK",
+   "reason": "6C.01 ¶1: the TTC provisions for pedestrian and worker safety \"shall be applied by knowledgeable (for example, trained and/or certified) persons\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P35-scenario",
+   "verdict": "OK",
+   "reason": "Untrained interns setting cones and a pedestrian detour in a work zone; 6C.01 ¶1 requires \"knowledgeable (for example, trained and/or certified) persons\". Fits the pedestrian/worker safety scope of 6C.01.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P36-manual_words",
+   "verdict": "OK",
+   "reason": "Exact copy of 6I.03 ¶1 (the only paragraph of 6I.03; the batch file listed no paragraphs under the section heading, confirmed in the chunks file).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P36-plain_words",
+   "verdict": "OK",
+   "reason": "Closed exit in a work zone; 6I.03 ¶1: an \"EXIT CLOSED sign panel with a black legend and border on an orange background should be placed diagonally across the interchange/intersection guide signs\".",
+   "action": "kept"
+  },
+  {
+   "case_id": "P36-scenario",
+   "verdict": "OK",
+   "reason": "Freeway exit ramp closed for rebuilding with guide signs left in place; 6I.03 ¶1 gives what goes on them and how it looks (black on orange, placed diagonally). Detour length is a harmless extra.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P37-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 6H.38 ¶5 ('Other warning signs should comply with the general requirements of color, shape, and alphabet size and series...'); matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P37-plain_words",
+   "verdict": "OK",
+   "reason": "A work-zone warning sign the manual does not show is covered by 6H.38 ¶3 ('Word message warning signs other than those classified and specified in this Manual ... may be developed') and ¶5 ('should comply with the general requirements of color, shape, and alphabet size and series ... brief, legible, and clear').",
+   "action": "kept"
+  },
+  {
+   "case_id": "P37-scenario",
+   "verdict": "PROBLEM",
+   "reason": "The hazard chosen has standard signs: 6H.19 says 'The FRESH OIL (TAR) (W21-2) sign ... should be used to warn road users of the surface treatment' (a chip seal is a surface treatment), and 'The LOOSE GRAVEL (W8-7) sign ... may be used to warn of loose gravel' (2C.30, used in TTC via 6H.38 ¶2 and 6H.34). A careful engineer would point to those signs, not to a custom sign under 6H.38 ¶5, so the premise 'no standard sign' is false for this condition.",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "A road crew on a 45 mph road needs to warn drivers of an unusual work-zone condition that no sign in the manual covers. They plan a long three-line message on a white rectangle. What should such a sign follow?"
+  },
+  {
+   "case_id": "P38-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 6N.16 ¶3; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P38-plain_words",
+   "verdict": "OK",
+   "reason": "'When a work space interferes with an entrance ramp, a lane may need to be closed on the freeway' answers 'what may need to happen on the main highway' with the same 'may' strength.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P38-scenario",
+   "verdict": "OK",
+   "reason": "Work space extending into the on-ramp merge area is 'a work space interferes with an entrance ramp'; answer is a possible freeway lane closure and 'shifting ramp vehicular traffic' (6N.16 ¶3). Volume and lane count are harmless extras.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P39-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 6H.10 ¶1; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P39-plain_words",
+   "verdict": "OK",
+   "reason": "Matches 'The RAMP NARROWS (W5-4) sign ... should be used in advance of the point where work on a ramp reduces the normal width of the ramp'.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P39-scenario",
+   "verdict": "OK",
+   "reason": "Work-zone barrier narrowing an exit ramp from 16 to 12 feet is 'work on a ramp reduces the normal width of the ramp'; answer is the W5-4 sign placed in advance. Duration and advisory speed are harmless extras.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P40-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 6O.01 ¶12; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P40-plain_words",
+   "verdict": "OK",
+   "reason": "A crash scene is a traffic incident; 6O.01 ¶12 answers yes, 'TTC devices on hand may be used for the initial response as long as they do not themselves create unnecessary additional hazards'.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P40-scenario",
+   "verdict": "OK",
+   "reason": "First responders at a crash using cones and flares they carry fits ¶12 ('TTC devices on hand may be used for the initial response as long as they do not themselves create unnecessary additional hazards'); ¶18 in the same section covers following up flares with channelizing devices.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P41-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 6H.02 ¶2; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P41-plain_words",
+   "verdict": "OK",
+   "reason": "Matches 'Where multiple advance warning signs are needed ... the ROAD WORK AHEAD (W20-1) sign should be the first advance warning sign encountered by road users'.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P41-scenario",
+   "verdict": "MINOR",
+   "reason": "Answer is still ROAD WORK AHEAD first per 6H.02 ¶2, but '2 miles long' sits exactly on the G20-1 threshold in 6H.35 ¶1 ('should be installed in advance of TTC zones that are more than 2 miles in length'), which may draw in the ROAD WORK NEXT XX MILES sign. A length such as 'half a mile' avoids this.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P42-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 7B.07 ¶1; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P42-plain_words",
+   "verdict": "OK",
+   "reason": "Matches 'Parking and stopping regulatory signs may be used to prevent parked or waiting vehicles from blocking pedestrians' views, and drivers' views of pedestrians' in school areas.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P42-scenario",
+   "verdict": "OK",
+   "reason": "Parents' waiting vehicles blocking views at a school crosswalk is the situation in 7B.07 ¶1; answer is parking and stopping regulatory signs, to keep views clear and 'to control vehicles as a part of the school traffic plan'. Street width and enrollment are harmless extras.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P43-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 7B.03 ¶11; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P43-plain_words",
+   "verdict": "MINOR",
+   "reason": "Same provision applies, but the case loosens its conditions: ¶11 needs 'a marked crosswalk that crosses an uncontrolled multi-lane approach within school zones' (2B.19 ¶2: 'only where it crosses an uncontrolled multi-lane approach'). 'Wide street with no signal' could be a wide two-lane street or one with a STOP sign; better: 'In a school zone, can a sign show drivers where to yield before a marked crosswalk on a street with more than one lane each way and no signal or stop sign?'",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "P43-scenario",
+   "verdict": "OK",
+   "reason": "Marked crosswalk in a school zone across a four-lane street with no stop sign or signal is 'a marked crosswalk that crosses an uncontrolled multi-lane approach within school zones'; the multiple-threat description matches the R1-5a/R1-5c purpose. Crossing-guard hours are a harmless extra.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P44-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 8A.12 ¶3; the wording is unique to this section. (It does not itself name circular intersections, but as a copy it matches only the target.)",
+   "action": "kept"
+  },
+  {
+   "case_id": "P44-plain_words",
+   "verdict": "PROBLEM",
+   "reason": "8A.12 covers only 'circular intersections, such as roundabouts and traffic circles, that include or are within close proximity to a grade crossing' ('Where circular intersections include or are within 200 feet of a grade crossing, an engineering study shall be made'). The case says an ordinary 'intersection', which moves the provision outside its scope; ordinary and signalized intersections near crossings are handled in 8D.09, 8D.11, 8D.12 and 8B.07.",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "When a roundabout is within 200 feet of a railroad crossing, who should review the engineering study and decide how to keep cars from being stuck on the tracks?"
+  },
+  {
+   "case_id": "P44-scenario",
+   "verdict": "PROBLEM",
+   "reason": "The case is about queues from a 'signalized intersection', but 8A.12 applies only 'Where circular intersections include or are within 200 feet of a grade crossing'. Queues from a downstream signalized intersection across a crossing are governed by 8D.09 (preemption, 'located 200 feet or less from an intersection ... controlled by a traffic control signal'), 8D.11 (pre-signals) and 8D.12 ('where the queue from a bottleneck (usually a signalized intersection) ... frequently extends back to and across the grade crossing, a queue cutter signal may be installed').",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "Queues from a roundabout regularly back up across a railroad crossing 150 feet away. An engineering study has been completed. The railroad runs 12 trains a day. Who should review the study and decide on measures, and what should those measures achieve?"
+  },
+  {
+   "case_id": "P45-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 8E.03 ¶4; the 'adjacent to pathways and sidewalks' wording is unique to this section (9A.02 ¶6 has a similar rule worded for 'shared-use paths').",
+   "action": "kept"
+  },
+  {
+   "case_id": "P45-plain_words",
+   "verdict": "OK",
+   "reason": "A sign beside a walking path at a railroad crossing is a pathway/sidewalk grade crossing sign; 8E.03 ¶4 gives 'should be 4 feet' minimum, bottom of sign to near edge of path surface.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P45-scenario",
+   "verdict": "OK",
+   "reason": "Signs beside a shared-use path at a rail crossing with the bottom at 3 feet fall short of 8E.03 ¶4 ('minimum mounting height ... should be 4 feet'), so the answer is no. 9A.02 ¶6 gives the same 4-foot value, so there is no conflict; 8E.03 is the more specific section. Path width is a harmless extra.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P46-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 8C.02 ¶10; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P46-plain_words",
+   "verdict": "OK",
+   "reason": "'Extra railroad symbol ... closer to the tracks' is a supplemental symbol between the advance warning sign and the crossing; answer is 'at least 50 feet upstream from the stop or yield line' (should).",
+   "action": "kept"
+  },
+  {
+   "case_id": "P46-scenario",
+   "verdict": "OK",
+   "reason": "A second symbol between the advance warning sign and the tracks whose last transverse line is 30 feet from the stop line fails 'should be at least 50 feet upstream from the stop or yield line'. The 35 mph fact touches ¶3 (markings optional below 40 mph) but does not change the spacing answer once the symbol is used.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P47-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 9E.09 ¶11; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P47-plain_words",
+   "verdict": "OK",
+   "reason": "Asks for a sign in place of the shared-lane marking; 9E.09 ¶11 answers directly ('a Bicycles Allowed Use of Full Lane sign that may be used in addition to or instead of the shared-lane marking'). 9B.14 ¶4 has the mirror statement, so both sections agree.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P47-scenario",
+   "verdict": "OK",
+   "reason": "25 mph street with lanes too narrow to share side by side and existing shared-lane markings is within 9E.09 scope (¶2 item B, ¶3 under 40 mph); ¶11 gives the R9-20 sign 'in addition to or instead of the shared-lane marking'.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P48-manual_words",
+   "verdict": "OK",
+   "reason": "Verbatim copy of 9B.12 ¶2; matches the target.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P48-plain_words",
+   "verdict": "OK",
+   "reason": "Matches 'the sign and the pavement marking shall be installed adjacent to each other' when the R9-6 sign is supported by a yield line.",
+   "action": "kept"
+  },
+  {
+   "case_id": "P48-scenario",
+   "verdict": "OK",
+   "reason": "An R9-6 sign with a yield line (row of yield triangles) on a shared path placed 40 feet before the line is not 'installed adjacent to each other' (shall), so the placement is wrong. Path volume is a harmless extra.",
+   "action": "kept"
+  },
+  {
+   "case_id": "T01-two_section_linked",
+   "verdict": "MINOR",
+   "reason": "2B.46 (DO NOT ENTER \"placed directly in view of a road user at the point where a road user could wrongly enter a ... one-way roadway\"; \"should be installed ... where wrong-way movements are prominent\") and 2B.47 (WRONG WAY \"may be used as a supplement\", \"farther from the crossroad than the DO NOT ENTER sign\", \"same side of the road\") answer the case. But \"Which signs should mark the entrance to the one-way road at the cross street\" can also pull in ONE WAY signs, which 2B.49 ¶2 requires (\"shall be placed parallel to the one-way street at all alleys and roadways that intersect one-way roadways\"), and the WRONG WAY sign is only an Option, not a \"should\".",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "T02-two_section_linked",
+   "verdict": "MINOR",
+   "reason": "2F.16 ¶3/¶5 cover the canopy beacons (\"one or two flashing yellow beacons ... may supplement a canopy sign over an ETC Account-Only lane\", \"mounted directly above or alongside the sign\") and 4R.03 ¶3 covers low mounting. But 4R.03 ¶3 allows the lower height only for beacons on islands \"to identify them as objects in the roadway\"; the case calls them \"more flashing lights\" without saying they mark the islands, so it could be read as extra ETC-lane beacons, which 2F.16 ¶5 limits to above/alongside the sign.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "T03-two_section_linked",
+   "verdict": "OK",
+   "reason": "7B.03 ¶11 allows the R1-5a/R1-5c sign \"in accordance with the provisions of Section 2B.19, in advance of a marked crosswalk that crosses an uncontrolled multi-lane approach within school zones\". 2B.19 gives the placement (\"20 to 50 feet in advance of the nearest edge of the crosswalk\") and the line rule (signs \"shall be used if yield (stop) lines are used\" and \"may be used ... even if yield (stop) lines are not used\").",
+   "action": "kept"
+  },
+  {
+   "case_id": "T04-two_section_linked",
+   "verdict": "OK",
+   "reason": "9B.12 ¶1 fits a shared-use path (\"where a bicyclist is required to cross or share a facility used by pedestrians\"), and ¶2 answers the placement: \"the sign and the pavement marking shall be installed adjacent to each other\". 3B.19 ¶10/¶12 give the yield line design (\"a row of solid white isosceles triangles pointing toward approaching vehicles\", base 12 to 24 inches, height 1.5 times the base, gaps 3 to 12 inches). 9E.13 (Shared-Use Paths) does not change the yield line design.",
+   "action": "kept"
+  },
+  {
+   "case_id": "T05-two_section_linked",
+   "verdict": "MINOR",
+   "reason": "9B.14 alone answers both questions: R9-20 \"may be used ... where travel lanes are too narrow for bicycles and motor vehicles to operate side-by-side\", and the shared-lane marking \"may be used in addition to or instead of\" the sign. The only extra thing 9E.09 adds is ¶12 (if both are used, \"the center of the marking is in the approximate center of the travel lane\"), and the case only hints at this with \"or both\" without asking it directly.",
+   "action": "kept (does not change the answer)"
+  },
+  {
+   "case_id": "T06-two_section_linked",
+   "verdict": "PROBLEM",
+   "reason": "The case says the signal is \"hidden by a bridge pier\", which is a permanent obstruction. That triggers 2C.35 ¶1: Signal Ahead signs \"shall be installed on an approach to a primary traffic control device that is not visible for a sufficient distance\". But the case asks \"What sign may be used there\", which matches the 2E.31 ¶5 Option (\"may be placed, where engineering judgment indicates a need\"). So the question's \"may\" is the wrong strength for the facts given.",
+   "action": "corrected in manual_cases_v2",
+   "new_text": "At a diamond interchange, a two-lane exit ramp ends at a traffic signal that ramp drivers cannot see in time because of a bridge pier. What warning sign is needed on the ramp, how should it be placed on a two-lane ramp, and may a beacon be added to it?"
+  },
+  {
+   "case_id": "T07-two_section_linked",
+   "verdict": "OK",
+   "reason": "3B.09 ¶3 gives the normal left edge line on divided highways (\"a normal width solid yellow line ... except as provided in Section 3E.04\"). 3E.04 covers a shoulder used part-time by buses (\"shall be marked with one or more pavement word markings ... such as BUS ONLY\", \"An additional outside solid edge line shall be provided on the shoulder\", optional dotted edge line and red pavement for transit-only shoulders). Both sections are needed and the case is in scope.",
+   "action": "kept"
+  },
+  {
+   "case_id": "T08-two_section_unlinked",
+   "verdict": "OK",
+   "reason": "4E.04 ¶1/¶3 give the top-to-bottom order of sections in a vertical face (\"all signal sections that display red signal indications shall be located above all signal sections that display yellow and green\"). 4I.06 ¶3 answers when the walking person may be shown (\"shall be displayed only when pedestrians are permitted to leave the curb or shoulder\"), along with ¶1 (not in flashing mode) and ¶2 (conflicting traffic gets steady red). Both sections are needed.",
+   "action": "kept"
+  },
+  {
+   "case_id": "T09-two_section_unlinked",
+   "verdict": "OK",
+   "reason": "6H.02 ¶2: \"Where multiple advance warning signs are needed ... the ROAD WORK AHEAD (W20-1) sign should be the first advance warning sign encountered\". 6I.03: \"When an exit ramp is closed, an EXIT CLOSED sign panel ... should be placed diagonally across the interchange/intersection guide signs\". 6H.12 (the separate E5-2a sign) does not cover what goes on the existing guide signs.",
+   "action": "kept"
+  },
+  {
+   "case_id": "T10-two_section_unlinked",
+   "verdict": "OK",
+   "reason": "8C.02 ¶9/¶10 answer the road part: for supplemental symbols, \"the downstream transverse line should be at least 50 feet upstream from the stop or yield line at the grade crossing\". 8E.03 ¶4 answers the sidewalk part: \"The minimum mounting height for post-mounted signs adjacent to pathways and sidewalks should be 4 feet\". The case leaves out the Diagnostic Team condition in ¶9, but that does not change the answer.",
+   "action": "kept"
+  }
+ ]
+}
