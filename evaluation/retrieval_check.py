@@ -1,12 +1,10 @@
 """Does retrieval find the right part of the manual when the question is worded freely?
 
-Runs every case in evaluation/retrieval_dev/manual_cases_v2.jsonl through the
-two retrieval entry points and records where the target section landed.
-
-  retrieve_for_compile(q)   what VINE's parser reads (search + cross-reference
-                            expansion + closure over notes, definitions, cited
-                            sections and paragraphs)
-  retrieve(q)               the RAG baseline, top 6 after reranking
+Runs every case in evaluation/retrieval_dev/manual_cases_v2.jsonl through
+`retrieve_for_compile` -- what VINE's parser reads (search + cross-reference
+expansion + closure over notes, definitions, cited sections and paragraphs) --
+and records where the target section and paragraph landed.
+(`with_rag=True` also runs the older `retrieve(q)` top 6; it is off by default.)
 
 The cases are written from the MUTCD itself: random provisions, each worded
 three ways (the manual's own words, plain words, a short scenario), plus
@@ -26,6 +24,22 @@ WHAT IS MEASURED, PER CASE
                   would read (searched + expanded + closure)
   chunk_in_kq     the exact source paragraph is in what the parser would read
   rag_rank        rank of the target section in the RAG top 6, or None
+                  (only with with_rag=True)
+
+WITH THE PROVISION FINDER (mrag/find_provisions.py), ALSO
+  targets         for each target paragraph: was it among the candidates
+                  (in_pool), which ways of looking brought it in (found_by:
+                  question, sentence n, term: X, heading: 2C.46), its rank in
+                  each view of the question (view_ranks), its rank among the
+                  searched slots (searched_rank) and whether it reached Kq
+  section_found_by  the same "found_by", per target section
+  find            sentences used, manual terms found, heading sections, pool size
+  rankings        every view's full ranking of the pool (for reading a run
+                  afterwards without running it again)
+
+passes(r): every target section is in Kq and, when the case names its source
+paragraph, that paragraph is too. This is the number the 7 October 2026 run
+missed on 17 of 154.
 
 Nothing in this file changes the pipeline. It only reads.
 """
@@ -57,8 +71,9 @@ def _first_rank(sections: List[str], target: str) -> Optional[int]:
     return None
 
 
-def run_case(retriever, case: Dict[str, Any], with_rag: bool = True) -> Dict[str, Any]:
-    """One case through both entry points. Never raises: a crash is recorded."""
+def run_case(retriever, case: Dict[str, Any], with_rag: bool = False) -> Dict[str, Any]:
+    """One case through retrieve_for_compile (and retrieve() if with_rag).
+    Never raises: a crash is recorded."""
     out: Dict[str, Any] = {k: case[k] for k in ("case_id", "style", "part", "target_sections")}
     t0 = time.time()
     try:
@@ -79,6 +94,9 @@ def run_case(retriever, case: Dict[str, Any], with_rag: bool = True) -> Dict[str
         # the VINE graph (TableRow, FigureReading) can be seen crowding or not
         out["kq_types"] = dict(_count(c.get("content_type", "?") for c in chunks))
         out["searched_types"] = dict(_count(c.get("content_type", "?") for c in searched))
+        find = (getattr(res, "debug", None) or {}).get("find")
+        if find is not None:
+            out.update(_find_record(find, case, chunks, searched))
     except Exception as e:                                     # noqa: BLE001
         out["error_compile"] = repr(e)
     if with_rag:
@@ -93,6 +111,93 @@ def run_case(retriever, case: Dict[str, Any], with_rag: bool = True) -> Dict[str
     return out
 
 
+def _find_record(find: Dict[str, Any], case: Dict[str, Any], chunks: List[Dict[str, Any]],
+                 searched: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Where each target came from, and how each view of the question ranked it."""
+    pool_ids = list(find.get("pool_ids") or [])
+    sources = find.get("sources") or {}
+    rankings = find.get("rankings") or {}
+    pos = {v: {cid: i for i, cid in enumerate(lst, 1)} for v, lst in rankings.items()}
+    searched_ids = [c.get("chunk_id", "") for c in searched]
+    all_ids = {c.get("chunk_id", "") for c in chunks}
+    targets = {}
+    for cid in case.get("target_chunk_ids") or []:
+        targets[cid] = {
+            "in_pool": cid in pool_ids,
+            "found_by": list(sources.get(cid, [])),
+            "view_ranks": {v: p.get(cid) for v, p in pos.items()},
+            "searched_rank": (searched_ids.index(cid) + 1) if cid in searched_ids else None,
+            "in_kq": cid in all_ids,
+        }
+    pool_secs = list(find.get("pool_sections") or [""] * len(pool_ids))
+    by_section: Dict[str, List[str]] = {}
+    for t in case["target_sections"]:
+        ways: List[str] = []
+        for cid, sec in zip(pool_ids, pool_secs):
+            if sec == t:
+                for w in sources.get(cid, []):
+                    if w not in ways:
+                        ways.append(w)
+        by_section[t] = ways
+    return {
+        "targets": targets,
+        "section_found_by": by_section,
+        "find": {"sentences": len(find.get("sentences") or []),
+                 "terms": [t.get("term") + (f" -> {t['see']}" if t.get("see") else "")
+                           for t in find.get("terms") or []],
+                 "headings": [h.get("section") for h in find.get("headings") or []],
+                 "pool": find.get("pool")},
+        "rankings": rankings,
+    }
+
+
+def passes(r: Dict[str, Any]) -> Optional[bool]:
+    """Every target section is in Kq, and the source paragraph too when the
+    case names one. None when the case crashed."""
+    if "in_kq" not in r:
+        return None
+    return all(r["in_kq"].values()) and r.get("chunk_in_kq") is not False
+
+
+def gate(now: List[Dict[str, Any]], before: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """The same cases before and after: how many pass, which were gained and
+    which were lost. `ok` is True when no fewer cases pass than before."""
+    b = {r["case_id"]: r for r in before}
+    common = [r for r in now if r["case_id"] in b]
+    gained = [r["case_id"] for r in common if passes(r) and not passes(b[r["case_id"]])]
+    lost = [r["case_id"] for r in common if passes(b[r["case_id"]]) and not passes(r)]
+    n_now = sum(1 for r in common if passes(r))
+    n_before = sum(1 for r in common if passes(b[r["case_id"]]))
+    errors = [r["case_id"] for r in common if passes(r) is None]
+    return {"n": len(common), "pass_before": n_before, "pass_now": n_now,
+            "gained": gained, "lost": lost, "errors": errors,
+            "ok": n_now >= n_before and not errors}
+
+
+def print_gate(g: Dict[str, Any]) -> None:
+    print(f"\n  cases compared        : {g['n']}")
+    print(f"  target reaches Kq     : {g['pass_before']} before -> {g['pass_now']} now")
+    print(f"  gained                : {g['gained'] or 'none'}")
+    print(f"  lost                  : {g['lost'] or 'none'}")
+    if g["errors"]:
+        print(f"  CRASHED               : {g['errors']}")
+
+
+def print_targets(results: List[Dict[str, Any]], case_ids: Iterable[str]) -> None:
+    """For the named cases: where each target came from and how each view ranked it."""
+    want = set(case_ids)
+    for r in results:
+        if r["case_id"] not in want:
+            continue
+        print(f"  {r['case_id']:26s} passes {passes(r)} | Kq {r.get('kq_size')} | "
+              f"terms {(r.get('find') or {}).get('terms')} | headings {(r.get('find') or {}).get('headings')}")
+        for sec, ways in (r.get("section_found_by") or {}).items():
+            print(f"      section {sec:7s} in Kq {r['in_kq'].get(sec)} | found by {ways or 'nothing'}")
+        for cid, t in (r.get("targets") or {}).items():
+            print(f"      {cid:36s} pool {t['in_pool']} | searched rank {t['searched_rank']} | "
+                  f"in Kq {t['in_kq']} | found by {t['found_by'] or 'nothing'} | view ranks {t['view_ranks']}")
+
+
 def _count(items: Iterable[str]) -> Dict[str, int]:
     d: Dict[str, int] = defaultdict(int)
     for x in items:
@@ -100,7 +205,7 @@ def _count(items: Iterable[str]) -> Dict[str, int]:
     return d
 
 
-def run_all(retriever, cases: List[Dict[str, Any]], with_rag: bool = True,
+def run_all(retriever, cases: List[Dict[str, Any]], with_rag: bool = False,
             progress: bool = True) -> List[Dict[str, Any]]:
     results = []
     t0 = time.time()

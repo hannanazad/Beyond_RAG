@@ -123,6 +123,18 @@ class Retriever:
         self.text = text_embedder
         self.img  = image_embedder
         self.rerank = reranker
+        self._finder = None
+
+    def _provision_finder(self):
+        """The four-ways search for Kq (mrag/find_provisions.py), built once.
+        Needs the VINE graph's chunk records and its section index."""
+        if self._finder is None:
+            if not hasattr(self.kg, "_chunk") or not hasattr(self.kg, "chunks_for_section"):
+                return None
+            from .find_provisions import ProvisionFinder
+            self._finder = ProvisionFinder(self.kg, self.text, self.store, self.rerank,
+                                           CFG.coll_chunks, CFG)
+        return self._finder
 
     # ----- public entry point ----------------------------------------------
 
@@ -359,39 +371,91 @@ class Retriever:
         result.debug["mode"] = "compile"
 
         explicit = self.kg.query_entities(query)
-        dense, sparse_list = self.text.encode_both([query])
-        fused = self.store.search_chunks_hybrid(
-            CFG.coll_chunks, dense[0], sparse_list[0], top_k=CFG.top_k_fused,
-        )
-
-        # ---- score the searched chunks, same formula as retrieve() -------
-        scored = []
-        for hit in fused:
-            payload = hit["payload"] or {}
-            base = float(hit.get("score", 0.0))
-            s_graph = self.kg.proximity_score(explicit, payload.get("chunk_id", ""))
-            s_rt = CFG.rule_type_weight(payload.get("content_type", "Support"))
-            s_hier = _hierarchy_prior(query, payload)
-            scored.append((
-                CFG.w_dense * base
-                + CFG.w_graph * s_graph
-                + CFG.w_ruletype * (s_rt - 1.0)
-                + CFG.w_hierarchy * s_hier,
-                hit,
-            ))
-        scored.sort(key=lambda t: t[0], reverse=True)
-        precursor = [h for _s, h in scored]
-        seen_ids = {(h["payload"] or {}).get("chunk_id", "") for h in precursor}
-
-        # ---- expansion, into its own reserved slots ----------------------
+        k = int(top_k if top_k is not None
+                else getattr(CFG, "top_k_compile_chunks", 20))
         n_slots = int(expansion_slots if expansion_slots is not None
                       else max(0, CFG.top_k_after_graph - CFG.top_k_fused))
+        want_reserved = int(reserved_slots if reserved_slots is not None
+                            else getattr(CFG, "expansion_reserved_slots", 5))
+
+        def scored_search(dense_q, sparse_q) -> List[Dict[str, Any]]:
+            """The pipeline's hybrid search and scoring formula, best first."""
+            fused = self.store.search_chunks_hybrid(
+                CFG.coll_chunks, dense_q, sparse_q, top_k=CFG.top_k_fused)
+            scored = []
+            for hit in fused:
+                payload = hit["payload"] or {}
+                base = float(hit.get("score", 0.0))
+                s_graph = self.kg.proximity_score(explicit, payload.get("chunk_id", ""))
+                s_rt = CFG.rule_type_weight(payload.get("content_type", "Support"))
+                s_hier = _hierarchy_prior(query, payload)
+                scored.append((
+                    CFG.w_dense * base
+                    + CFG.w_graph * s_graph
+                    + CFG.w_ruletype * (s_rt - 1.0)
+                    + CFG.w_hierarchy * s_hier,
+                    hit,
+                ))
+            scored.sort(key=lambda t: t[0], reverse=True)
+            return [h for _s, h in scored]
+
+        finder = self._provision_finder() if getattr(CFG, "compile_find_provisions", False) else None
+        if finder is None:
+            dense, sparse_list = self.text.encode_both([query])
+            precursor = scored_search(dense[0], sparse_list[0])
+            source_sections_from = precursor
+        else:
+            # Four ways of looking, one judge (see mrag/find_provisions.py).
+            def scored_lists(texts):
+                d, sp = self.text.encode_both(list(texts))
+                return [[(h["payload"] or {}) for h in scored_search(d[i], sp[i])]
+                        for i in range(len(texts))]
+            found = finder.candidates(query, scored_lists)
+            result.debug["find"] = {
+                "sentences": found["sentences"],
+                "terms": [{k2: t[k2] for k2 in ("term", "see", "score")} for t in found["terms"]],
+                "headings": found["headings"], "pool": len(found["pool"]),
+                "pool_ids": list(found["pool"]),
+                "pool_sections": [str(found["payloads"][c].get("section_id") or "")
+                                  for c in found["pool"]],
+                "sources": found["sources"]}
+            precursor = [{"payload": found["payloads"][c], "score": 0.0} for c in found["pool"]]
+            source_sections_from = None
+        seen_ids = {(h["payload"] or {}).get("chunk_id", "") for h in precursor}
+
+        def _rerank(pool: List[Dict[str, Any]], want: int, source: str):
+            if not pool or want <= 0:
+                return []
+            if finder is not None:
+                # the finder's reading: each paragraph with its Part, Section and heading
+                from .find_provisions import ranking_text
+                docs = [ranking_text(h["payload"] or {}) for h in pool]
+            else:
+                docs = [h["payload"].get("text", "")[:1500] for h in pool]
+            out = []
+            for idx, score in self.rerank.rank(query, docs, top_k=want):
+                payload = pool[idx]["payload"] or {}
+                out.append({**payload, "score": score, "source": source})
+            return out
+
+        # ---- the searched part first when the finder is on: the sections it
+        #      ranks best are the ones whose citations are followed ---------
+        searched_out: List[Dict[str, Any]] = []
+        searched_ranked: List[Dict[str, Any]] = []
+        if finder is not None:
+            ranked, rankings = finder.rank(found["views"], found["pool"], found["payloads"], k)
+            result.debug["find"]["rankings"] = rankings
+            searched_ranked = [{**found["payloads"][c], "score": float(sc), "source": "searched",
+                                "found_by": found["sources"].get(c, [])} for c, sc in ranked]
+            source_sections_from = [{"payload": c} for c in searched_ranked]
+
+        # ---- expansion, into its own reserved slots ----------------------
         expanded_hits: List[Dict[str, Any]] = []
         cited_sections: List[str] = []
 
         if expand_cross_references and n_slots > 0:
             top_sections, seen_secs = [], set()
-            for h in precursor[: CFG.expansion_source_chunks]:
+            for h in source_sections_from[: CFG.expansion_source_chunks]:
                 sec = (h["payload"] or {}).get("section_id", "")
                 if sec and sec not in seen_secs:
                     seen_secs.add(sec)
@@ -403,9 +467,14 @@ class Retriever:
                         cited_sections.append(ref)
 
             expand_ids = []
+            # what is already in the output is not fetched again. With the finder,
+            # only its chosen top: a pool paragraph that lost the ranking may still
+            # come in as part of a section the winners cite.
+            have = ({c.get("chunk_id") for c in searched_ranked} if finder is not None
+                    else seen_ids)
             for ref in cited_sections:
                 for cid in self.kg.chunks_for_section(ref):
-                    if cid not in seen_ids:
+                    if cid not in have:
                         expand_ids.append(cid)
 
             expanded_hits = self.store.fetch_chunks_by_ids(
@@ -423,44 +492,42 @@ class Retriever:
         # which are there precisely because search ranked them below the
         # cutoff, lose again. The slots have to be reserved in the OUTPUT.
         # So: two independent reranks, then merge.
-        k = int(top_k if top_k is not None
-                else getattr(CFG, "top_k_compile_chunks", 20))
         # How much of the OUTPUT expansion is allowed to take. This is a real
         # trade, not a free win: every reserved slot is one the search does not
         # get. Reserving half of 20 cost eight searched sections to gain two
         # cited ones. A quarter keeps most of what search found while still
         # guaranteeing the cross-referenced provisions a place. Hard ceiling of
         # k//2 so no setting can starve the searched pool entirely.
-        want_reserved = int(reserved_slots if reserved_slots is not None
-                            else getattr(CFG, "expansion_reserved_slots", 5))
         n_reserved = min(want_reserved, n_slots, k // 2, len(expanded_hits))
         n_searched = k - n_reserved
 
-        def _rerank(pool: List[Dict[str, Any]], want: int, source: str):
-            if not pool or want <= 0:
-                return []
-            docs = [h["payload"].get("text", "")[:1500] for h in pool]
-            out = []
-            for idx, score in self.rerank.rank(query, docs, top_k=want):
-                payload = pool[idx]["payload"] or {}
-                out.append({**payload, "score": score, "source": source})
-            return out
-
-        searched_out = _rerank(precursor[: CFG.top_k_fused], n_searched, "searched")
+        if finder is None:
+            searched_out = _rerank(precursor[: CFG.top_k_fused], n_searched, "searched")
+        else:
+            searched_out = searched_ranked[:n_searched]
         expanded_out = _rerank(expanded_hits, n_reserved, "expanded")
 
         # If one pool underfills, give the remainder to the other.
         short = k - len(searched_out) - len(expanded_out)
         if short > 0:
             have = {c.get("chunk_id") for c in searched_out + expanded_out}
-            extra_pool = precursor[CFG.top_k_fused:] or precursor[: CFG.top_k_fused]
+            if finder is not None:
+                # the finder's own order first, then the rest of its pool
+                extra_pool = ([{"payload": c} for c in searched_ranked[n_searched:]]
+                              + precursor)
+            else:
+                extra_pool = precursor[CFG.top_k_fused:] or precursor[: CFG.top_k_fused]
             for h in extra_pool:
                 if short <= 0:
                     break
                 p = h["payload"] or {}
                 if p.get("chunk_id") in have:
                     continue
-                searched_out.append({**p, "score": 0.0, "source": "searched"})
+                have.add(p.get("chunk_id"))
+                extra = {**p, "score": 0.0, "source": "searched"}
+                if finder is not None:
+                    extra["found_by"] = found["sources"].get(p.get("chunk_id"), [])
+                searched_out.append(extra)
                 short -= 1
 
         final_chunks = searched_out + expanded_out

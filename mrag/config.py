@@ -336,6 +336,28 @@ class Config:
     # 10 of 20 cost eight searched sections to gain two cited ones.
     expansion_reserved_slots: int = 3
 
+    # ---- finding the governing provisions for Kq (mrag/find_provisions.py)
+    # Measured on DEV (7 Oct 2026): 17 of 154 cases lost a needed section or
+    # paragraph before the parser saw it -- extra facts in a scenario pulled
+    # the one search away, the question used everyday words instead of the
+    # manual's terms, the right section was named by its heading only, or a
+    # paragraph was ranked without the heading that says what it is about.
+    # The searched part of Kq is ranked from four ways of looking (the whole
+    # question, each informative sentence, the manual's terms whose
+    # definitions match, the sections whose headings match), by the same
+    # cross-encoder reading each paragraph with its Part, Section and heading;
+    # the slots are taken in turn by the whole question's ranking and by each
+    # informative sentence's ranking. Same number of slots; Kq does not grow.
+    compile_find_provisions: bool = True
+    compile_sentence_queries: int = 5     # informative sentences used on their own
+    compile_list_depth: int = 15          # candidates kept per sentence / term search
+    compile_term_queries: int = 2         # manual terms added from the definitions
+    compile_term_candidates: int = 10     # definitions shown to the cross-encoder
+    compile_heading_sections: int = 2     # sections added from their headings
+    compile_heading_candidates: int = 15  # headings shown to the cross-encoder
+    compile_heading_paragraphs: int = 16  # normative paragraphs taken from each
+    compile_pool_cap: int = 90            # candidates the cross-encoder ranks
+
     # ---- figure relevance filter --------------------------------------
     # Figures arriving by graph link have score 0.0 and were never checked
     # against the query, so off-topic tables ate image slots. The filter
