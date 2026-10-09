@@ -53,7 +53,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 
 from .answer import Answer, answer as verbalize_answer, supporting_certificates
 from .calculator import make_calculator
-from .certificate import Status
+from .certificate import Certificate, Status
 from .compile import CompileError, NetworkSpec, compile_section, instantiate
 from .execute import ExecutionTrace, execute
 from .model_verifiers import make_llm_verifier, make_vlm_verifier
@@ -64,7 +64,7 @@ from .table_data import Table
 from .verifiers import make_cross_reference_resolver
 
 __all__ = ["VineResult", "ask_vine", "make_ask", "build_verifiers",
-           "hand_over_when_undecided"]
+           "hand_over_when_undecided", "resolve_then_read"]
 
 
 # --------------------------------------------------------------------------- #
@@ -220,6 +220,51 @@ def hand_over_when_undecided(primary: Callable, interpreter: Callable,
     return verify
 
 
+def resolve_then_read(resolver: Callable, reader: Callable) -> Callable:
+    """The exact resolver first, then the text checker reads the claim.
+
+    S3.3: "an explicit section reference should be resolved exactly" -- and
+    "generative models are used where interpretation is necessary". The
+    resolver can say whether every section, figure and table a claim points
+    to exists. It cannot say whether the claim is right about what that
+    target says. Certifying the claim because its pointer resolved (DEV,
+    8 October 2026: "the R9-20 sign may be used in addition to shared-lane
+    markings, and then the marking goes in the centre of the lane" came out
+    TRUE because 9E.09 paragraph 12 exists) is certifying something nobody
+    checked against the manual.
+
+        resolver FALSE    a pointer names something the manual does not
+                          contain: a real finding, kept as it is
+        otherwise         the text checker decides the claim against the
+                          manual; the resolver's result is in the provenance
+    """
+    def verify(op, store):
+        try:
+            first = resolver(op, store)
+        except Exception as e:                                # noqa: BLE001
+            # a crashed resolver has found nothing, including nothing missing
+            first = Certificate(claim=op.claim, status=Status.UNKNOWN,
+                                verifier="cross_reference_resolver",
+                                provenance={"error": repr(e)})
+        if first.status is Status.FALSE:
+            return first
+        second = reader(op, store)
+        prov = first.provenance or {}
+        if first.status is Status.TRUE:
+            why = ("every reference it names exists; the text checker "
+                   + ("decided the claim against the manual"
+                      if second.status is not Status.UNKNOWN
+                      else "could not decide what the claim says about them"))
+        else:
+            why = prov.get("reason") or prov.get("error") or ""
+        second.provenance = dict(second.provenance or {})
+        second.provenance["handed_over_from"] = {
+            "verifier": "cross_reference_resolver", "status": first.status.value,
+            "reason": why, "resolved": prov.get("resolved", [])}
+        return second
+    return verify
+
+
 def build_verifiers(tables: Sequence[Table] = (), kg=None, retriever=None,
                     ask: Optional[Callable] = None, query: str = "",
                     extra: Optional[Dict[str, Callable]] = None,
@@ -235,7 +280,9 @@ def build_verifiers(tables: Sequence[Table] = (), kg=None, retriever=None,
 
     hand_over
         When a model is available, a calculator or rule-evaluator result of
-        UNKNOWN is passed to the text checker (`hand_over_when_undecided`).
+        UNKNOWN is passed to the text checker (`hand_over_when_undecided`),
+        and a cross-reference claim whose references all exist is read by the
+        text checker against the manual (`resolve_then_read`).
     model_options
         Passed to the text and image checkers (`use_pointers`,
         `max_pointed_chunks`, `max_images`).
@@ -255,6 +302,9 @@ def build_verifiers(tables: Sequence[Table] = (), kg=None, retriever=None,
                 if name in verifiers:
                     verifiers[name] = hand_over_when_undecided(
                         verifiers[name], verifiers["llm"], name)
+            if "cross_reference_resolver" in verifiers:
+                verifiers["cross_reference_resolver"] = resolve_then_read(
+                    verifiers["cross_reference_resolver"], verifiers["llm"])
     if extra:
         verifiers.update(extra)
     return verifiers

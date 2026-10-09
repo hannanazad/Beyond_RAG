@@ -27,11 +27,11 @@ from .parser import (PARSER_CONTRACT, ParseReport, build_parser_prompt,
                      make_semantic_parser, read_spec)
 from .run import VineResult, ask_vine, build_verifiers, make_ask
 from .review import RELAXES, MODIFIES, classify_provision, review_spec
-from .execute import ExecutionTrace, enabled, execute, merge_statuses
+from .execute import ExecutionTrace, enabled, execute, merge_authority, merge_statuses
 
 __all__ = ["Authority", "Certificate", "CertificateStore", "Evidence", "Status",
            "Gate", "MergeType", "Network", "ObligationType", "Operation",
-           "ExecutionTrace", "enabled", "execute", "merge_statuses",
+           "ExecutionTrace", "enabled", "execute", "merge_statuses", "merge_authority",
            "make_cross_reference_resolver", "parse_references",
            "make_calculator", "evaluate_formula", "extract_footnote_formulas",
            "classify_condition", "ConditionKind", "FormulaError",

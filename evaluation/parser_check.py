@@ -89,6 +89,7 @@ def spec_stats(spec, net=None) -> Dict[str, Any]:
     levels = _levels(spec)
     width = Counter(levels.values())
     out = {
+        "facts": len(getattr(spec, "facts", []) or []),
         "obligations": len(spec.obligations),
         "merges": len(spec.merges),
         "dependencies": sum(len(o.requires) for o in spec.obligations),
@@ -278,6 +279,8 @@ def summarize(records: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
     if ok:
         st = [r["stats"] for r in ok]
         out.update({
+            "plans_with_facts": sum(1 for s in st if s.get("facts")),
+            "mean_facts": round(sum(s.get("facts", 0) for s in st) / len(st), 1),
             "mean_obligations": round(sum(s["obligations"] for s in st) / len(st), 1),
             "plans_with_dependencies": sum(1 for s in st if s["dependencies"]),
             "plans_with_guards": sum(1 for s in st if s["guards"]),
@@ -310,6 +313,8 @@ def print_summary(s: Dict[str, Any]) -> None:
     print(f"  mean attempts             : {s['mean_attempts']}")
     print(f"  mean seconds / tokens     : {s['mean_seconds']} s / {s['mean_completion_tokens']} tokens")
     if "mean_obligations" in s:
+        if "plans_with_facts" in s:
+            print(f"  plans with given facts    : {s['plans_with_facts']} (mean {s['mean_facts']} facts)")
         print(f"  mean obligations          : {s['mean_obligations']}")
         print(f"  plans with dependencies   : {s['plans_with_dependencies']}")
         print(f"  plans with guards         : {s['plans_with_guards']}")
@@ -340,6 +345,8 @@ def print_plan(rec: Dict[str, Any], width: int = 100) -> None:
                 print("   problem:", str(p)[:width])
         return
     print(f"   terminal: {spec['terminal']}")
+    for f in spec.get("facts") or []:
+        print(f"   {f['id']:5s} GIVEN       {f['fact'][:width]}")
     for o in spec["obligations"]:
         req = f" requires {o['requires']}" if o.get("requires") else ""
         grd = f" guard {json.dumps(o['guard'])}" if o.get("guard") else ""

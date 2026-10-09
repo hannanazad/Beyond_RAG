@@ -46,7 +46,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from .certificate import Authority, Certificate, CertificateStore, Status
 from .execute import (ExecutionTrace, _kleene_and, _kleene_or, _non_blocking,
-                      execute, merge_statuses)
+                      execute, merge_authority, merge_statuses)
 from .network import MergeType, Network, Operation
 
 __all__ = ["Scenario", "Result", "make_scenario", "reference_terminal",
@@ -146,6 +146,9 @@ def reference_terminal(net: Network, scenario: Scenario) -> Status:
     """
     producer: Dict[str, Operation] = {op.produces: op for op in net.operations}
     cache: Dict[str, Tuple[Status, bool]] = {}     # state -> (status, may not apply)
+    # the heading each result carries; a merge that comes out FALSE takes the
+    # strongest heading among the inputs that failed (see _authority_plain)
+    carries: Dict[str, Authority] = {}
     visiting: set = set()
     T, F, U, NA = Status.TRUE, Status.FALSE, Status.UNKNOWN, Status.NOT_APPLICABLE
 
@@ -181,14 +184,18 @@ def reference_terminal(net: Network, scenario: Scenario) -> Status:
             # taken as it is; only an input that may not apply is tried both
             # ways. (Trying TRUE/FALSE/UNKNOWN for every input made a wide
             # conjunction cost 3^n and stalled the tables.)
-            authorities = [_authority_of(producer.get(s)) for s in op.merge_inputs]
             ins = [value(s) for s in op.merge_inputs]
+            authorities = [carries.get(s, _authority_of(producer.get(s)))
+                           for s in op.merge_inputs]
             options = [(U, NA) if (st is U and m) else (st,) for st, m in ins]
             if sum(len(o) > 1 for o in options) > _MAX_FLAGGED_MERGE_INPUTS:
                 result = (U, True)
             else:
                 result = settle({_merge_plain(op.merge, list(combo), authorities)
                                  for combo in itertools.product(*options)})
+            if result[0] is F:
+                carries[state] = _authority_plain(op.merge, [st for st, _m in ins],
+                                                  authorities, op.normative_authority)
         else:
             status = scenario.of(op.id)
             # a check whose prerequisite never resolved cannot itself resolve
@@ -264,6 +271,29 @@ def _merge_plain(kind: MergeType, inputs: Sequence[Status],
     if kind is MergeType.ALTERNATIVE:
         return _kleene_or([s for s, _a in pairs])
     return Status.UNKNOWN
+
+
+_STRENGTH = {Authority.SUPPORT: 0, Authority.OPTION: 1, Authority.GUIDANCE: 2,
+             Authority.STANDARD: 3}
+
+
+def _authority_plain(kind: MergeType, inputs: Sequence[Status],
+                     authorities: Sequence[Authority], declared: Authority) -> Authority:
+    """The heading a FALSE merge carries, restated for the reference: the
+    strongest among its declared heading and the inputs that failed, where
+    "failed" is read as the merge reads it."""
+    NA = Status.NOT_APPLICABLE
+    if kind is MergeType.EXCEPTION:
+        failed = ([authorities[0]] if inputs and inputs[0] is not NA
+                  and _blocking(inputs[0], authorities[0]) is Status.FALSE else [])
+    elif kind is MergeType.CONJUNCTION:
+        failed = [a for s, a in zip(inputs, authorities)
+                  if s is not NA and _blocking(s, a) is Status.FALSE]
+    elif kind is MergeType.ALTERNATIVE:
+        failed = [a for s, a in zip(inputs, authorities) if s is Status.FALSE]
+    else:
+        failed = []
+    return max([declared] + failed, key=lambda a: _STRENGTH[a])
 
 
 # --------------------------------------------------------------------------- #
@@ -359,6 +389,9 @@ def run_sequential(net: Network, scenario: Scenario,
 
     verifier = make_scenario_verifier(scenario)
     store = CertificateStore()
+    for state in net.initial.states():          # Γ0q, as the executor starts
+        for cert in net.initial.get(state):
+            store.add(state, cert)
     trace = ExecutionTrace(store=store)
 
     for op in obligations:
@@ -370,11 +403,14 @@ def run_sequential(net: Network, scenario: Scenario,
         inputs = [store.latest(s) for s in op.merge_inputs]
         if any(c is None for c in inputs):
             status = Status.UNKNOWN
+            authority = op.normative_authority
         else:
             status = merge_statuses(op.merge, inputs)
+            # the same typed merges as VINE, so the same authority rule
+            authority = merge_authority(op.merge, inputs, op.normative_authority, status)[0]
         store.add(op.produces, Certificate(
             claim=op.claim, status=status, verifier="merge",
-            normative_authority=op.normative_authority, obligation_id=op.id))
+            normative_authority=authority, obligation_id=op.id))
         trace.waves.append([op.id])
 
     trace.terminal = store.latest(net.terminal) if net.terminal else None

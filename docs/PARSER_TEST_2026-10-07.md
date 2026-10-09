@@ -1,5 +1,7 @@
 # Parser test with Qwen3.8-27B, 7 October 2026
 
+> **Update, 8 October 2026 (evening):** the instructions are now **fix5** (given facts in Γ0q; the exception-base check). Every plan is made again. See `CHECKER_FIXES_2026-10-08.md`.
+
 ## What the parser does
 
 The parser gets two things: a question, and everything retrieval returned for it. Retrieval runs on the VINE graph through `retrieve_for_compile`.

@@ -52,11 +52,11 @@ from itertools import product
 from dataclasses import dataclass, field, asdict
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
-from .certificate import Authority, Certificate, CertificateStore, Status
+from .certificate import Authority, Certificate, CertificateStore, Evidence, Status
 from .network import Gate, MergeType, Network, ObligationType, Operation
 from .symbolic import Comparison, Conjunction, Disjunction, Negation, parse_rule
 
-__all__ = ["Obligation", "MergeSpec", "NetworkSpec", "GuardSpec",
+__all__ = ["Obligation", "MergeSpec", "NetworkSpec", "GuardSpec", "GivenFact",
            "instantiate", "assign_verifier", "repair_request",
            "compile_section", "CompileError"]
 
@@ -207,6 +207,45 @@ class MergeSpec:
 
 
 @dataclass
+class GivenFact:
+    """A fact the question states about the case, copied by the parser.
+
+    Eq 1 compiles Nq from (q, Kq), and Eq 2 gives Nq an initial certificate
+    store, Γ0q. The question's facts are what the case starts from, so they go
+    there (see `instantiate`). The checkers then see them as established, the
+    same way they see any earlier result, and never see the question itself
+    (S3.3: "All verification remains grounded in the persistent knowledge
+    graph"; Eq 5 uses q for retrieval only). A fact is not a step: nothing
+    requires it, merges it or guards on it."""
+    id: str
+    text: str
+
+    @staticmethod
+    def from_any(d: Any, k: int) -> "GivenFact":
+        if isinstance(d, str):
+            text, ident = d, ""
+        elif isinstance(d, dict):
+            text = d.get("fact", d.get("text", ""))
+            ident = d.get("id", "")
+        else:
+            raise CompileError(f"fact number {k} is not an object")
+        text = str(text or "").strip()
+        if not text:
+            raise CompileError(f"fact number {k} has no text")
+        ident = str(ident or "").strip()
+        return GivenFact(id=ident or f"f{k}", text=text)
+
+
+# A fact id is shown to the checker and may be cited, so it must look like
+# nothing else: not a provision id, and not a sentence of its own.
+_FACT_ID = re.compile(r"^f\d{1,3}$")
+
+
+def _given_state(fact_id: str) -> str:
+    return f"given_{fact_id}"
+
+
+@dataclass
 class NetworkSpec:
     """The constrained intermediate representation of S3.1."""
     query: str
@@ -214,6 +253,7 @@ class NetworkSpec:
     obligations: List[Obligation] = field(default_factory=list)
     merges: List[MergeSpec] = field(default_factory=list)
     source: str = ""                       # how this spec was produced
+    facts: List[GivenFact] = field(default_factory=list)   # for Γ0q
 
     # ---- structural checks on the IR itself --------------------------------
     def problems(self) -> List[str]:
@@ -226,10 +266,30 @@ class NetworkSpec:
         """
         out: List[str] = []
         ids = [o.id for o in self.obligations] + [m.id for m in self.merges]
-        dupes = sorted({i for i in ids if ids.count(i) > 1})
+        fact_ids = [f.id for f in self.facts]
+        everything = ids + fact_ids
+        dupes = sorted({i for i in everything if everything.count(i) > 1})
         if dupes:
             out.append(f"duplicate ids: {dupes}")
         known = set(ids)
+        facts = set(fact_ids) - known
+        for f in self.facts:
+            if not _FACT_ID.match(f.id):
+                out.append(f"fact id {f.id!r} must be f1, f2, f3, ...")
+
+        # A fact is where the case starts, not a step: reading one in
+        # `requires`, `inputs`, a guard or as the terminal would make a check
+        # wait on, or merge, something no checker produces.
+        def fact_used(where: str, names: Iterable[str]) -> None:
+            for n in names:
+                if n in facts:
+                    out.append(f"{where}: {n!r} is a fact, not a step; facts are "
+                               f"never in requires, inputs, a guard or the terminal")
+        for o in self.obligations:
+            fact_used(o.id, list(o.requires) + (o.guard.states() if o.guard else []))
+        for m in self.merges:
+            fact_used(m.id, list(m.inputs) + (m.guard.states() if m.guard else []))
+        fact_used("terminal", [self.terminal] if self.terminal else [])
 
         for o in self.obligations:
             if o.type not in {t.value for t in ObligationType}:
@@ -240,12 +300,12 @@ class NetworkSpec:
                 out.append(f"{o.id}: authority SUPPORT; support material is "
                            f"not an obligation")
             for r in o.requires:
-                if r not in known:
+                if r not in known and r not in facts:
                     out.append(f"{o.id}: requires {r!r}, which no obligation "
                                f"or merge produces")
             if o.guard:
                 for s in o.guard.states():
-                    if s not in known:
+                    if s not in known and s not in facts:
                         out.append(f"{o.id}: guard names {s!r}, which no "
                                    f"obligation or merge produces")
 
@@ -256,7 +316,7 @@ class NetworkSpec:
                 out.append(f"{m.id}: a {m.kind} merge needs at least two "
                            f"inputs, got {len(m.inputs)}")
             for i in m.inputs:
-                if i not in known:
+                if i not in known and i not in facts:
                     out.append(f"{m.id}: merges {i!r}, which no obligation "
                                f"or merge produces")
             if m.kind == MergeType.EXCEPTION.value and len(m.inputs) >= 2:
@@ -268,7 +328,7 @@ class NetworkSpec:
 
         if not self.terminal:
             out.append("no terminal proposition")
-        elif self.terminal not in known:
+        elif self.terminal not in known and self.terminal not in facts:
             out.append(f"terminal {self.terminal!r} is not an obligation or merge")
         if not self.obligations:
             out.append("no obligations were extracted")
@@ -284,24 +344,32 @@ class NetworkSpec:
             if g.kind == "not":
                 return {"not": guard(g.parts[0])}
             return {g.kind: [guard(p) for p in g.parts]}
-        return {
+        out = {
             "query": self.query, "terminal": self.terminal, "source": self.source,
             "obligations": [{**{k: v for k, v in asdict(o).items() if k != "guard"},
                              "guard": guard(o.guard)} for o in self.obligations],
             "merges": [{**{k: v for k, v in asdict(m).items() if k != "guard"},
                         "guard": guard(m.guard)} for m in self.merges],
         }
+        if self.facts:
+            # only when there are some, so a spec without facts reads as before
+            out["facts"] = [{"id": f.id, "fact": f.text} for f in self.facts]
+        return out
 
     def to_json(self) -> str:
         return json.dumps(self.as_dict(), indent=2)
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "NetworkSpec":
+        facts = d.get("facts") or []
+        if not isinstance(facts, list):
+            raise CompileError('"facts" must be a list')
         return NetworkSpec(
             query=str(d.get("query", "")), terminal=str(d.get("terminal", "")),
             obligations=[Obligation.from_dict(o) for o in (d.get("obligations") or [])],
             merges=[MergeSpec.from_dict(m) for m in (d.get("merges") or [])],
-            source=str(d.get("source", "")))
+            source=str(d.get("source", "")),
+            facts=[GivenFact.from_any(f, k) for k, f in enumerate(facts, 1)])
 
     @staticmethod
     def from_json(text: str) -> "NetworkSpec":
@@ -581,6 +649,19 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             guard_eval=_build_gate(m.guard) if m.guard else None,
             guard_spec=_guard_data(m.guard) if m.guard else None,
             merge=MergeType(m.kind), merge_inputs=inputs))
+
+    # Γ0q (Eq 2): the facts the question states, each a certificate the case
+    # starts from. TRUE because the question says so; the evidence is the
+    # question, and the authority SUPPORT because a fact of the case requires
+    # nothing. No operation reads these states, so they cannot gate anything;
+    # the checkers see them as established (model_verifiers.build_prompt).
+    for f in spec.facts:
+        net.initial.add(_given_state(f.id), Certificate(
+            claim=f.text, status=Status.TRUE,
+            evidence=[Evidence("given", f.id)],
+            normative_authority=Authority.SUPPORT, confidence=1.0,
+            verifier="given", obligation_id=f.id,
+            provenance={"given": "stated in the question"}))
 
     net.states = states
     net.operations = operations

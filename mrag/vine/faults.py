@@ -236,9 +236,12 @@ def _sequential_trace(net: Network, verifier: Callable,
                       order_seed: Optional[int] = None):
     """A linear pass with no dependency gating."""
     import random
-    from .execute import ExecutionTrace, merge_statuses
+    from .execute import ExecutionTrace, merge_authority, merge_statuses
     chain = copy.deepcopy(net)
     store = CertificateStore()
+    for state in net.initial.states():          # Γ0q, as the executor starts
+        for cert in net.initial.get(state):
+            store.add(state, cert)
     trace = ExecutionTrace(store=store)
     obligations = [o for o in chain.operations if o.merge is None]
     if order_seed is not None:
@@ -250,9 +253,11 @@ def _sequential_trace(net: Network, verifier: Callable,
         inputs = [store.latest(s) for s in op.merge_inputs]
         status = (Status.UNKNOWN if any(c is None for c in inputs)
                   else merge_statuses(op.merge, inputs))
+        authority = (op.normative_authority if any(c is None for c in inputs)
+                     else merge_authority(op.merge, inputs, op.normative_authority, status)[0])
         store.add(op.produces, Certificate(
             claim=op.claim, status=status, verifier="merge",
-            normative_authority=op.normative_authority, obligation_id=op.id))
+            normative_authority=authority, obligation_id=op.id))
         trace.waves.append([op.id])
     trace.terminal = store.latest(net.terminal) if net.terminal else None
     return trace

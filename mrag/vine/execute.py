@@ -55,9 +55,10 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field, replace
 from itertools import product
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from .certificate import Authority, Certificate, CertificateStore, Evidence, Status
+from .certificate import (Authority, Certificate, CertificateStore, Evidence, Status,
+                          stronger)
 from .network import Gate, MergeType, Network, Operation
 
 log = logging.getLogger("mrag.vine.execute")
@@ -181,6 +182,47 @@ def merge_statuses(kind: MergeType, inputs: Sequence[Certificate],
     input of unknown applicability turns out (S3.2), else UNKNOWN."""
     outcomes = merge_outcomes(kind, inputs, threshold_fn)
     return next(iter(outcomes)) if len(outcomes) == 1 else Status.UNKNOWN
+
+
+def _failed_inputs(kind: MergeType, inputs: Sequence[Certificate]) -> List[Certificate]:
+    """The inputs that make a merge come out FALSE, read the way the merge
+    reads them (see `_merge_once`)."""
+    if kind is MergeType.EXCEPTION:
+        if inputs and _applies(inputs[0]) and _non_blocking(inputs[0]) is Status.FALSE:
+            return [inputs[0]]
+        return []
+    live = [c for c in inputs if _applies(c)]
+    if kind is MergeType.CONJUNCTION:
+        return [c for c in live if _non_blocking(c) is Status.FALSE]
+    if kind is MergeType.ALTERNATIVE:
+        return [c for c in live if c.status is Status.FALSE]
+    return []
+
+
+def merge_authority(kind: MergeType, inputs: Sequence[Certificate],
+                    declared: Authority, status: Status) -> Tuple[Authority, List[str]]:
+    """The authority a merge's certificate carries, and which inputs raised it.
+
+    Eq 3: r_i records the normative authority of the evidence the result rests
+    on. A merge that comes out FALSE rests on the inputs that failed. In a
+    conjunction or as the base of an exception only a failed STANDARD blocks,
+    so such a merge failing means a Standard failed, whatever heading the
+    parser gave the merge. Keeping the parser's GUIDANCE label there made the
+    failure read as a non-conformance, and an enclosing conjunction then let
+    it through. So the merge takes the strongest heading among its failed
+    inputs. Only raised, never lowered; a TRUE, UNKNOWN or NOT_APPLICABLE
+    merge keeps its declared heading.
+    """
+    if status is not Status.FALSE:
+        return declared, []
+    failed = _failed_inputs(kind, inputs)
+    best = declared
+    for c in failed:
+        if stronger(c.normative_authority, best):
+            best = c.normative_authority
+    if best is declared:
+        return declared, []
+    return best, [c.obligation_id for c in failed if c.normative_authority is best]
 
 
 # --------------------------------------------------------------------------- #
@@ -468,10 +510,23 @@ def _run_verifier(op: Operation, store: CertificateStore,
     # verifier return its own would let an LLM downgrade a Standard to
     # Guidance and turn a refutation into a note of non-conformance. The
     # operation's declared authority wins; any disagreement is recorded.
-    if cert.normative_authority is not op.normative_authority:
+    # One exception: a FALSE that the checker shows rests on a provision
+    # printed under a STRONGER heading carries that heading (Eq 3), recorded
+    # in `authority_from` by model_verifiers. Raised only, never lowered.
+    shown = (cert.provenance or {}).get("authority_from") or {}
+    raised = (cert.status is Status.FALSE
+              and cert.verifier in ("llm", "vlm")
+              and stronger(cert.normative_authority, op.normative_authority)
+              and isinstance(shown, dict)
+              and shown.get("printed_heading") == cert.normative_authority.value)
+    if cert.normative_authority is not op.normative_authority and not raised:
         cert.provenance = dict(cert.provenance)
         cert.provenance["verifier_claimed_authority"] = cert.normative_authority.value
         cert.normative_authority = op.normative_authority
+    if not raised and "authority_from" in (cert.provenance or {}):
+        # a raise the executor did not accept must not read as one
+        cert.provenance = dict(cert.provenance)
+        cert.provenance["authority_from_not_accepted"] = cert.provenance.pop("authority_from")
     return cert
 
 
@@ -500,9 +555,10 @@ def _run_merge(op: Operation, store: CertificateStore,
                 seen.add(key)
                 evidence.append(e)
     confs = [c.confidence for c in used if c.confidence]
+    authority, raised_by = merge_authority(op.merge, inputs, op.normative_authority, status)
     return Certificate(
         claim=op.claim, status=status, evidence=evidence,
-        normative_authority=op.normative_authority,
+        normative_authority=authority,
         confidence=min(confs) if confs else 0.0,    # a merge is as weak as its weakest input
         verifier="merge", obligation_id=op.id,
         dependencies=list(op.merge_inputs),
@@ -515,6 +571,9 @@ def _run_merge(op: Operation, store: CertificateStore,
                                 if c.non_conformance()],
             "not_applicable": [s for s, c in zip(op.merge_inputs, inputs)
                                if not _applies(c)],
+            **({"authority_from": {"failed_inputs": raised_by,
+                                   "declared": op.normative_authority.value}}
+               if raised_by else {}),
             **({"applicability": "unknown"}
                if status is Status.UNKNOWN and Status.NOT_APPLICABLE in outcomes
                else {}),

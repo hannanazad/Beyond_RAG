@@ -95,7 +95,8 @@ def _citations(support: Sequence[Certificate]) -> List[Dict[str, str]]:
     for cert in support:
         for ev in cert.evidence:
             key = (ev.type, ev.id)
-            if key in seen:
+            if key in seen or ev.type == "given":
+                # a fact from the question is what the case is, not a source
                 continue
             seen.add(key)
             item = {"type": ev.type, "id": ev.id}
@@ -213,9 +214,13 @@ def compose(query: str, net: Network, trace: ExecutionTrace) -> Answer:
         verdict = "holds" if status is Status.TRUE else "does not hold"
         text = f"{terminal.claim} — this {verdict}."
         if f["non_conformances"]:
-            text += (" Recorded as non-conformance with Guidance, which does "
-                     "not refute the decision: "
-                     + "; ".join(f["non_conformances"][:3]) + ".")
+            # "does not refute" only makes sense next to a decision that holds;
+            # beside one that does not, it read as if the Guidance item were
+            # the reason for the decision, or excused it.
+            lead = (" Recorded as non-conformance with Guidance, which does "
+                    "not refute the decision: " if status is Status.TRUE
+                    else " Also recorded as non-conformance with Guidance: ")
+            text += lead + "; ".join(f["non_conformances"][:3]) + "."
         if f["not_applicable"]:
             text += (" Not applicable here: "
                      + "; ".join(f["not_applicable"][:3])
@@ -238,12 +243,15 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
 
     lines: List[str] = []
     for cert in f["support"]:
-        ids = ", ".join(e.id for e in cert.evidence) or "no evidence"
+        ids = ", ".join(e.id for e in cert.evidence if e.type != "given") or "no evidence"
+        facts = [e.id for e in cert.evidence if e.type == "given"]
         lines.append(f"- [{cert.status.value}] {cert.claim}\n"
                      f"  authority: {cert.normative_authority.value}"
                      f"  verifier: {cert.verifier}"
                      f"  confidence: {cert.confidence:.2f}\n"
-                     f"  evidence: {ids}")
+                     f"  evidence: {ids}"
+                     + (f"\n  facts from the question it used: {', '.join(facts)}"
+                        if facts else ""))
 
     if status == "UNKNOWN":
         guidance = (

@@ -41,7 +41,23 @@ THE THREE RULES THAT MAKE A MODEL'S ANSWER USABLE
    NOTHING it cited was supplied, the certificate is UNKNOWN.
 3. Authority is never the model's to set. It comes from the operation, which
    got it from the printed heading. The executor enforces this too; this file
-   simply does not ask.
+   simply does not ask. One exception, in one direction only: Eq 3 has r_i
+   record the normative authority of R_i, the evidence. When the checker
+   answers FALSE and names as its `basis` a supplied provision whose PRINTED
+   heading is stronger than the operation's (a Standard, for a check the
+   parser labelled Guidance), the certificate takes that heading. The heading
+   is read from the provision's record, never from the reply, and it is never
+   lowered. Without this, a check labelled Guidance that the checker found to
+   break a "shall" was filed as a mere non-conformance, and the decision
+   came out the wrong way (DEV, 8 October 2026).
+
+WHAT THE CHECKER SEES
+---------------------
+The claim, the facts the question states (Γ0q, listed by the parser and put
+in the initial store by `instantiate`), what earlier checks established, and
+the manual text found for this claim. Never the question itself: S3.3 says
+"All verification remains grounded in the persistent knowledge graph", and
+Eq 5 uses q only to retrieve the evidence.
 """
 from __future__ import annotations
 
@@ -52,7 +68,8 @@ import re
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from .certificate import Authority, Certificate, CertificateStore, Evidence, Status
+from .certificate import (Authority, Certificate, CertificateStore, Evidence, Status,
+                          stronger)
 from .network import Operation
 
 log = logging.getLogger("mrag.vine.model_verifiers")
@@ -93,6 +110,7 @@ explanation outside the JSON, no markdown fence.
 
 {"status": "TRUE" | "FALSE" | "UNKNOWN",
  "evidence": ["<id>", ...],
+ "basis": "<id>",
  "confidence": <number between 0 and 1>,
  "reason": "<one or two sentences>"}
 
@@ -106,9 +124,21 @@ different situation. UNKNOWN is a correct answer and is preferred to a guess.
 Do not reason from general knowledge of traffic engineering; decide only from
 the evidence listed below.
 
+Facts about the case come only from GIVEN IN THE QUESTION and ALREADY
+ESTABLISHED. What the manual requires, recommends or allows comes only from
+EVIDENCE.
+
 evidence
-  the ids of the items you actually used, copied exactly from the list.
-  Do not name anything that is not in the list."""
+  the ids of the items you actually used, copied exactly from the lists: a
+  provision or figure from EVIDENCE, or a fact from GIVEN IN THE QUESTION
+  (f1, f2, ...). Do not name anything that is not in the lists.
+
+basis
+  the one id from EVIDENCE your answer rests on most, also listed under
+  evidence. For FALSE, the provision the claim fails against.
+
+A TRUE or FALSE needs at least one item from EVIDENCE: the facts of the case
+alone never settle what the manual requires."""
 
 
 def _evidence_block(chunks: Sequence[Dict[str, Any]],
@@ -143,15 +173,23 @@ def _evidence_block(chunks: Sequence[Dict[str, Any]],
 
 def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
                  figures: Sequence[Dict[str, Any]],
-                 established: Sequence[Certificate] = ()) -> Tuple[str, List[str]]:
+                 established: Sequence[Certificate] = (),
+                 given: Sequence[Certificate] = ()) -> Tuple[str, List[str]]:
     """The prompt for ONE obligation, and the ids it may cite.
 
     The claim is the obligation, not the user's question. S3.3 is explicit
     that evidence is retrieved for "the obligation currently being verified",
     and asking the model the original question here would invite it to answer
     that instead -- which is the single-shot RAG this architecture replaces.
+
+    `given` are the facts of the case from Γ0q (verifier "given"). They are
+    listed apart from what earlier checks established, so the checker can
+    tell a fact of the case from a result, and they may be cited by id.
     """
     evidence, allowed = _evidence_block(chunks, figures)
+    facts = [c for c in given if c.obligation_id]
+    given_block = "\n".join(f"[{c.obligation_id}] {c.claim}" for c in facts) or "(none)"
+    allowed = allowed + [c.obligation_id for c in facts]
     # A check found not to apply is shown as such, in words: the checker can
     # only answer TRUE, FALSE or UNKNOWN, and should not read a fourth status
     # word as an answer it may give.
@@ -165,6 +203,9 @@ def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
         "You are checking ONE claim against the evidence below.",
         "",
         f"CLAIM\n{op.claim}",
+        "",
+        "GIVEN IN THE QUESTION (facts of the case, copied from the question; "
+        "they say nothing about what the manual requires)\n" + given_block,
         "",
         f"ALREADY ESTABLISHED\n{known}",
         "",
@@ -192,6 +233,7 @@ class Reply:
     reason: str
     dropped: List[str]           # ids cited that were never supplied
     problem: str = ""
+    basis: str = ""              # the supplied id the answer rests on most
 
 
 def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
@@ -231,8 +273,11 @@ def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
         confidence = 0.0
     confidence = min(max(confidence, 0.0), 1.0)
 
+    basis = str(data.get("basis") or "").strip()
+    if basis not in permitted:
+        basis = ""
     return Reply(status, kept, confidence, str(data.get("reason", "")).strip(),
-                 dropped)
+                 dropped, basis=basis)
 
 
 # --------------------------------------------------------------------------- #
@@ -240,19 +285,40 @@ def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
 # --------------------------------------------------------------------------- #
 def _evidence_objects(ids: Sequence[str],
                       chunks: Sequence[Dict[str, Any]],
-                      figures: Sequence[Dict[str, Any]]) -> List[Evidence]:
+                      figures: Sequence[Dict[str, Any]],
+                      given_ids: Sequence[str] = ()) -> List[Evidence]:
     chunk_ids = {str(c.get("chunk_id")) for c in chunks}
+    given = set(given_ids)
     out: List[Evidence] = []
     inferred = {str(c.get("chunk_id")): bool(c.get("authority_inferred"))
                 for c in chunks}
     for ident in ids:
-        if ident in chunk_ids:
+        if ident in given:
+            out.append(Evidence("given", ident))
+        elif ident in chunk_ids:
             out.append(Evidence("chunk", ident, inferred.get(ident, False)))
         elif ident.lower().startswith("table"):
             out.append(Evidence("table", ident))
         else:
             out.append(Evidence("figure", ident))
     return out
+
+
+_HEADINGS = {"Standard": Authority.STANDARD, "Guidance": Authority.GUIDANCE,
+             "Option": Authority.OPTION}
+
+
+def _printed_heading(chunk_id: str, chunks: Sequence[Dict[str, Any]]
+                     ) -> Optional[Authority]:
+    """The Standard / Guidance / Option heading the manual PRINTS over this
+    provision, or None (Support, a table row, a figure description, or a
+    heading this project inferred from the verb)."""
+    for c in chunks:
+        if str(c.get("chunk_id")) == chunk_id:
+            if c.get("authority_inferred"):
+                return None
+            return _HEADINGS.get(str(c.get("content_type") or ""))
+    return None
 
 
 def _merge_by_id(first: Sequence[Dict[str, Any]], then: Sequence[Dict[str, Any]],
@@ -315,8 +381,12 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
             return _abstain(op, kind, "no evidence was retrieved for this "
                                       "obligation")
 
-        established = [c for c in store.all() if c.status is not Status.UNKNOWN]
-        prompt, allowed = build_prompt(op, chunks, figures, established)
+        given = [c for c in store.all()
+                 if c.verifier == "given" and c.status is Status.TRUE]
+        established = [c for c in store.all()
+                       if c.status is not Status.UNKNOWN and c.verifier != "given"]
+        prompt, allowed = build_prompt(op, chunks, figures, established, given)
+        given_ids = [c.obligation_id for c in given if c.obligation_id]
 
         images: List[str] = []
         images_left_out: List[str] = []
@@ -361,13 +431,26 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
             # Rule 2. Naming evidence that was never supplied is fabricated
             # provenance, so it is recorded and removed rather than trusted.
             provenance["fabricated_evidence_ids"] = reply.dropped
+        if reply.basis:
+            provenance["basis"] = reply.basis
+        if given_ids:
+            provenance["given_facts_shown"] = given_ids
 
         status = reply.status
+        manual_cited = [e for e in reply.evidence if e not in set(given_ids)]
         if status is not Status.UNKNOWN and not reply.evidence:
             # A definitive answer resting on nothing that was shown is not a
             # verification result. S3.2 keeps it unresolved instead.
             provenance["downgraded"] = ("a definitive answer cited no evidence "
                                         "that was actually supplied")
+            status = Status.UNKNOWN
+        elif status is not Status.UNKNOWN and not manual_cited:
+            # The facts of the case say what the case is, never what the
+            # manual makes of it. S3.3: "All verification remains grounded in
+            # the persistent knowledge graph." An answer citing only facts
+            # from the question is not grounded there.
+            provenance["downgraded"] = ("a definitive answer cited only facts from "
+                                        "the question and no manual text")
             status = Status.UNKNOWN
 
         confidence = reply.confidence if status is not Status.UNKNOWN else 0.0
@@ -382,12 +465,25 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
             provenance["partial_figures"] = [f.get("figure_id") for f in partial]
             confidence = min(confidence, 0.5)
 
+        # Rule 3: authority comes from a printed heading. Normally the
+        # operation's; for a FALSE that rests on a provision printed under a
+        # stronger heading, that provision's (Eq 3). Never lowered.
+        authority = op.normative_authority
+        cited = list(reply.evidence)
+        # the basis must be something the checker says it USED, not merely
+        # something it was shown
+        if status is Status.FALSE and reply.basis and reply.basis in cited:
+            heading = _printed_heading(reply.basis, chunks)
+            if heading is not None and stronger(heading, authority):
+                provenance["authority_from"] = {
+                    "basis": reply.basis, "printed_heading": heading.value,
+                    "declared": authority.value}
+                authority = heading
+
         return Certificate(
             claim=op.claim, status=status,
-            evidence=_evidence_objects(reply.evidence, chunks, figures),
-            # Rule 3: authority comes from the printed heading, via the
-            # operation. The model is never asked and never consulted.
-            normative_authority=op.normative_authority,
+            evidence=_evidence_objects(cited, chunks, figures, given_ids),
+            normative_authority=authority,
             confidence=confidence, verifier=kind, obligation_id=op.id,
             dependencies=list(op.requires), provenance=provenance)
 

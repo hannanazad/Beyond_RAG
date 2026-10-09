@@ -1,5 +1,7 @@
 # Execution test, 8 October 2026
 
+> **Update, 8 October 2026 (evening):** after the first run, the checkers see the plan's given facts, a FALSE takes the authority of the provision it rests on, and a cross-reference claim is read by the text checker. See `CHECKER_FIXES_2026-10-08.md` for what changed and the new run order.
+
 ## What it is
 
 `notebooks/Execution_Test.ipynb` runs the frozen parser's DEV plans through the checkers and the executor.

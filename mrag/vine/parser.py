@@ -48,7 +48,21 @@ the references a plan makes to the MANUAL, all decided mechanically:
   * every table, figure and section named in a hint exists in the manual, and
     a column, chart or sheet named for a table is one the table has;
   * no `threshold` merge: the executor has no comparator for one, so it could
-    only ever come out UNKNOWN.
+    only ever come out UNKNOWN;
+  * the first input of an exception merge is not an applicability check;
+  * every listed fact is the question's own: its numbers are in the
+    question, and it cites the manual or says what is required or allowed
+    only if the question does (`fact_problems`).
+
+THE FACTS (added 8 October 2026, fix5)
+--------------------------------------
+The checkers never see the question (S3.3; Eq 5 uses q only for retrieval).
+Until fix5 the parser had to copy every fact a claim needed into the claim,
+and on the DEV cases it sometimes did not ("the facility described ...",
+"in the described signal face ..."), leaving the checker unable to decide or
+deciding the rule instead of the case. Now the parser also lists the facts
+the question states, once, and `instantiate` puts them in Eq 2's initial
+certificate store Γ0q, where every checker sees them as established.
 
 A plan that fails any of these goes back to the model with the problems,
 phrased in the ids the model wrote. A model naming its own verifier is
@@ -77,8 +91,8 @@ from .network import MergeType, ObligationType
 log = logging.getLogger("mrag.vine.parser")
 
 __all__ = ["ParseReport", "make_semantic_parser", "build_parser_prompt",
-           "read_spec", "grounding_problems", "PARSER_TASK", "PARSER_CONTRACT",
-           "HINT_TYPES"]
+           "read_spec", "grounding_problems", "fact_problems", "PARSER_TASK",
+           "PARSER_CONTRACT", "HINT_TYPES"]
 
 NORMATIVE = ("Standard", "Guidance", "Option")
 HINT_TYPES = ("table", "column", "part", "sheet", "figure", "section")
@@ -143,6 +157,9 @@ THE JSON OBJECT
 
 {{
   "terminal": "<id of the merge or obligation whose result answers the question>",
+  "facts": [
+    {{"id": "f1", "fact": "<one fact the question states about the case, in its words>"}}
+  ],
   "obligations": [
     {{"id": "o1",
       "claim": "<one checkable statement>",
@@ -165,6 +182,17 @@ THE JSON OBJECT
 
 THE FIELDS
 
+facts
+  The facts the question states about the case: what is there or planned,
+  and its sizes, places, counts and conditions. One fact per item, copied
+  from the question's statements in their own words, with every value and
+  unit exactly as written there. Only what the question states, never what
+  it asks. Nothing else: no conclusion, no requirement, no reference to the
+  manual, and no value you worked out. Every checker is shown these
+  facts; no checker is shown the question. If the question states no facts
+  about a case (it only asks what the manual says), give an empty list. A
+  fact is not a step: never put its id in "requires", "inputs" or a guard.
+
 claim
   One statement, never a question, about the situation in the question. Write
   it so that TRUE means the situation meets the provision (or, for a
@@ -173,9 +201,10 @@ claim
   whether a described design complies, the claim states what the manual
   requires, recommends or allows in this situation, and TRUE means the manual
   says so. Say what the provision means for this case; do not just repeat the
-  provision's sentence. The checker sees the claim and the manual, not the question, so
-  the claim must carry the facts it is about: copy the values, units and
-  conditions it needs from the question, as written there. Do not decide
+  provision's sentence. The checker sees the claim, the facts and the manual,
+  never the question. So every fact a claim depends on must be in "facts",
+  and the claim itself should still carry the values, units and conditions
+  it is about, as written in the question. Do not decide
   whether the claim is true. Do not work out a value that a table, figure or
   provision holds; say where it is, in evidence_hint.
 
@@ -194,8 +223,10 @@ type: what kind of check it is. The type decides the checker.
   definitional      what a defined term means
                     -> language model
   cross_reference   a provision points to another section, figure or table
-                    -> resolver. It confirms the target exists. What the target
-                    requires is an obligation of its own.
+                    -> resolver, then language model. The resolver confirms the
+                    target exists; the language model checks what the claim
+                    says about it against the manual. What the target requires
+                    is an obligation of its own.
   exception         a provision that relaxes or overrides another
                     -> language model
 
@@ -258,8 +289,14 @@ STANDARD unless the merge combines only GUIDANCE or only OPTION items.
 
 RULES (a plan that breaks one is sent back to you)
 - Every id is unique. Every id in "requires", "inputs" and a guard is declared
-  in this plan.
+  in this plan, and is an obligation or a merge, never a fact.
+- A fact is a statement copied from the question, never its question. Every
+  number in a fact is in the question's statements. A fact names a section,
+  figure or table, or says what is required or allowed, only if the
+  question's statements do.
 - A merge has at least two inputs.
+- The first input of an exception merge is the base rule: never an
+  applicability or exception obligation.
 - No cycles.
 - The terminal can be reached: everything it depends on can be produced.
 - Every obligation has a source_chunk from the provisions shown, and its
@@ -285,6 +322,11 @@ GROUNDING_RULES = [
     "its inputs)",
     "every claim is a statement that is TRUE when the situation meets the "
     "provision, never a question",
+    "a fact is a statement copied from the question in its own words, never "
+    "its question: every number in it is in the question's statements, and it "
+    "names the manual or says what is required or allowed only if they do",
+    "the first input of an exception merge is the base rule (a claim that the "
+    "situation MEETS a rule), never an applicability or exception obligation",
 ]
 
 
@@ -652,6 +694,22 @@ def grounding_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]],
         if m.authority not in ("STANDARD", "GUIDANCE", "OPTION"):
             out.append(f"{m.id}: merge authority {m.authority!r} is not "
                        f"STANDARD, GUIDANCE or OPTION")
+
+    # The executor reads inputs[0] of an exception merge as "the situation
+    # MEETS the rule": TRUE settles the merge without looking at the
+    # exception. A claim that a rule APPLIES is TRUE whether or not the rule
+    # is met, so in that place it would pass a case the exception does not
+    # cover. The instructions above already say so; this enforces it.
+    by_ob = {o.id: o for o in spec.obligations}
+    for m in spec.merges:
+        if m.kind == MergeType.EXCEPTION.value and m.inputs:
+            base = by_ob.get(m.inputs[0])
+            if base is not None and base.type == ObligationType.APPLICABILITY.value:
+                out.append(f"{m.id}: its first input {base.id!r} is an applicability "
+                           f"check, but the first input of an exception merge is the "
+                           f"base rule, written as a claim that the situation MEETS "
+                           f"it; put {base.id!r} in requires or a guard instead")
+    out.extend(fact_problems(spec))
     return out
 
 
@@ -685,6 +743,165 @@ def _table_detail_problems(o, named_tables: List[str],
             if sheets and ident not in sheets:
                 out.append(f"{o.id}: sheet {ident!r} is not a sheet of "
                            f"{', '.join(named_tables)}; its sheets are {sheets}")
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# 4b. The facts (Γ0q): copied from the question, nothing added
+# --------------------------------------------------------------------------- #
+_FACT_NUMBER = re.compile(r"(?<![\w.])\d+(?:,\d{3})*(?:\.\d+)?")
+_FACT_REF = re.compile(r"\b\d{1,2}[A-Z]\.\d{2}\b"
+                       r"|\b(?:section|figure|table|paragraph|mutcd|manual)s?\b", re.I)
+# Words that say what is required or allowed, or whether something passes.
+# A fact may use one only if a statement in the question does.
+_FACT_NORMATIVE = re.compile(
+    r"\b(?:shall|should|must|may|requir(?:e|es|ed|ement|ements)|mandatory|"
+    r"permi(?:t|ts|tted|ssible)|allow(?:s|ed)?|prohibit(?:s|ed)?|forbidden|"
+    r"recommend(?:s|ed)?|warrant(?:s|ed)?|compl(?:y|ies|iant|iance)|noncompliant|"
+    r"conform(?:s|ing|ance)?|nonconforming|violat(?:e|es|ed|ion|ions)|"
+    r"satisf(?:y|ies|ied|actory)|meets|met|(?:un)?acceptable|(?:im)?proper(?:ly)?|"
+    r"(?:in)?correct(?:ly)?|(?:il)?legal|(?:in)?valid|(?:in)?adequate|"
+    r"(?:in)?sufficient|(?:in)?appropriate|ok|okay|fine|(?:un)?suitable|"
+    r"needs?|needed|(?:un)?necessary|appl(?:y|ies|ied|icable)|inapplicable|"
+    r"qualif(?:y|ies|ied|ying|ication)|pass(?:es|ed)?|fail(?:s|ed)?|"
+    r"(?:in)?consistent|(?:in)?eligible|exempt(?:ed|ion)?)\b", re.I)
+_ASKING = re.compile(r"^\s*(?:is|are|was|were|does|do|did|can|could|may|might|must|"
+                     r"should|shall|will|would|what|which|where|when|who|whom|whose|"
+                     r"why|how)\b", re.I)
+_NUMBER_WORDS = {w: str(i) for i, w in enumerate(
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen "
+    "fourteen fifteen sixteen seventeen eighteen nineteen twenty".split())}
+_NUMBER_WORDS.update({"thirty": "30", "forty": "40", "fifty": "50", "sixty": "60",
+                      "seventy": "70", "eighty": "80", "ninety": "90",
+                      "hundred": "100", "thousand": "1000"})
+
+
+def _canon_number(n: str) -> str:
+    n = n.replace(",", "")
+    if "." in n:
+        n = n.rstrip("0").rstrip(".")
+    return n or "0"
+
+
+def _numbers(text: str) -> List[str]:
+    """Every number in the text, spelt as digits; section numbers left out."""
+    text = _FACT_REF.sub(" ", text)
+    out = [_canon_number(n) for n in _FACT_NUMBER.findall(text)]
+    out += [_NUMBER_WORDS[w] for w in re.findall(r"[a-z]+", text.lower())
+            if w in _NUMBER_WORDS]
+    return out
+
+
+def _words(text: str) -> List[str]:
+    return re.findall(r"[a-z0-9]+", text.lower())
+
+
+# a full stop after these is part of a short form, not the end of a sentence
+_SHORT_FORM = re.compile(r"(?:\b(?:in|ft|mi|yd|lb|no|nos|st|rd|ave|blvd|hwy|approx|"
+                         r"fig|sec|para|vs|etc|min|max|sq|e\.g|i\.e)\.|\b[A-Z]\.)$", re.I)
+
+
+def _sentences(text: str) -> List[str]:
+    parts = [x.strip() for x in re.split(r"(?<=[.?!])[\"'\u201d\u2019)\]]*\s+", text or "")
+             if x.strip()]
+    out: List[str] = []
+    for x in parts:
+        if out and _SHORT_FORM.search(out[-1]):
+            out[-1] = f"{out[-1]} {x}"
+        else:
+            out.append(x)
+    return out
+
+
+# "Determine whether ...", "Explain what ...": an ask without a question mark
+_ASK_VERB = re.compile(r"^\W*(?:please\s+)?(?:(?:determine|explain|decide|check|identify|"
+                       r"tell|list|describe|find|confirm|verify)\b|(?:state|say)\s+"
+                       r"(?:whether|what|which|how|if|when|where|who|the|any)\b)", re.I)
+# words too common to show that a fact was reworded
+_GLUE = set("a an the is are was were be been being it its this that these those of to "
+            "in on at by for with and or as from there their they them he she his her "
+            "has have had will would which who whom".split())
+# a fact may bring in at most this share of content words that no statement
+# of the question has (a pronoun resolved, a plural made singular)
+_NEW_WORD_SHARE = 0.25
+
+
+def _stem(w: str) -> str:
+    return w[:-1] if len(w) > 3 and w.endswith("s") and not w.endswith("ss") else w
+
+
+def _is_ask(sentence: str) -> bool:
+    bare = sentence.rstrip("\"'\u201d\u2019)] ")
+    return (bare.endswith("?") or bool(_ASKING.match(sentence.lstrip("\"'\u201c\u2018(["))
+            and not bare.endswith("."))
+            or bool(_ASK_VERB.match(sentence)) or bool(re.search(r"\bwhether\b", sentence, re.I)))
+
+
+def _split_question(query: str) -> Tuple[List[str], List[str]]:
+    """(statements, asks). A question with no recognisable ask is taken to
+    ask in its last sentence, so its last sentence never counts as a fact."""
+    sentences = _sentences(query)
+    asks = [x for x in sentences if _is_ask(x)]
+    if not asks and sentences:
+        asks = [sentences[-1]]
+    return [x for x in sentences if x not in asks], asks
+
+
+def fact_problems(spec: NetworkSpec) -> List[str]:
+    """What a listed fact adds to the question.
+
+    A fact goes into Γ0q and every checker treats it as established, so it
+    must be what the question STATES. Only the question's statements count,
+    not what it asks: "Is this allowed?" is not a fact, and its "allowed"
+    may not appear in one. A fact's numbers are the statements' numbers
+    (written in digits or in words); it names the manual, or says what is
+    required, allowed or acceptable, only if a statement does; at most a
+    quarter of its content words are new (it is the question's own words, not
+    a paraphrase that could carry a conclusion: "the panel is good"); it is
+    one sentence, never a question, and does not copy the question's ask (a
+    sentence ending in "?", one starting "Determine ..." or holding
+    "whether", or, failing those, the question's last sentence). Checked against
+    `spec.query`, which `read_spec` sets to the question.
+    """
+    out: List[str] = []
+    stated, asked = _split_question(spec.query or "")
+    statements = " ".join(stated)
+    asks = [" ".join(_words(x)) for x in asked]
+    q_refs = {m.group(0).lower() for m in _FACT_REF.finditer(statements)}
+    q_numbers = set(_numbers(statements))
+    q_words = set(_words(statements))
+    for f in spec.facts:
+        text = f.text
+        flat = " ".join(_words(text))
+        if "?" in text or _is_ask(text):
+            out.append(f"{f.id}: is a question; a fact states what the case is")
+        elif any(len(a.split()) >= 3 and f" {a} " in f" {flat} " for a in asks):
+            out.append(f"{f.id}: copies what the question asks; a fact states only "
+                       f"what the question says about the case")
+        if len(_sentences(text)) > 1:
+            out.append(f"{f.id}: has more than one sentence; give one fact per item")
+        refs = [m.group(0) for m in _FACT_REF.finditer(text)
+                if m.group(0).lower() not in q_refs]
+        if refs:
+            out.append(f"{f.id}: names {sorted(set(refs))}, which is not in what "
+                       f"the question states; a fact describes the case, not the manual")
+        new = [n for n in dict.fromkeys(_numbers(text)) if n not in q_numbers]
+        if new:
+            out.append(f"{f.id}: the number(s) {new} are not in what the question "
+                       f"states; copy its values exactly and work nothing out")
+        content = [w for w in _words(text) if w not in _GLUE and not w.isdigit()
+                   and w not in _NUMBER_WORDS]
+        stems = {_stem(w) for w in q_words}
+        added = [w for w in content if _stem(w) not in stems]
+        if content and len(added) / len(content) > _NEW_WORD_SHARE:
+            out.append(f"{f.id}: uses words not found in the question ({sorted(set(added))[:6]}); "
+                       f"copy the question's statements in their own words")
+        said = sorted({m.group(0).lower() for m in _FACT_NORMATIVE.finditer(text)}
+                      - q_words)
+        if said:
+            out.append(f"{f.id}: says {said}, which is not in what the question "
+                       f"states; a fact states what the case is, not what is "
+                       f"required, allowed or acceptable")
     return out
 
 

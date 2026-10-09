@@ -53,6 +53,17 @@ class Authority(str, Enum):
 
 REFUTING = (Authority.STANDARD,)
 
+# How strong each heading is, for the one place a result's authority may
+# change: it may be RAISED to the printed heading of the evidence it rests on
+# (Eq 3: r_i records the normative authority of R_i), never lowered.
+AUTHORITY_RANK = {Authority.SUPPORT: 0, Authority.OPTION: 1,
+                  Authority.GUIDANCE: 2, Authority.STANDARD: 3}
+
+
+def stronger(a: Authority, b: Authority) -> bool:
+    """Is heading `a` stronger than heading `b`?"""
+    return AUTHORITY_RANK[a] > AUTHORITY_RANK[b]
+
 
 @dataclass(frozen=True)
 class Evidence:
@@ -60,7 +71,7 @@ class Evidence:
     from the verb rather than read from a printed heading — true for every
     note printed inside a figure or table (see parsing.py). A certificate must
     never present a guess as if the manual had said it."""
-    type: str            # section | figure | table | chunk | paragraph
+    type: str            # section | figure | table | chunk | paragraph | given
     id: str
     inferred: bool = False
 
