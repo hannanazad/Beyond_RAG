@@ -151,9 +151,12 @@ else
     rm -rf "$RETR_ENV"                 # a half-made environment is made again
     uv venv "$RETR_ENV" --python "$PY_VERSION"
     RP="$RETR_ENV/bin/python"
-    # same order as the notebooks (see the top of requirements.txt)
+    # same order as the notebooks (see the top of requirements.txt):
+    # torch and torchvision from PyTorch's CUDA 12.4 index, then everything else
+    # from PyPI. (The PyTorch index must NOT be used for the rest: it has only
+    # old torchao builds, up to 0.9.0, and requirements.txt needs 0.13.)
     uv pip install --python "$RP" --torch-backend="$RETR_TORCH_BACKEND" "torch==2.6.0" "torchvision==0.21.0"
-    uv pip install --python "$RP" --torch-backend="$RETR_TORCH_BACKEND" -r "$VINE_REPO/requirements.txt"
+    uv pip install --python "$RP" -r "$VINE_REPO/requirements.txt"
     # the notebooks' last step: these four at the newest version inside their ranges
     uv pip install --python "$RP" --no-deps --upgrade \
         "transformers>=4.49,<4.55" "huggingface_hub>=0.34,<0.35" "tokenizers>=0.21,<0.22" "torchao>=0.13,<0.14"
