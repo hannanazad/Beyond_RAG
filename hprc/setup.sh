@@ -194,7 +194,10 @@ if is_done vllm_env; then
 else
     rm -rf "$VLLM_ENV"
     uv venv "$VLLM_ENV" --python "$PY_VERSION"
-    uv pip install --python "$VLLM_ENV/bin/python" --torch-backend="$VLLM_TORCH_BACKEND" "vllm==$VLLM_VERSION"
+    # torch and torchvision from PyTorch's CUDA 13.2 index, then vLLM and the
+    # rest from PyPI (vLLM needs torchaudio 2.11.0, which that index does not have)
+    uv pip install --python "$VLLM_ENV/bin/python" --torch-backend="$VLLM_TORCH_BACKEND" "torch==2.13.0" "torchvision==0.28.0"
+    uv pip install --python "$VLLM_ENV/bin/python" "vllm==$VLLM_VERSION"
     VLLM_VERSION="$VLLM_VERSION" VLLM_TORCH_PREFIX="$VLLM_TORCH_PREFIX" VLLM_TORCH_CUDA="$VLLM_TORCH_CUDA" \
     "$VLLM_ENV/bin/python" - <<'PY'
 import os
