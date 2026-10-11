@@ -37,7 +37,7 @@ What it does:
 1. Checks the data and unpacks the vector store (`qdrant_db.tar`, which is kept).
 2. Gets uv (the installer) and Python 3.12, into `$SCRATCH/vine`.
 3. Builds the retrieval environment: torch 2.6.0 and `requirements.txt`, in the same order as the notebooks.
-4. Builds the parser's environment: vLLM 0.31.0, with torch 2.13 for CUDA 13.2, the build Colab used.
+4. Builds the parser's environment: vLLM 0.31.0 with the torch, torchvision and torchaudio it asks for, all from PyPI (so all three are built for the same CUDA).
 5. Downloads the three models at the revisions Colab used:
 
    | Model | Revision |

@@ -14,7 +14,7 @@
 # What it makes (ALL in $SCRATCH, nothing in $HOME -- see hprc/env.sh):
 #   $SCRATCH/vine/bin, python      uv (the installer) and Python 3.12
 #   $SCRATCH/vine/envs/retrieval   torch 2.6.0 + the retrieval stack, as on Colab
-#   $SCRATCH/vine/envs/vllm        vLLM 0.31.0 (torch 2.13, CUDA 13.2), as on Colab
+#   $SCRATCH/vine/envs/vllm        vLLM 0.31.0 with the torch 2.13 it asks for (all from PyPI)
 #   $SCRATCH/hf_cache              the three models, at the exact revisions used on Colab
 #   $SCRATCH/Beyond_RAG/qdrant_db  the vector store, unpacked from qdrant_db.tar
 #   $SCRATCH/vine/setup_summary.txt  every version and revision, for the run records
@@ -29,12 +29,11 @@ export VINE_REPO
 
 PY_VERSION=3.12
 VLLM_VERSION=0.31.0
-# On Colab (driver 580.82) the vLLM install chose torch 2.13 built for CUDA 13.2
-# (docs/PARSER_TEST_2026-10-07.md). FASTER's driver is 580.126.20, so the same
-# build runs here. The login node has no GPU to choose from, so it is named here.
-VLLM_TORCH_BACKEND=cu132
+# vLLM and the torch, torchvision and torchaudio it asks for, ALL from PyPI, so
+# all three are built for the same CUDA. (torch from PyTorch's CUDA 13.2 index
+# with PyPI's torchaudio, built for CUDA 13.0, stops vLLM from starting.)
 VLLM_TORCH_PREFIX=2.13
-VLLM_TORCH_CUDA=13.2
+VLLM_RECIPE=pypi1          # a new recipe makes the environment again
 # The retrieval stack, pinned as in the notebooks (torch 2.6.0 for CUDA 12.4).
 RETR_TORCH_BACKEND=cu124
 
@@ -189,27 +188,27 @@ fi
 # --------------------------------------------------------------------------- #
 step 5 "the parser's environment (vLLM $VLLM_VERSION), $VLLM_ENV"
 # --------------------------------------------------------------------------- #
-if is_done vllm_env; then
+if is_done "vllm_env_$VLLM_RECIPE"; then
     echo "already done"
 else
     rm -rf "$VLLM_ENV"
     uv venv "$VLLM_ENV" --python "$PY_VERSION"
-    # torch and torchvision from PyTorch's CUDA 13.2 index, then vLLM and the
-    # rest from PyPI (vLLM needs torchaudio 2.11.0, which that index does not have)
-    uv pip install --python "$VLLM_ENV/bin/python" --torch-backend="$VLLM_TORCH_BACKEND" "torch==2.13.0" "torchvision==0.28.0"
     uv pip install --python "$VLLM_ENV/bin/python" "vllm==$VLLM_VERSION"
-    VLLM_VERSION="$VLLM_VERSION" VLLM_TORCH_PREFIX="$VLLM_TORCH_PREFIX" VLLM_TORCH_CUDA="$VLLM_TORCH_CUDA" \
-    "$VLLM_ENV/bin/python" - <<'PY'
+    VLLM_VERSION="$VLLM_VERSION" VLLM_TORCH_PREFIX="$VLLM_TORCH_PREFIX" "$VLLM_ENV/bin/python" - <<'PY'
 import os
-import torch, transformers, vllm
-print(f"  vllm {vllm.__version__} | torch {torch.__version__} (CUDA {torch.version.cuda}) | transformers {transformers.__version__}")
+import torch, torchaudio, torchvision, transformers, vllm
+print(f"  vllm {vllm.__version__} | torch {torch.__version__} (CUDA {torch.version.cuda}) | torchvision "
+      f"{torchvision.__version__} | torchaudio {torchaudio.__version__} | transformers {transformers.__version__}")
 assert vllm.__version__ == os.environ["VLLM_VERSION"], "wrong vLLM version"
-assert torch.__version__.startswith(os.environ["VLLM_TORCH_PREFIX"]) and torch.version.cuda == os.environ["VLLM_TORCH_CUDA"], (
-    f"Colab ran torch {os.environ['VLLM_TORCH_PREFIX']} for CUDA {os.environ['VLLM_TORCH_CUDA']}; this is a different build")
+assert torch.__version__.startswith(os.environ["VLLM_TORCH_PREFIX"]), "not the torch vLLM asks for"
+# the import chain `vllm serve` goes through (it stopped here when the CUDA builds differed)
+import vllm.entrypoints.cli.main  # noqa: F401
+import transformers.processing_utils  # noqa: F401
+print("  vllm serve's imports load (torch and torchaudio are built for the same CUDA)")
 PY
     [ -x "$VLLM_ENV/bin/vllm" ] || fail "$VLLM_ENV/bin/vllm is missing"
     uv pip freeze --python "$VLLM_ENV/bin/python" > "$VINE_HOME/envs/vllm_packages.txt"
-    mark_done vllm_env
+    mark_done "vllm_env_$VLLM_RECIPE"
 fi
 
 # --------------------------------------------------------------------------- #
