@@ -42,6 +42,10 @@ def detect_environment() -> str:
         return "hprc"
     return "local"
 
+# Base folders the data files were written under on other machines (Colab's Drive).
+_OTHER_MACHINE_BASES = ("/content/drive/MyDrive/Beyond_RAG", "/content/drive/MyDrive/MRAG")
+
+
 def _default_base_dir(env: str) -> Path:
     if env == "colab":
         # Drive mount is required; this path exists only after drive.mount(...)
@@ -516,6 +520,21 @@ class Config:
             except (PermissionError, OSError):
                 # Drive may not be mounted yet; user will rerun config later.
                 pass
+
+    def local_data_path(self, path: str) -> str:
+        """A data file recorded on another machine, as the same file under this
+        machine's base folder. figures.jsonl was written on Colab, so its image
+        paths start with the Drive folder (/content/drive/MyDrive/Beyond_RAG/...);
+        on HPRC the same file is under $SCRATCH/Beyond_RAG/. A path that exists,
+        or that is not under one of those folders, is returned unchanged (so on
+        Colab nothing changes)."""
+        if not path:
+            return path
+        s = str(path)
+        for base in _OTHER_MACHINE_BASES:
+            if s.startswith(base + "/") and not Path(s).exists():
+                return str(Path(self.base_dir) / s[len(base) + 1:])
+        return s
 
     def rule_type_weight(self, ct: str) -> float:
         return {

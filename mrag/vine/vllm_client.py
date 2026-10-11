@@ -134,10 +134,15 @@ def _vllm_pids() -> List[int]:
     worker vLLM starts). Matched on whole arguments, never on a substring of
     a command line, so a shell whose command merely mentions the server is
     left alone."""
-    me = os.getpid()
+    me, uid = os.getpid(), os.getuid()
     out: List[int] = []
     for d in Path("/proc").iterdir():
         if not d.name.isdigit() or int(d.name) == me:
+            continue
+        try:
+            if d.stat().st_uid != uid:      # never another user's process (shared HPC nodes)
+                continue
+        except OSError:
             continue
         try:
             argv = (d / "cmdline").read_bytes().split(b"\0")
@@ -183,9 +188,31 @@ def stop_servers(say: Callable[[str], None] = print, wait: float = 120) -> None:
 _MAX_LEN_RE = re.compile(r"estimated maximum model length is (\d+)")
 
 
+def stop_server(server: Dict[str, Any], wait: float = 120) -> None:
+    """Stop ONE server started by `launch` (and the engine processes it
+    started), leaving any other server alone."""
+    import signal
+    proc = server.get("proc") if isinstance(server, dict) else server
+    if proc is None or proc.poll() is not None:
+        return
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)    # the server runs in its own session
+    except OSError:
+        proc.terminate()
+    try:
+        proc.wait(timeout=wait)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except OSError:
+            proc.kill()
+        proc.wait(timeout=30)
+
+
 def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
            env: Optional[Dict[str, str]] = None, say: Callable[[str], None] = print,
-           min_model_len: Optional[int] = None, **kw) -> Dict[str, Any]:
+           min_model_len: Optional[int] = None, stop_others: bool = True,
+           **kw) -> Dict[str, Any]:
     """Start the server and wait for it. Any server already running is
     stopped first, so the one that answers is the one started here. If this
     vLLM does not know `--language-model-only`, start again with the older
@@ -195,9 +222,13 @@ def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
     a request of `max_model_len` tokens, vLLM says the largest length that
     fits; the server is started again with that (rounded down to 1,024) as
     long as it is at least `min_model_len`. The length actually used is in the
-    result. Returns {"proc", "base_url", "cmd", "seconds", "max_model_len"}."""
+    result. Returns {"proc", "base_url", "cmd", "seconds", "max_model_len"}.
+
+    stop_others=False: leave other servers running (several servers, one per
+    GPU, on one machine); only the server started here is stopped on a retry."""
     base_url = f"http://127.0.0.1:{port}"
-    stop_servers(say)
+    if stop_others:
+        stop_servers(say)
     modes = ["flag", "limits"]
     max_len = int(kw.pop("max_model_len", 40960))
     i = 0
@@ -215,7 +246,9 @@ def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
             return {"proc": proc, "base_url": base_url, "cmd": cmd, "seconds": secs,
                     "max_model_len": max_len}
         except ServerFailed as e:
-            if proc.poll() is None:
+            if not stop_others:
+                stop_server({"proc": proc})
+            elif proc.poll() is None:
                 proc.terminate()
             text = str(e) + "\n" + log_tail(log_path, 400)
             unknown_flag = ("--language-model-only" in text
@@ -231,7 +264,8 @@ def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
                     say(f"the working memory holds {m.group(1)} tokens, not {max_len}; "
                         f"starting again with max_model_len {fits}")
                     max_len = fits
-                    stop_servers(say)
+                    if stop_others:
+                        stop_servers(say)
                     continue
             raise
     raise ServerFailed("unreachable")

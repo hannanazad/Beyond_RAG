@@ -129,6 +129,10 @@ class VineKG:
                 g.add_edge(e.src, e.dst, label=e.rel, why=e.why)
 
         # ---- figures: attributes callers read, from figures.jsonl ----------
+        # (figures.jsonl was written on Colab: its image paths are found under
+        # this machine's data folder, see CFG.local_data_path)
+        from .config import CFG
+        local = CFG.local_data_path
         self._figures: Dict[str, str] = {}
         recs: Dict[str, List[dict]] = defaultdict(list)
         if figures_path and Path(figures_path).exists():
@@ -164,8 +168,8 @@ class VineKG:
                 chapter=chapter, anchor_section=anchor,
                 page_pdf=head.get("page_pdf"), page_printed=head.get("page_printed"),
                 caption=head.get("caption") or v.text, title=head.get("title") or v.text,
-                image_path=head.get("image_path", ""),
-                image_paths=tuple(r.get("image_path", "") for r in rs) or ("",),
+                image_path=local(head.get("image_path", "")),
+                image_paths=tuple(local(r.get("image_path", "")) for r in rs) or ("",),
                 n_sheets=max(1, len(rs)), sign_codes=tuple(sorted(depicted)),
                 unresolved=False)
             self._figures[fid.upper()] = nid

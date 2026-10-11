@@ -56,3 +56,35 @@ source $SCRATCH/Beyond_RAG_repo/hprc/env.sh
 ```
 
 This also clears any loaded modules.
+
+## 3. Save the Anthropic key (once)
+
+The checkers call the Anthropic API. This asks for the key without showing it, and only you can read the file:
+
+```bash
+read -rs -p "Anthropic key: " K; echo; printf "%s" "$K" > $SCRATCH/vine/anthropic_key; chmod 600 $SCRATCH/vine/anthropic_key; unset K
+```
+
+## 4. Run
+
+```bash
+cd $SCRATCH/Beyond_RAG_repo && git pull
+bash hprc/run.sh ACCOUNT 8
+```
+
+`ACCOUNT` is your project account number (`myproject` shows it); `8` is how many A100s the parser gets (1 to 10). This submits three Slurm jobs. Each starts only when the one before it finished well; a job that stops cancels the ones after it.
+
+| Stage | GPUs | What | Time |
+|---|---|---|---|
+| `retrieval` | 1 | the retrieval check on 154 DEV cases (**the gate**), then Kq for every question | 30-60 min |
+| `parse` | 8 | one parser server on each GPU (Qwen3.8-27B-FP8, xhigh, seed 42, one question at a time each); the plans | about 7 min a question, shared out over the GPUs |
+| `execute` | 1 | the checkers (Claude Sonnet 5.5) execute every plan; the answers | 15-30 min |
+
+- Watch: `squeue -u $USER`. Logs: `$SCRATCH/vine/logs/vine_<stage>_<job>.log`.
+- Results: `$SCRATCH/Beyond_RAG/parser_runs_faster/` and `$SCRATCH/Beyond_RAG/retrieval_dev_results_faster/` (apart from the Colab runs). The answers file is `answers_sample_<time>.txt` in the run folder.
+- Every stage carries on where it stopped. To start again from one stage: `bash hprc/run.sh ACCOUNT 8 parse` (or `execute`).
+- Why one question at a time on each GPU: that is how the parser gave the same plan every time on Colab. Which GPU makes which plan does not matter; each server works alone with seed 42.
+- The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
+
+The code is `hprc/vine_hprc.py` (the steps of `notebooks/VINE_Run.ipynb`) and `hprc/vine_job.slurm`.
+
