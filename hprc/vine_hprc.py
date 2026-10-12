@@ -22,6 +22,9 @@ The repeat run (VINE_REPEAT=NAME, the parse stage only): the 11 DEV plans made
 again from the same Kq, into parser_runs_faster/repeat_NAME/ with its own,
 empty model cache, so every reply comes from a new model call. Then
 hprc/compare_plans.py NAME compares them with the plans of the first run.
+
+The probe (VINE_PROBE=NAME, the probe stage only, 4 GPUs): why the parser's reply
+changes from one server start to the next; see hprc/repeat_probe.py.
 """
 from __future__ import annotations
 
@@ -98,6 +101,11 @@ class Run:
         self.dev = pc.load_dev_cases()            # the 11 DEV cases answered end to end
         qfile = os.environ.get("VINE_QUESTIONS", "").strip()
         self.repeat = os.environ.get("VINE_REPEAT", "").strip()
+        self.probe = os.environ.get("VINE_PROBE", "").strip()
+        if self.probe:
+            assert re.fullmatch(r"[A-Za-z0-9_-]{1,40}", self.probe), \
+                f"VINE_PROBE={self.probe!r}: use letters, digits, - and _ only"
+            assert not self.repeat, "VINE_PROBE and VINE_REPEAT are two different jobs -- set one"
         if self.repeat:
             assert re.fullmatch(r"[A-Za-z0-9_-]{1,40}", self.repeat), \
                 f"VINE_REPEAT={self.repeat!r}: use letters, digits, - and _ only"
@@ -155,6 +163,34 @@ def gpu_names() -> list:
     except (OSError, subprocess.SubprocessError):
         return []
     return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+# --------------------------------------------------------------------------- #
+# The parser's server: one place, so every stage starts it the same way
+# --------------------------------------------------------------------------- #
+PARSER_SERVER = {"served_name": "parser", "max_model_len": 73728, "min_model_len": 65536,
+                 "gpu_memory_utilization": GPU_UTIL, "seed": SEED, "stop_others": False}
+
+
+def parser_model_path() -> Path:
+    path = (Path(os.environ["HF_HUB_CACHE"]) / ("models--" + MODEL_ID.replace("/", "--"))
+            / "snapshots" / REVISION)
+    assert (path / "config.json").exists(), f"the parser's model is not at {path} -- run hprc/setup.sh"
+    return path
+
+
+def parser_server_env(gpu: str, own: Path) -> dict:
+    """The environment of one parser server: its GPU, and its compile caches in
+    its own folder `own` (on the node's own disk)."""
+    return {"CUDA_VISIBLE_DEVICES": gpu, "HF_HUB_OFFLINE": "1",
+            # FlashInfer's sampler failed to build on Colab; seeded requests never use it
+            "VLLM_USE_FLASHINFER_SAMPLER": "0",
+            "VLLM_CACHE_ROOT": str(own / "vllm"), "TRITON_CACHE_DIR": str(own / "triton"),
+            "TORCHINDUCTOR_CACHE_DIR": str(own / "inductor"), "FLASHINFER_WORKSPACE_BASE": str(own)}
+
+
+def first_port(job: str) -> int:
+    return 20000 + (int(job) % 400) * 10 if job.isdigit() else 20000
 
 
 # --------------------------------------------------------------------------- #
@@ -282,11 +318,9 @@ def stage_parse(R: Run) -> int:
         tables.setdefault(t.table_id, []).append(t)
 
     vllm_env = Path(os.environ["VLLM_ENV"])
-    model_path = (Path(os.environ["HF_HUB_CACHE"]) / ("models--" + MODEL_ID.replace("/", "--"))
-                  / "snapshots" / REVISION)
-    assert (model_path / "config.json").exists(), f"the parser's model is not at {model_path} -- run hprc/setup.sh"
+    model_path = parser_model_path()
     tmp = Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}")
-    port0 = 20000 + (int(R.job) % 400) * 10 if R.job.isdigit() else 20000
+    port0 = first_port(R.job)
     log_dir = R.run_dir / "server_logs"
 
     servers = [None] * n
@@ -298,14 +332,8 @@ def stage_parse(R: Run) -> int:
             servers[i] = vc.launch(
                 str(vllm_env / "bin" / "vllm"), str(model_path),
                 log_path=str(log_dir / f"vllm_{R.job}_gpu{i}.log"), port=port0 + i,
-                env={"CUDA_VISIBLE_DEVICES": gpus[i], "HF_HUB_OFFLINE": "1",
-                     # FlashInfer's sampler failed to build on Colab; seeded requests never use it
-                     "VLLM_USE_FLASHINFER_SAMPLER": "0",
-                     "VLLM_CACHE_ROOT": str(own / "vllm"), "TRITON_CACHE_DIR": str(own / "triton"),
-                     "TORCHINDUCTOR_CACHE_DIR": str(own / "inductor"), "FLASHINFER_WORKSPACE_BASE": str(own)},
-                say=lambda m, i=i: say(f"[gpu{i}] {m}"),
-                served_name="parser", max_model_len=73728, min_model_len=65536,
-                gpu_memory_utilization=GPU_UTIL, seed=SEED, stop_others=False)
+                env=parser_server_env(gpus[i], own),
+                say=lambda m, i=i: say(f"[gpu{i}] {m}"), **PARSER_SERVER)
         except Exception as e:                                   # noqa: BLE001
             errors.append((i, e))
 
@@ -567,9 +595,34 @@ def stage_execute(R: Run) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# The probe: why the parser's reply changes from one server start to the next
+# --------------------------------------------------------------------------- #
+def stage_probe(R: Run) -> int:
+    from mrag.vine import vllm_client as vc
+    import repeat_probe as rp
+    gpus = [g for g in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",") if g.strip()]
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""            # this process itself never uses them
+    say(f"GPUs: {len(gpus)} -> {gpu_names()}")
+    say(f"probe '{R.probe}': the prompts of {', '.join(rp.PROBE_CASES)} from the first run in {R.run_dir}")
+    report = rp.run_probe(
+        R.probe, R.runs, R.run_dir.name, gpus, launch=vc.launch, stop=vc.stop_server,
+        make_ask=vc.make_ask_vllm, server_env=parser_server_env, server_kwargs=PARSER_SERVER,
+        vllm_bin=str(Path(os.environ["VLLM_ENV"]) / "bin" / "vllm"), model_path=str(parser_model_path()),
+        tmp=Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}"), port0=first_port(R.job),
+        ask_kwargs={"model_id": MODEL_ID, "revision": REVISION, "engine": f"vllm {VLLM_VERSION}",
+                    "seed": SEED, "max_tokens": rp.PROBE_TOKENS, "reasoning_effort": EFFORT},
+        say=say)
+    if not report["comparisons"][0]["of"]:
+        say("\nSTOPPED: server A1 gave no replies, so nothing could be compared. Send this log.")
+        return 1
+    say("\nPROBE FINISHED")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("stage", choices=("retrieval", "parse", "execute"))
+    ap.add_argument("stage", choices=("retrieval", "parse", "execute", "probe"))
     args = ap.parse_args()
     say(f"=== VINE on FASTER: {args.stage} | {time.strftime('%Y-%m-%d %H:%M:%S')} | job {os.environ.get('SLURM_JOB_ID', '-')} "
         f"| node {os.uname().nodename} ===")
@@ -577,7 +630,12 @@ def main() -> int:
     if R.repeat and args.stage != "parse":
         say(f"STOPPED: a repeat run (VINE_REPEAT={R.repeat}) makes plans only -- the parse stage, not {args.stage}")
         return 2
-    return {"retrieval": stage_retrieval, "parse": stage_parse, "execute": stage_execute}[args.stage](R)
+    if bool(R.probe) != (args.stage == "probe"):
+        say("STOPPED: the probe stage runs with VINE_PROBE set, and only then -- "
+            "submit it with: bash hprc/run.sh ACCOUNT 4 probe NAME")
+        return 2
+    return {"retrieval": stage_retrieval, "parse": stage_parse, "execute": stage_execute,
+            "probe": stage_probe}[args.stage](R)
 
 
 if __name__ == "__main__":

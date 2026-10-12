@@ -4,6 +4,7 @@
 #
 #   bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE]
 #   bash hprc/run.sh ACCOUNT GPUS repeat NAME
+#   bash hprc/run.sh ACCOUNT 4 probe NAME
 #
 #   ACCOUNT      your project account number (the `myproject` command shows it)
 #   GPUS         A100s for the parse stage (default 8; at most 10)
@@ -12,6 +13,9 @@
 #                into parser_runs_faster/repeat_NAME/ with its own empty model
 #                cache (so every reply is a new model call). Then compare:
 #                $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py NAME
+#   probe NAME   why replies change from one server start to the next: one job
+#                on 4 GPUs (hprc/repeat_probe.py); the result is at the end of
+#                its log, and in parser_runs_faster/probe_NAME/probe.json
 #
 #   retrieval : 1 A100, the retrieval check on 154 DEV cases (the gate) + Kq
 #   parse     : GPUS A100s, one parser server on each, the plans
@@ -24,6 +28,12 @@ ACCT="${1:?usage: bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE]}"
 NGPU="${2:-8}"
 FIRST="${3:-retrieval}"
 REPEAT=""
+PROBE=""
+if [ "$FIRST" = probe ]; then
+    PROBE="${4:-}"
+    [[ "$PROBE" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "usage: bash hprc/run.sh ACCOUNT 4 probe NAME   (NAME: letters, digits, - and _ only)"; exit 1; }
+    [ "$NGPU" = 4 ] || { echo "the probe uses exactly 4 GPUs: bash hprc/run.sh ACCOUNT 4 probe $PROBE"; exit 1; }
+fi
 if [ "$FIRST" = repeat ]; then
     REPEAT="${4:-}"
     [[ "$REPEAT" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "usage: bash hprc/run.sh ACCOUNT GPUS repeat NAME   (NAME: letters, digits, - and _ only)"; exit 1; }
@@ -33,8 +43,8 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO/hprc/env.sh"
 
 [ -f "$VINE_HOME/.done_models" ] || { echo "the setup has not finished -- run hprc/setup.sh first"; exit 1; }
-case "$FIRST" in retrieval|parse|execute|repeat) ;; *) echo "FIRST_STAGE must be retrieval, parse, execute or repeat"; exit 1 ;; esac
-if [ -z "$REPEAT" ] && [ ! -s "$VINE_HOME/anthropic_key" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+case "$FIRST" in retrieval|parse|execute|repeat|probe) ;; *) echo "FIRST_STAGE must be retrieval, parse, execute, repeat or probe"; exit 1 ;; esac
+if [ -z "$REPEAT$PROBE" ] && [ ! -s "$VINE_HOME/anthropic_key" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
     echo "the Anthropic key is missing; save it once with (it asks for the key, it is not shown):"
     echo '  read -rs -p "Anthropic key: " K; echo; printf "%s" "$K" > $SCRATCH/vine/anthropic_key; chmod 600 $SCRATCH/vine/anthropic_key; unset K'
     exit 1
@@ -46,7 +56,7 @@ cd "$REPO"
 LOG="$VINE_HOME/logs"; mkdir -p "$LOG"
 # VINE_REPEAT is always set (empty for a normal run), so a value left in this
 # shell can never turn a normal run into a repeat run
-EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT"
+EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
 dep=()
 submit() {   # stage gpus cpus mem time
     local id
@@ -57,6 +67,18 @@ submit() {   # stage gpus cpus mem time
     dep=(--dependency="afterok:$id" --kill-on-invalid-dep=yes)
     echo "$id"
 }
+if [ -n "$PROBE" ]; then
+    echo "submitting the probe '$PROBE' (account $ACCT, 4 GPUs): 7 server starts, about 45-75 minutes"
+    if [ -d "$MRAG_BASE_DIR/parser_runs_faster/probe_$PROBE" ]; then
+        echo "probe_$PROBE has been used already -- choose a new NAME"; exit 1
+    fi
+    submit probe 4 16 112 03:00:00 >/dev/null
+    echo
+    echo "watch it   : squeue -u $USER"
+    echo "read a log : tail -n 30 \$(ls -t $LOG/vine_probe_*.log | head -1)"
+    echo "the result is at the end of that log, after the line RESULT"
+    exit 0
+fi
 if [ -n "$REPEAT" ]; then
     echo "submitting the repeat test '$REPEAT' (account $ACCT, $NGPU GPUs): the 11 DEV plans again"
     if [ -d "$MRAG_BASE_DIR/parser_runs_faster/repeat_$REPEAT" ]; then

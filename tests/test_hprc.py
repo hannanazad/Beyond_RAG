@@ -388,6 +388,290 @@ def test_compare_flags_changed_settings_and_a_missing_first_run():
         assert _compare_mod().compare(runs, "nothing")[0] == 2
 
 
+
+# --------------------------------------------------------------------------- #
+# The probe (hprc/repeat_probe.py), with fake servers: a server started fresh
+# picks a random "kernel choice"; one started from a copy of another's caches
+# keeps that one's choice; with VLLM_BATCH_INVARIANT=1 the choice is fixed.
+# Each reply depends on the choice and the prompt.
+# --------------------------------------------------------------------------- #
+def _probe_mod():
+    sys.path.insert(0, str(REPO / "hprc"))
+    return importlib.import_module("repeat_probe")
+
+
+def _probe_world(d, fail_setup=None, slow_a1=0.0):
+    import hashlib
+    import json
+    import uuid
+    import threading
+    import time
+    P = _probe_mod()
+    runs = Path(d) / "parser_runs_faster"
+    folder = "e2e_rX_sY_pZ"
+    (runs / folder).mkdir(parents=True)
+    (runs / "model_cache").mkdir()
+    plans = {}
+    for qid in P.PROBE_CASES:
+        prompt = f"the whole prompt of {qid} " * 50
+        sha = hashlib.sha256(prompt.encode()).hexdigest()
+        plans[qid] = {"calls": [{"cache_key": "first_" + qid, "prompt_sha256": sha}]}
+        (runs / "model_cache" / f"first_{qid}.json").write_text(json.dumps(
+            {"prompt": prompt, "reasoning": "first run thinking about " + qid, "max_tokens": 49152}))
+    (runs / folder / "plans.json").write_text(json.dumps(plans))
+    w = {"kernel": {}, "launches": [], "sent": [], "stopped": [], "order": [], "lock": threading.Lock()}
+
+    def launch(vllm_bin, model_path, log_path, port, env, say, extra=(), **kw):
+        own = Path(env["VLLM_CACHE_ROOT"]).parent
+        label = Path(log_path).stem
+        with w["lock"]:
+            w["launches"].append({"label": label, "env": dict(env), "extra": list(extra), "kw": dict(kw),
+                                  "port": port})
+            w["order"].append(("start", label))
+        if fail_setup and ((fail_setup == "batch_invariant" and env.get("VLLM_BATCH_INVARIANT"))
+                           or fail_setup == label):
+            raise RuntimeError(f"the vLLM server exited with code 1 ({label})")
+        if label == "A1" and slow_a1:
+            time.sleep(slow_a1)
+        own.mkdir(parents=True, exist_ok=True)
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(log_path).write_text("INFO torch.compile took 40.0 s in total\n")
+        if (own / "kernel").exists():
+            k = (own / "kernel").read_text()
+        elif env.get("VLLM_BATCH_INVARIANT") == "1":
+            k = "fixed"
+        else:
+            k = uuid.uuid4().hex[:8]
+        (own / "kernel").write_text(k)
+        url = f"http://fake/{port}"
+        w["kernel"][url] = k
+        return {"base_url": url, "max_model_len": 73728, "proc": None}
+
+    def stop(server):
+        w["stopped"].append(server["base_url"])
+
+    def make_ask(base_url, cache_dir=None, **kw):
+        assert kw["max_tokens"] == P.PROBE_TOKENS and kw["seed"] == 42
+        cache = Path(cache_dir)
+        cache.mkdir(parents=True, exist_ok=True)
+
+        def ask(prompt, images=None):
+            sha = hashlib.sha256(prompt.encode()).hexdigest()
+            key = hashlib.sha256((prompt + cache_dir).encode()).hexdigest()
+            assert not (cache / f"{key}.json").exists(), "a probe reply was read from a cache"
+            text = f"thinking with kernels {w['kernel'][base_url]} about {sha[:8]}"
+            (cache / f"{key}.json").write_text(json.dumps(
+                {"reasoning": text, "content": "", "finish_reason": "length", "prompt_sha256": sha,
+                 "usage": {"completion_tokens": 4096}}))
+            with w["lock"]:
+                w["sent"].append((base_url, prompt))
+                w["order"].append(("ask", base_url))
+            ask.last = {"cache_key": key}
+            return ""
+        return ask
+
+    def go(name="p1"):
+        return P.run_probe(name, runs, folder, ["0", "1", "2", "3"], launch=launch, stop=stop, make_ask=make_ask,
+                           server_env=lambda gpu, own: {"CUDA_VISIBLE_DEVICES": gpu,
+                                                        "VLLM_CACHE_ROOT": str(own / "vllm")},
+                           server_kwargs={"served_name": "parser", "max_model_len": 73728, "seed": 42},
+                           vllm_bin="vllm", model_path="M", tmp=Path(d) / "tmp", port0=21000,
+                           ask_kwargs={"max_tokens": P.PROBE_TOKENS, "seed": 42}, say=lambda m: None, settle=0)
+    return P, runs, plans, w, go
+
+
+def _rows(report):
+    return {r["title"]: (r["same"], r["of"]) for r in report["comparisons"]}
+
+
+def test_probe_tells_the_setups_apart():
+    import json
+    with tempfile.TemporaryDirectory() as d:
+        # A1 is slow to start, so A3 (which copies A1's caches) has to wait for it
+        P, runs, plans, w, go = _probe_world(d, slow_a1=1.5)
+        report = go()
+        assert _rows(report) == {
+            "the same server, asked twice": (3, 3),
+            "two servers started fresh, as now": (0, 3),
+            "a server started from a copy of A1's caches": (3, 3),
+            "two fresh servers, VLLM_BATCH_INVARIANT=1": (3, 3),
+            "two fresh servers, --enforce-eager": (0, 3)}, _rows(report)
+        L = {x["label"]: x for x in w["launches"]}
+        assert sorted(L) == ["A1", "A2", "A3", "B1", "B2", "C1", "C2"]
+        assert all(x["env"]["TRITON_CACHE_AUTOTUNING"] == "1" for x in L.values())
+        assert sorted(l for l, x in L.items() if x["env"].get("VLLM_BATCH_INVARIANT") == "1") == ["B1", "B2"]
+        assert sorted(l for l, x in L.items() if "--enforce-eager" in x["extra"]) == ["C1", "C2"]
+        assert all(x["kw"] == {"served_name": "parser", "max_model_len": 73728, "seed": 42} for x in L.values())
+        assert len({x["port"] for x in L.values()}) == 7                    # no two servers share a port
+        # every prompt sent is one the first run sent; 7 servers x 3, A1 twice
+        first = {json.loads((runs / "model_cache" / f"first_{q}.json").read_text())["prompt"] for q in plans}
+        assert len(w["sent"]) == 8 * 3 and {p for _, p in w["sent"]} == first
+        assert len(w["stopped"]) == 7
+        # A3 starts only after A1 has answered all three once
+        i_a3 = w["order"].index(("start", "A3"))
+        a1_url = "http://fake/21000"
+        assert sum(1 for o in w["order"][:i_a3] if o == ("ask", a1_url)) >= 3
+        saved = json.loads((runs / "probe_p1" / "probe.json").read_text())
+        assert saved["report"]["comparisons"][0]["same"] == 3 and "A1" in saved["replies"]
+        agree = saved["report"]["agreement_with_earlier_runs"]
+        assert set(agree) == set(P.PROBE_CASES) and "first run" in agree["P44-scenario"]["A1 round 1"]
+        # a used name is refused, so old replies can never be read back as new ones
+        try:
+            go()
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("the same probe name was accepted twice")
+
+
+def test_probe_carries_on_when_a_setup_cannot_start():
+    import threading
+    with tempfile.TemporaryDirectory() as d:
+        P, runs, plans, w, go = _probe_world(d, fail_setup="batch_invariant")
+        report = go()
+        rows = {r["title"]: r for r in report["comparisons"]}
+        assert rows["two fresh servers, VLLM_BATCH_INVARIANT=1"]["of"] == 0
+        assert rows["two fresh servers, VLLM_BATCH_INVARIANT=1"]["problems"]
+        assert (rows["the same server, asked twice"]["same"], rows["two fresh servers, --enforce-eager"]["of"]) == (3, 3)
+    with tempfile.TemporaryDirectory() as d:
+        # A1 cannot start: A3 (which copies A1's caches) must not wait for ever
+        P, runs, plans, w, go = _probe_world(d, fail_setup="A1")
+        out = {}
+        t = threading.Thread(target=lambda: out.setdefault("r", go()))
+        t.start()
+        t.join(timeout=60)
+        assert not t.is_alive(), "the probe hung when A1 did not start"
+        rows = {r["title"]: r for r in out["r"]["comparisons"]}
+        assert rows["the same server, asked twice"]["of"] == 0
+        assert rows["a server started from a copy of A1's caches"]["of"] == 0
+        assert rows["two fresh servers, VLLM_BATCH_INVARIANT=1"]["same"] == 3
+
+
+def test_probe_needs_the_first_runs_prompts():
+    with tempfile.TemporaryDirectory() as d:
+        P, runs, plans, w, go = _probe_world(d)
+        (runs / "model_cache" / "first_P47-scenario.json").unlink()
+        try:
+            go()
+        except AssertionError as e:
+            assert "P47-scenario" in str(e)
+        else:
+            raise AssertionError("the probe ran without the first run's prompt")
+        assert w["launches"] == []                                         # nothing was started
+
+
+def test_parser_server_settings_are_unchanged():
+    V = _vine_hprc()
+    assert V.PARSER_SERVER == {"served_name": "parser", "max_model_len": 73728, "min_model_len": 65536,
+                               "gpu_memory_utilization": 0.90, "seed": 42, "stop_others": False}
+    assert V.parser_server_env("3", Path("/x")) == {
+        "CUDA_VISIBLE_DEVICES": "3", "HF_HUB_OFFLINE": "1", "VLLM_USE_FLASHINFER_SAMPLER": "0",
+        "VLLM_CACHE_ROOT": "/x/vllm", "TRITON_CACHE_DIR": "/x/triton", "TORCHINDUCTOR_CACHE_DIR": "/x/inductor",
+        "FLASHINFER_WORKSPACE_BASE": "/x"}
+    assert V.first_port("3198937") == 20000 + (3198937 % 400) * 10 and V.first_port("nojob") == 20000
+
+
+def test_probe_stage_runs_only_with_its_name():
+    from mrag.config import CFG
+    V = _vine_hprc()
+    called = []
+    with tempfile.TemporaryDirectory() as d:
+        stages = [(V, n, (lambda R, n=n: called.append(n) or 0))
+                  for n in ("stage_retrieval", "stage_parse", "stage_execute", "stage_probe")]
+        with _Patched([(CFG, "base_dir", Path(d))] + stages, {"VINE_REPEAT": None, "VINE_QUESTIONS": None,
+                                                             "VINE_PROBE": None}):
+            with _Patched([(sys, "argv", ["vine_hprc.py", "probe"])]):
+                assert V.main() == 2                      # no VINE_PROBE
+            with _Patched([], {"VINE_PROBE": "p1"}):
+                for stage in ("retrieval", "parse", "execute"):
+                    with _Patched([(sys, "argv", ["vine_hprc.py", stage])]):
+                        assert V.main() == 2
+                with _Patched([(sys, "argv", ["vine_hprc.py", "probe"])]):
+                    assert V.main() == 0
+            assert called == ["stage_probe"]
+            with _Patched([], {"VINE_PROBE": "p1", "VINE_REPEAT": "r1"}):
+                try:
+                    V.Run()
+                except AssertionError:
+                    pass
+                else:
+                    raise AssertionError("VINE_PROBE and VINE_REPEAT were both accepted")
+
+
+def test_run_sh_probe_submits_one_job_on_four_gpus():
+    import shutil
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        scratch, stubs = d / "scratch", d / "stubs"
+        (scratch / "vine").mkdir(parents=True)
+        (scratch / "vine" / ".done_models").write_text("")
+        stubs.mkdir()
+        (stubs / "sbatch").write_text('#!/bin/bash\necho "$@" >> "$SIM_LOG"\necho $((RANDOM + 1000))\n')
+        (stubs / "sbatch").chmod(0o755)
+        log = d / "sbatch.log"
+
+        def run(*args, extra=None):
+            if log.exists():
+                log.unlink()
+            env = {"PATH": f"{stubs}:/usr/bin:/bin", "HOME": str(d / "home"), "SCRATCH": str(scratch),
+                   "USER": "u", "SIM_LOG": str(log), **(extra or {})}
+            p = subprocess.run([shutil.which("bash"), str(REPO / "hprc" / "run.sh"), *args], env=env,
+                               capture_output=True, text=True, timeout=60)
+            return p.returncode, p.stdout + p.stderr, (log.read_text().splitlines() if log.exists() else [])
+
+        code, out, calls = run("123", "4", "probe", "p1", extra={"VINE_REPEAT": "left_over"})
+        assert code == 0, out
+        assert len(calls) == 1, calls
+        c = calls[0]
+        assert "STAGE=probe" in c and "VINE_PROBE=p1" in c and "VINE_REPEAT=," in c and "--gres=gpu:a100:4" in c
+        assert "--job-name=vine_probe" in c and "--dependency" not in c
+        for args in (("123", "8", "probe", "p1"), ("123", "4", "probe"), ("123", "4", "probe", "a/b")):
+            code, out, calls = run(*args)
+            assert code == 1 and calls == [], (args, out)
+        (scratch / "Beyond_RAG" / "parser_runs_faster" / "probe_p1").mkdir(parents=True)
+        code, out, calls = run("123", "4", "probe", "p1")
+        assert code == 1 and calls == [] and "used already" in out
+        # a normal run never carries a probe name
+        (scratch / "vine" / "anthropic_key").write_text("k")
+        code, out, calls = run("123", "8", "execute", extra={"VINE_PROBE": "left_over"})
+        assert code == 0 and len(calls) == 1 and calls[0].rstrip().split("VINE_PROBE=")[1].startswith(",STAGE")
+
+
+
+def test_probe_stage_passes_the_parse_stages_settings():
+    from mrag.config import CFG
+    from mrag.vine import vllm_client as vc
+    V = _vine_hprc()
+    P = _probe_mod()
+    got = {}
+
+    def fake_run_probe(name, runs, folder, gpus, **kw):
+        got.update(name=name, runs=runs, folder=folder, gpus=gpus, **kw)
+        return {"comparisons": [{"of": 3}]}
+
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        hub = base / "hf" / "models--Qwen--Qwen3.8-27B-FP8" / "snapshots" / V.REVISION
+        hub.mkdir(parents=True)
+        (hub / "config.json").write_text("{}")
+        env = {"VINE_PROBE": "p1", "VINE_REPEAT": None, "VINE_QUESTIONS": None, "CUDA_VISIBLE_DEVICES": "4,5,6,7",
+               "VLLM_ENV": str(base / "venv"), "HF_HUB_CACHE": str(base / "hf"), "TMPDIR": str(base / "tmp"),
+               "SLURM_JOB_ID": "3199700"}
+        with _Patched([(CFG, "base_dir", base), (P, "run_probe", fake_run_probe)], env):
+            R = V.Run()
+            assert V.stage_probe(R) == 0
+        first = _run(d)
+    assert got["name"] == "p1" and got["gpus"] == ["4", "5", "6", "7"]
+    assert got["runs"] == first.runs and got["folder"] == first.run_dir.name     # the first run's folder
+    assert got["launch"] is vc.launch and got["stop"] is vc.stop_server and got["make_ask"] is vc.make_ask_vllm
+    assert got["server_kwargs"] is V.PARSER_SERVER and got["server_env"] is V.parser_server_env
+    assert got["ask_kwargs"] == {"model_id": V.MODEL_ID, "revision": V.REVISION, "engine": "vllm 0.31.0",
+                                 "seed": 42, "max_tokens": P.PROBE_TOKENS, "reasoning_effort": "xhigh"}
+    assert got["port0"] == V.first_port("3199700") and got["tmp"] == base / "tmp"
+    assert got["vllm_bin"] == str(base / "venv" / "bin" / "vllm") and got["model_path"] == str(hub)
+
+
 if __name__ == "__main__":
     for _name, _f in sorted(globals().items()):
         if _name.startswith("test_") and callable(_f):

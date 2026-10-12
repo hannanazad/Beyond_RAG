@@ -83,7 +83,7 @@ bash hprc/run.sh ACCOUNT 8
 - Watch: `squeue -u $USER`. Logs: `$SCRATCH/vine/logs/vine_<stage>_<job>.log`.
 - Results: `$SCRATCH/Beyond_RAG/parser_runs_faster/` and `$SCRATCH/Beyond_RAG/retrieval_dev_results_faster/` (apart from the Colab runs). The answers file is `answers_sample_<time>.txt` in the run folder.
 - Every stage carries on where it stopped. To start again from one stage: `bash hprc/run.sh ACCOUNT 8 parse` (or `execute`).
-- Why one question at a time on each GPU: that is how the parser gave the same plan every time on Colab. Which GPU makes which plan does not matter; each server works alone with seed 42.
+- Why one question at a time on each GPU: on Colab, one running server asked the same question twice gave the same plan (3 of 3). That check never started the server again. Across server starts the plans did NOT repeat on 12 October (1 of 11, section 5); section 6 tests why.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
 
 ## 5. The repeat test: does the same question give the same plan?
@@ -97,3 +97,10 @@ The first line submits the parse stage only, for the 11 DEV questions, into `par
 
 The code is `hprc/vine_hprc.py` (the steps of `notebooks/VINE_Run.ipynb`) and `hprc/vine_job.slurm`.
 
+## 6. The probe: why does a reply change when the server is started again?
+
+```bash
+bash hprc/run.sh ACCOUNT 4 probe p1
+```
+
+One job on 4 GPUs, about 45-75 minutes, no API cost (`hprc/repeat_probe.py`). It starts 7 parser servers in different set-ups and asks each the same 3 DEV prompts (the ones the first run sent), the first 4,096 tokens of each reply: the same server asked twice; two servers started fresh; a server started from a copy of another's caches; two with `VLLM_BATCH_INVARIANT=1`; two with `--enforce-eager`. The result is at the end of the job's log (after `RESULT`), and in `parser_runs_faster/probe_p1/probe.json`. A name can be used once.
