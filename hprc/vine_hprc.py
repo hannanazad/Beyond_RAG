@@ -17,6 +17,11 @@ $SCRATCH/Beyond_RAG/retrieval_dev_results_faster/, apart from the Colab runs.
 The questions: the 11 DEV cases plus the 20 sample questions (their TEXT only,
 read from notebooks/VINE_Run.ipynb so there is one copy). For the sealed
 questions later: VINE_QUESTIONS=/path/to/file.json ({id: text}).
+
+The repeat run (VINE_REPEAT=NAME, the parse stage only): the 11 DEV plans made
+again from the same Kq, into parser_runs_faster/repeat_NAME/ with its own,
+empty model cache, so every reply comes from a new model call. Then
+hprc/compare_plans.py NAME compares them with the plans of the first run.
 """
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ import hashlib
 import json
 import os
 import queue
+import re
 import subprocess
 import sys
 import threading
@@ -91,7 +97,13 @@ class Run:
         self.dev_all = rc.load_cases()            # 154 DEV cases: the retrieval check
         self.dev = pc.load_dev_cases()            # the 11 DEV cases answered end to end
         qfile = os.environ.get("VINE_QUESTIONS", "").strip()
-        if qfile:
+        self.repeat = os.environ.get("VINE_REPEAT", "").strip()
+        if self.repeat:
+            assert re.fullmatch(r"[A-Za-z0-9_-]{1,40}", self.repeat), \
+                f"VINE_REPEAT={self.repeat!r}: use letters, digits, - and _ only"
+            assert not qfile, "a repeat run makes the DEV plans only -- unset VINE_QUESTIONS"
+            self.answer_set, self.set_name = {}, "no other"
+        elif qfile:
             self.answer_set, self.set_name = json.loads(Path(qfile).read_text()), "sealed"
         else:
             self.answer_set, self.set_name = sample_questions(), "sample"
@@ -102,8 +114,12 @@ class Run:
         self.retr_commit = vr.retrieval_commit(str(REPO))
         self.store_tag = vr.store_tag(CFG.base_dir)
         self.instructions_sha = hashlib.sha256((PARSER_TASK + PARSER_CONTRACT).encode()).hexdigest()
-        self.runs = Path(CFG.base_dir) / "parser_runs_faster"
-        self.kq_file = self.runs / f"kq_r{self.retr_commit}_s{self.store_tag}.json"
+        base = Path(CFG.base_dir) / "parser_runs_faster"
+        # Kq is always the shared one, so a repeat run reads exactly what the first run read
+        self.kq_file = base / f"kq_r{self.retr_commit}_s{self.store_tag}.json"
+        # a repeat run: its own folder, so its own (empty) model cache
+        self.runs = base / f"repeat_{self.repeat}" if self.repeat else base
+        self.model_cache = self.runs / "model_cache"
         self.run_dir = self.runs / f"e2e_r{self.retr_commit}_s{self.store_tag}_p{self.instructions_sha[:8]}"
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.plans_file = self.run_dir / "plans.json"
@@ -112,6 +128,9 @@ class Run:
         say(f"code commit {self.commit} | retrieval code {self.retr_commit} | store {self.store_tag} "
             f"| parser instructions {self.instructions_sha[:12]}")
         say(f"{len(self.questions)} questions: {len(self.dev)} DEV + {len(self.answer_set)} {self.set_name}")
+        if self.repeat:
+            say(f"REPEAT RUN '{self.repeat}': the DEV plans again, from {self.kq_file}, "
+                f"with their own model cache {self.model_cache}")
         say(f"run folder: {self.run_dir}")
 
 
@@ -323,7 +342,7 @@ def stage_parse(R: Run) -> int:
         def make_ask(mt, url=s["base_url"]):
             return vc.make_ask_vllm(url, "parser", model_id=MODEL_ID, revision=REVISION, engine=engine,
                                     seed=SEED, max_tokens=mt, reasoning_effort=EFFORT,
-                                    cache_dir=str(R.runs / "model_cache"))
+                                    cache_dir=str(R.model_cache))
         asks.append((i, vr.BudgetedAsk(make_ask, s["base_url"], "parser", max_len=max_len, max_tokens=max_tokens,
                                        template_kwargs={"enable_thinking": True, "reasoning_effort": EFFORT})))
     if not asks:
@@ -390,8 +409,9 @@ def stage_parse(R: Run) -> int:
     say("\n=== DEV plans ===")
     pc.print_summary(pc.summarize(dev_plans))
     others = [records[q] for q in R.questions if q not in R.dev_ids and q in records]
-    say(f"{R.set_name} plans: " + ", ".join(f"{k} {sum(1 for r in others if r['outcome'] == k)}"
-                                          for k in ("valid first time", "valid after repair", "failed")))
+    if R.answer_set:
+        say(f"{R.set_name} plans: " + ", ".join(f"{k} {sum(1 for r in others if r['outcome'] == k)}"
+                                              for k in ("valid first time", "valid after repair", "failed")))
     for r in dev_plans:
         say()
         pc.print_plan(r)
@@ -401,6 +421,8 @@ def stage_parse(R: Run) -> int:
             "Submit the parse stage again; it makes only those.")
         return 1
     say("\nPARSE STAGE FINISHED")
+    if R.repeat:
+        say(f"compare with the first run: $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py {R.repeat}")
     return 0
 
 
@@ -552,6 +574,9 @@ def main() -> int:
     say(f"=== VINE on FASTER: {args.stage} | {time.strftime('%Y-%m-%d %H:%M:%S')} | job {os.environ.get('SLURM_JOB_ID', '-')} "
         f"| node {os.uname().nodename} ===")
     R = Run()
+    if R.repeat and args.stage != "parse":
+        say(f"STOPPED: a repeat run (VINE_REPEAT={R.repeat}) makes plans only -- the parse stage, not {args.stage}")
+        return 2
     return {"retrieval": stage_retrieval, "parse": stage_parse, "execute": stage_execute}[args.stage](R)
 
 

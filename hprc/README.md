@@ -86,5 +86,14 @@ bash hprc/run.sh ACCOUNT 8
 - Why one question at a time on each GPU: that is how the parser gave the same plan every time on Colab. Which GPU makes which plan does not matter; each server works alone with seed 42.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
 
+## 5. The repeat test: does the same question give the same plan?
+
+```bash
+bash hprc/run.sh ACCOUNT 6 repeat r1
+$SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py r1     # when the job has finished
+```
+
+The first line submits the parse stage only, for the 11 DEV questions, into `parser_runs_faster/repeat_r1/`. That folder has its own model cache, which starts empty, so every plan comes from a new model call; Kq is the same file the first run read. The second line compares each plan with the first run's: the prompt, the model's whole reply (reasoning and answer) and the plan must be the same, byte for byte. Which GPU made a plan does not matter. For another test later, use another name (`r2`, ...); the same name carries on in the same folder.
+
 The code is `hprc/vine_hprc.py` (the steps of `notebooks/VINE_Run.ipynb`) and `hprc/vine_job.slurm`.
 
