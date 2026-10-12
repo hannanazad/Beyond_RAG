@@ -391,21 +391,20 @@ def test_compare_flags_changed_settings_and_a_missing_first_run():
 
 # --------------------------------------------------------------------------- #
 # The probe (hprc/repeat_probe.py), with fake servers: a server started fresh
-# picks a random "kernel choice"; one started from a copy of another's caches
-# keeps that one's choice; with VLLM_BATCH_INVARIANT=1 the choice is fixed.
-# Each reply depends on the choice and the prompt.
+# picks a random "kernel choice" (timing noise), unless the tuning pin is loaded
+# (PYTHONPATH = hprc/pin_tuning and VINE_PIN_TUNING=1), when it always picks the
+# same one. Each reply depends on the choice and the prompt.
 # --------------------------------------------------------------------------- #
 def _probe_mod():
     sys.path.insert(0, str(REPO / "hprc"))
     return importlib.import_module("repeat_probe")
 
 
-def _probe_world(d, fail_setup=None, slow_a1=0.0):
+def _probe_world(d, fail=None, pin_loads=True):
     import hashlib
     import json
     import uuid
     import threading
-    import time
     P = _probe_mod()
     runs = Path(d) / "parser_runs_faster"
     folder = "e2e_rX_sY_pZ"
@@ -419,30 +418,27 @@ def _probe_world(d, fail_setup=None, slow_a1=0.0):
         (runs / "model_cache" / f"first_{qid}.json").write_text(json.dumps(
             {"prompt": prompt, "reasoning": "first run thinking about " + qid, "max_tokens": 49152}))
     (runs / folder / "plans.json").write_text(json.dumps(plans))
-    w = {"kernel": {}, "launches": [], "sent": [], "stopped": [], "order": [], "lock": threading.Lock()}
+    w = {"kernel": {}, "launches": [], "sent": [], "stopped": [], "lock": threading.Lock()}
 
     def launch(vllm_bin, model_path, log_path, port, env, say, extra=(), **kw):
-        own = Path(env["VLLM_CACHE_ROOT"]).parent
         label = Path(log_path).stem
         with w["lock"]:
             w["launches"].append({"label": label, "env": dict(env), "extra": list(extra), "kw": dict(kw),
                                   "port": port})
-            w["order"].append(("start", label))
-        if fail_setup and ((fail_setup == "batch_invariant" and env.get("VLLM_BATCH_INVARIANT"))
-                           or fail_setup == label):
+        if label == fail:
             raise RuntimeError(f"the vLLM server exited with code 1 ({label})")
-        if label == "A1" and slow_a1:
-            time.sleep(slow_a1)
-        own.mkdir(parents=True, exist_ok=True)
+        pinned = (pin_loads and env.get("VINE_PIN_TUNING") == "1"
+                  and Path(env.get("PYTHONPATH", "")) == REPO / "hprc" / "pin_tuning"
+                  and (Path(env["PYTHONPATH"]) / "sitecustomize.py").exists())
+        k = "first-option" if pinned else uuid.uuid4().hex[:8]
         Path(log_path).parent.mkdir(parents=True, exist_ok=True)
-        Path(log_path).write_text("INFO torch.compile took 40.0 s in total\n")
-        if (own / "kernel").exists():
-            k = (own / "kernel").read_text()
-        elif env.get("VLLM_BATCH_INVARIANT") == "1":
-            k = "fixed"
-        else:
-            k = uuid.uuid4().hex[:8]
-        (own / "kernel").write_text(k)
+        log = ""
+        if pinned:
+            log += "[vine-pin pid 7] Triton tuning pinned (the first working option of each kernel is kept)\n"
+            log += "[vine-pin pid 7] torch.compile tuning pinned (the first working option of each kernel is kept)\n"
+        log += ("Triton autotuning for function chunk_fwd_kernel_o,\nwith key as (16, 128, 128, 64),\n"
+                f"finished after 0.{len(label)}s,\nbest config selected: BK: {k}, num_warps: 4;\n")
+        Path(log_path).write_text(log)
         url = f"http://fake/{port}"
         w["kernel"][url] = k
         return {"base_url": url, "max_model_len": 73728, "proc": None}
@@ -465,12 +461,11 @@ def _probe_world(d, fail_setup=None, slow_a1=0.0):
                  "usage": {"completion_tokens": 4096}}))
             with w["lock"]:
                 w["sent"].append((base_url, prompt))
-                w["order"].append(("ask", base_url))
             ask.last = {"cache_key": key}
             return ""
         return ask
 
-    def go(name="p1"):
+    def go(name="p2"):
         return P.run_probe(name, runs, folder, ["0", "1", "2", "3"], launch=launch, stop=stop, make_ask=make_ask,
                            server_env=lambda gpu, own: {"CUDA_VISIBLE_DEVICES": gpu,
                                                         "VLLM_CACHE_ROOT": str(own / "vllm")},
@@ -484,67 +479,59 @@ def _rows(report):
     return {r["title"]: (r["same"], r["of"]) for r in report["comparisons"]}
 
 
-def test_probe_tells_the_setups_apart():
+def test_probe_pinned_servers_started_fresh_agree():
     import json
     with tempfile.TemporaryDirectory() as d:
-        # A1 is slow to start, so A3 (which copies A1's caches) has to wait for it
-        P, runs, plans, w, go = _probe_world(d, slow_a1=1.5)
+        P, runs, plans, w, go = _probe_world(d)
         report = go()
-        assert _rows(report) == {
-            "the same server, asked twice": (3, 3),
-            "two servers started fresh, as now": (0, 3),
-            "a server started from a copy of A1's caches": (3, 3),
-            "two fresh servers, VLLM_BATCH_INVARIANT=1": (3, 3),
-            "two fresh servers, --enforce-eager": (0, 3)}, _rows(report)
+        assert set(_rows(report).values()) == {(3, 3)} and len(_rows(report)) == 3, _rows(report)
         L = {x["label"]: x for x in w["launches"]}
-        assert sorted(L) == ["A1", "A2", "A3", "B1", "B2", "C1", "C2"]
-        assert all(x["env"]["TRITON_CACHE_AUTOTUNING"] == "1" for x in L.values())
-        assert sorted(l for l, x in L.items() if x["env"].get("VLLM_BATCH_INVARIANT") == "1") == ["B1", "B2"]
-        assert sorted(l for l, x in L.items() if "--enforce-eager" in x["extra"]) == ["C1", "C2"]
-        assert all(x["kw"] == {"served_name": "parser", "max_model_len": 73728, "seed": 42} for x in L.values())
-        assert len({x["port"] for x in L.values()}) == 7                    # no two servers share a port
-        # every prompt sent is one the first run sent; 7 servers x 3, A1 twice
+        assert sorted(L) == ["P1", "P2", "P3", "P4"]
+        for x in L.values():
+            assert x["env"]["PYTHONPATH"] == str(REPO / "hprc" / "pin_tuning")
+            assert x["env"]["VINE_PIN_TUNING"] == "1" and x["env"]["TRITON_PRINT_AUTOTUNING"] == "1"
+            assert "TRITON_CACHE_AUTOTUNING" not in x["env"] and x["extra"] == []
+            assert x["kw"] == {"served_name": "parser", "max_model_len": 73728, "seed": 42}
+        assert len({x["port"] for x in L.values()}) == 4                    # no two servers share a port
+        assert len({Path(x["env"]["VLLM_CACHE_ROOT"]).parent for x in L.values()}) == 4   # each its own caches
         first = {json.loads((runs / "model_cache" / f"first_{q}.json").read_text())["prompt"] for q in plans}
-        assert len(w["sent"]) == 8 * 3 and {p for _, p in w["sent"]} == first
-        assert len(w["stopped"]) == 7
-        # A3 starts only after A1 has answered all three once
-        i_a3 = w["order"].index(("start", "A3"))
-        a1_url = "http://fake/21000"
-        assert sum(1 for o in w["order"][:i_a3] if o == ("ask", a1_url)) >= 3
-        saved = json.loads((runs / "probe_p1" / "probe.json").read_text())
-        assert saved["report"]["comparisons"][0]["same"] == 3 and "A1" in saved["replies"]
-        agree = saved["report"]["agreement_with_earlier_runs"]
-        assert set(agree) == set(P.PROBE_CASES) and "first run" in agree["P44-scenario"]["A1 round 1"]
-        # a used name is refused, so old replies can never be read back as new ones
+        assert len(w["sent"]) == 4 * 3 and {p for _, p in w["sent"]} == first
+        assert len(w["stopped"]) == 4
+        servers = report["servers"]
+        assert all(s["pin"]["triton"] and s["pin"]["torch_compile"] and not s.get("error") for s in servers.values())
+        assert all(c["count"] == 1 for c in report["triton_choices"].values())
+        assert all(c["same_as_P1"] for l, c in report["triton_choices"].items())
+        saved = json.loads((runs / "probe_p2" / "probe.json").read_text())
+        assert saved["report"]["comparisons"][0]["same"] == 3 and "P1" in saved["replies"]
         try:
-            go()
+            go()                     # a used name is refused: old replies are never read back as new ones
         except AssertionError:
             pass
         else:
             raise AssertionError("the same probe name was accepted twice")
 
 
-def test_probe_carries_on_when_a_setup_cannot_start():
-    import threading
+def test_probe_says_so_when_the_pin_did_not_load():
     with tempfile.TemporaryDirectory() as d:
-        P, runs, plans, w, go = _probe_world(d, fail_setup="batch_invariant")
+        P, runs, plans, w, go = _probe_world(d, pin_loads=False)
+        report = go()
+        assert set(_rows(report).values()) == {(0, 3)}                       # timing noise decides again
+        for s in report["servers"].values():
+            assert "pin did not load" in s["error"] and not s["pin"]["triton"]
+        assert not any(c["same_as_P1"] for l, c in report["triton_choices"].items() if l != "P1")
+        rows = {r["title"]: r for r in report["comparisons"]}
+        assert all(r["problems"] for r in rows.values())
+
+
+def test_probe_carries_on_when_a_server_cannot_start():
+    with tempfile.TemporaryDirectory() as d:
+        P, runs, plans, w, go = _probe_world(d, fail="P3")
         report = go()
         rows = {r["title"]: r for r in report["comparisons"]}
-        assert rows["two fresh servers, VLLM_BATCH_INVARIANT=1"]["of"] == 0
-        assert rows["two fresh servers, VLLM_BATCH_INVARIANT=1"]["problems"]
-        assert (rows["the same server, asked twice"]["same"], rows["two fresh servers, --enforce-eager"]["of"]) == (3, 3)
-    with tempfile.TemporaryDirectory() as d:
-        # A1 cannot start: A3 (which copies A1's caches) must not wait for ever
-        P, runs, plans, w, go = _probe_world(d, fail_setup="A1")
-        out = {}
-        t = threading.Thread(target=lambda: out.setdefault("r", go()))
-        t.start()
-        t.join(timeout=60)
-        assert not t.is_alive(), "the probe hung when A1 did not start"
-        rows = {r["title"]: r for r in out["r"]["comparisons"]}
-        assert rows["the same server, asked twice"]["of"] == 0
-        assert rows["a server started from a copy of A1's caches"]["of"] == 0
-        assert rows["two fresh servers, VLLM_BATCH_INVARIANT=1"]["same"] == 3
+        assert rows["pinned: two servers started fresh (P1 / P3)"]["of"] == 0
+        assert "did not start" in rows["pinned: two servers started fresh (P1 / P3)"]["problems"][0]
+        assert _rows(report)["pinned: two servers started fresh (P1 / P2)"] == (3, 3)
+        assert _rows(report)["pinned: two servers started fresh (P1 / P4)"] == (3, 3)
 
 
 def test_probe_needs_the_first_runs_prompts():
@@ -670,6 +657,88 @@ def test_probe_stage_passes_the_parse_stages_settings():
                                  "seed": 42, "max_tokens": P.PROBE_TOKENS, "reasoning_effort": "xhigh"}
     assert got["port0"] == V.first_port("3199700") and got["tmp"] == base / "tmp"
     assert got["vllm_bin"] == str(base / "venv" / "bin" / "vllm") and got["model_path"] == str(hub)
+
+
+
+# --------------------------------------------------------------------------- #
+# hprc/pin_tuning/sitecustomize.py, on fake triton and torch modules that pick
+# their option by a random "timing", the way timing noise does on a GPU
+# --------------------------------------------------------------------------- #
+_FAKE_TRITON = """
+import builtins, random
+class Autotuner:
+    def __init__(self, configs):
+        self.configs = configs
+    def _bench(self, *args, config, **meta):
+        if config == "out_of_resources":
+            return [float("inf")] * 3
+        return [random.random(), random.random(), random.random()]
+    def run(self):
+        timings = {c: self._bench(config=c) for c in self.configs}
+        return builtins.min(timings, key=timings.get)
+"""
+_FAKE_INDUCTOR = """
+import builtins, random
+class CachingAutotuner:
+    def __init__(self, launchers):
+        self.launchers = launchers
+    def bench(self, launcher, *args, with_profiler=False, **kwargs):
+        return float("inf") if launcher == "spills" else random.random()
+    def autotune_to_one_config(self):
+        timings = {l: self.bench(l) for l in self.launchers}
+        return builtins.min(timings, key=timings.get)
+    def combo(self):
+        best, best_time = self.launchers[1], self.bench(self.launchers[1])
+        for l in self.launchers[2:]:
+            t = self.bench(l)
+            if t < best_time:
+                best, best_time = l, t
+        return best
+"""
+_PIN_SCRIPT = """
+import collections, json
+from triton.runtime.autotuner import Autotuner
+from torch._inductor.runtime.triton_heuristics import CachingAutotuner
+a = Autotuner(["out_of_resources", "c1", "c2", "c3"])
+b = CachingAutotuner(["spills", "l1", "l2", "l3"])
+print(json.dumps({"triton": sorted(set(a.run() for _ in range(40))),
+                  "inductor": sorted(set(b.autotune_to_one_config() for _ in range(40))),
+                  "combo": sorted(set(b.combo() for _ in range(40)))}))
+"""
+
+
+def _run_pinned(pin):
+    import json
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        fake = Path(d)
+        for pkg in ("triton", "triton/runtime", "torch", "torch/_inductor", "torch/_inductor/runtime"):
+            (fake / pkg).mkdir(parents=True, exist_ok=True)
+            (fake / pkg / "__init__.py").write_text("")
+        (fake / "triton/runtime/autotuner.py").write_text(_FAKE_TRITON)
+        (fake / "torch/_inductor/runtime/triton_heuristics.py").write_text(_FAKE_INDUCTOR)
+        env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+               "PYTHONPATH": f"{REPO / 'hprc' / 'pin_tuning'}:{fake}"}
+        if pin:
+            env["VINE_PIN_TUNING"] = "1"
+        p = subprocess.run([sys.executable, "-c", _PIN_SCRIPT], env=env, capture_output=True, text=True,
+                           timeout=120, cwd=d)
+        assert p.returncode == 0, p.stderr
+        return json.loads(p.stdout.strip().splitlines()[-1]), p.stderr
+
+
+def test_pin_tuning_keeps_the_first_working_option():
+    got, err = _run_pinned(pin=True)
+    assert got == {"triton": ["c1"], "inductor": ["l1"], "combo": ["l1"]}, got
+    assert "Triton tuning pinned" in err and "torch.compile tuning pinned" in err, err
+    assert "NOT PINNED" not in err
+
+
+def test_without_the_pin_the_choice_follows_the_timing():
+    got, err = _run_pinned(pin=False)
+    assert len(got["triton"]) > 1 and len(got["inductor"]) > 1, got      # the noise decides
+    assert "out_of_resources" not in got["triton"] and "spills" not in got["inductor"]
+    assert "pinned" not in err
 
 
 if __name__ == "__main__":

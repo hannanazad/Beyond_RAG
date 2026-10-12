@@ -97,10 +97,13 @@ The first line submits the parse stage only, for the 11 DEV questions, into `par
 
 The code is `hprc/vine_hprc.py` (the steps of `notebooks/VINE_Run.ipynb`) and `hprc/vine_job.slurm`.
 
-## 6. The probe: why does a reply change when the server is started again?
+## 6. The probe: do servers started separately give the same reply?
 
 ```bash
-bash hprc/run.sh ACCOUNT 4 probe p1
+bash hprc/run.sh ACCOUNT 4 probe p2
 ```
 
-One job on 4 GPUs, about 45-75 minutes, no API cost (`hprc/repeat_probe.py`). It starts 7 parser servers in different set-ups and asks each the same 3 DEV prompts (the ones the first run sent), the first 4,096 tokens of each reply: the same server asked twice; two servers started fresh; a server started from a copy of another's caches; two with `VLLM_BATCH_INVARIANT=1`; two with `--enforce-eager`. The result is at the end of the job's log (after `RESULT`), and in `parser_runs_faster/probe_p1/probe.json`. A name can be used once.
+One job on 4 GPUs, no API cost (`hprc/repeat_probe.py`). It asks parser servers, each started fresh, the same 3 DEV prompts (the ones the first run sent), and compares the first 4,096 tokens of each reply byte for byte. The result is at the end of the job's log (after `RESULT`), and in `parser_runs_faster/probe_NAME/probe.json`. A name can be used once.
+
+- **probe_p1 (12 Oct):** one server asked twice gave the same reply (3 of 3); two servers started fresh did not (0 of 3), nor did a server started from a copy of another's caches (0 of 3), nor two with `--enforce-eager` (0 of 3, and 3 times slower). `VLLM_BATCH_INVARIANT=1` did not start (an 8-bit weight kernel failed to build). The cause, read in the code: kernels that tune themselves by timing the first time they run (Triton's autotuner, used by vLLM's FLA kernels for the GDN layers, and torch.compile's kernels). Timing noise makes servers keep different options, which round the last bit differently.
+- **The fix being tested (p2):** `hprc/pin_tuning/sitecustomize.py`, loaded only by the parser servers (PYTHONPATH, `VINE_PIN_TUNING=1`), makes every such step keep the first working option instead of the fastest. 4 servers with it, each started fresh; their replies, and their Triton choices, must be the same.

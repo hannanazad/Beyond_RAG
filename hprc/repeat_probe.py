@@ -1,27 +1,32 @@
-"""hprc/repeat_probe.py -- why does the parser's reply change from one server start to the next?
+"""hprc/repeat_probe.py -- do parser servers started separately give the same reply?
 
     bash hprc/run.sh ACCOUNT 4 probe NAME          (one Slurm job, 4 GPUs, no API cost)
 
 On 12 October the repeat run (hprc/compare_plans.py r1) found that the same
 prompt, with the same settings and seed, gave a different reply in 10 of 11 DEV
-cases when the server had been started again. The Colab check (3 of 3 the same)
-had asked one running server twice; it never started a server again.
+cases when the server had been started again. The first probe (probe_p1) found:
 
-This job starts parser servers in several set-ups and asks each the same prompts,
-so the replies can be compared byte for byte:
+    the same server, asked twice                         3 of 3 the same
+    two servers started fresh                            0 of 3
+    a server started from a copy of another's caches     0 of 3
+    two fresh servers, VLLM_BATCH_INVARIANT=1            did not start (an 8-bit weight
+                                                         kernel failed to build)
+    two fresh servers, --enforce-eager                   0 of 3, and 3 times slower
 
-    A1 twice      the same server, asked twice               does one server repeat itself?
-    A1 / A2       two servers started fresh, as now          the problem itself
-    A1 / A3       A3 starts from a COPY of A1's caches       fix: tune once, reuse every time
-    B1 / B2       two fresh servers, VLLM_BATCH_INVARIANT=1  fix: vLLM's own repeatable mode
-    C1 / C2       two fresh servers, --enforce-eager         fix: no compiling and no CUDA graphs
+The cause, read in the code: kernels that tune themselves by timing when they
+first run (Triton's autotuner, used by vLLM's FLA kernels for the GDN layers, and
+torch.compile's own kernels). hprc/pin_tuning/sitecustomize.py makes every such
+step keep the first working option instead of the fastest, so the choice no
+longer depends on timing noise.
 
-Every server runs exactly as the parse stage runs it (vine_hprc.PARSER_SERVER and
-parser_server_env), plus TRITON_CACHE_AUTOTUNING=1 so that tuning results are
-written to the caches, which A3 needs. The prompts are the ones the 11 October run
-sent, read back from its model cache, for the three DEV cases that changed earliest
-on 12 October. Each reply is cut at PROBE_TOKENS tokens: on 12 October every reply
-that changed had changed by about 500 tokens.
+This probe starts 4 servers with that pin, each started fresh, and asks each the
+same prompts; the replies must be the same byte for byte. Every server runs
+exactly as the parse stage runs it (vine_hprc.PARSER_SERVER and
+parser_server_env), plus TRITON_PRINT_AUTOTUNING=1, which writes each Triton
+tuning choice to the server log so the choices can be compared too. The prompts
+are the ones the 11 October run sent, read back from its model cache, for the
+three DEV cases that changed earliest. Each reply is cut at PROBE_TOKENS tokens:
+on 12 October every reply that changed had changed within about 500 tokens.
 
 Results: $SCRATCH/Beyond_RAG/parser_runs_faster/probe_NAME/ (probe.json, the
 replies, the server logs). The job prints the comparison at the end of its log.
@@ -31,38 +36,33 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import shutil
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 PROBE_CASES = ("P44-scenario", "P47-scenario", "P18-scenario")
 PROBE_TOKENS = 4096
-COMMON_ENV = {"TRITON_CACHE_AUTOTUNING": "1"}
+PIN_DIR = str(Path(__file__).resolve().parent / "pin_tuning")
+COMMON_ENV = {"TRITON_PRINT_AUTOTUNING": "1"}
 SETUPS = {
     "default": ({}, []),
-    "batch_invariant": ({"VLLM_BATCH_INVARIANT": "1"}, []),
-    "eager": ({}, ["--enforce-eager"]),
+    "pinned": ({"PYTHONPATH": PIN_DIR, "VINE_PIN_TUNING": "1"}, []),
 }
-# each GPU's servers, one after the other: (label, set-up, copy the caches of)
+# each GPU's servers, one after the other: (label, set-up)
 SCHEDULE = [
-    [("A1", "default", None)],
-    [("A2", "default", None), ("A3", "default", "A1")],
-    [("B1", "batch_invariant", None), ("C1", "eager", None)],
-    [("B2", "batch_invariant", None), ("C2", "eager", None)],
+    [("P1", "pinned")],
+    [("P2", "pinned")],
+    [("P3", "pinned")],
+    [("P4", "pinned")],
 ]
-ROUNDS = {"A1": 2}            # A1 is asked twice
+ROUNDS: Dict[str, int] = {}   # how many times a server is asked (default once)
 COMPARISONS = [
-    ("the same server, asked twice", ("A1", 1), ("A1", 2)),
-    ("two servers started fresh, as now", ("A1", 1), ("A2", 1)),
-    ("a server started from a copy of A1's caches", ("A1", 1), ("A3", 1)),
-    ("two fresh servers, VLLM_BATCH_INVARIANT=1", ("B1", 1), ("B2", 1)),
-    ("two fresh servers, --enforce-eager", ("C1", 1), ("C2", 1)),
+    ("pinned: two servers started fresh (P1 / P2)", ("P1", 1), ("P2", 1)),
+    ("pinned: two servers started fresh (P1 / P3)", ("P1", 1), ("P3", 1)),
+    ("pinned: two servers started fresh (P1 / P4)", ("P1", 1), ("P4", 1)),
 ]
-LOG_SIGNS = ("torch.compile took", "Directly load", "loaded", "Using cache directory", "batch invariant",
-             "Batch invariant", "batch_invariant", "enforce_eager=True", "Cudagraph is disabled",
-             "Using FLASH", "Selected ", "Using Triton", "Traceback", "Error")
+LOG_SIGNS = ("vine-pin", "torch.compile took", "Using FLASH", "Selected ", "Using Triton", "Traceback", "Error")
 
 
 def common_prefix(a: str, b: str) -> int:
@@ -123,36 +123,23 @@ def run_probe(name: str, runs: Path, folder: str, gpus: List[str], *, launch: Ca
     earlier = {qid: earlier_replies(runs, folder, qid) for qid in PROBE_CASES}
     replies: Dict[str, Dict[int, Dict[str, Any]]] = {}
     servers: Dict[str, Dict[str, Any]] = {}
-    a1_ready = threading.Event()          # A1's caches are complete once its first round is done
     lock = threading.Lock()
     ports = iter(range(port0, port0 + 10))
-    port_of = {label: next(ports) for lane in SCHEDULE for label, _, _ in lane}
+    port_of = {label: next(ports) for lane in SCHEDULE for label, _ in lane}
 
-    def one_server(slot: int, label: str, setup: str, copy_from: Optional[str]) -> None:
+    def one_server(slot: int, label: str, setup: str) -> None:
         try:
-            _one_server(slot, label, setup, copy_from)
+            _one_server(slot, label, setup)
         except Exception as e:                                        # noqa: BLE001
             with lock:
                 servers.setdefault(label, {"label": label, "setup": setup})["error"] = f"stopped: {e!r}"[:1500]
             say(f"[{label}] stopped: {e!r}"[:300])
-        finally:
-            if label == "A1":
-                a1_ready.set()        # however A1 ended, nothing waits for it for ever
 
-    def _one_server(slot: int, label: str, setup: str, copy_from: Optional[str]) -> None:
-        own = tmp / f"probe_{label}"
-        info: Dict[str, Any] = {"label": label, "setup": setup, "gpu_slot": slot, "copied_caches_of": copy_from}
+    def _one_server(slot: int, label: str, setup: str) -> None:
+        own = tmp / f"probe_{label}"          # its own, empty caches: started fresh
+        info: Dict[str, Any] = {"label": label, "setup": setup, "gpu_slot": slot}
         with lock:
             servers[label] = info
-        if copy_from:
-            a1_ready.wait()
-            src = tmp / f"probe_{copy_from}"
-            if not src.exists():
-                info["error"] = f"no caches of {copy_from} to copy"
-                say(f"[{label}] {info['error']}")
-                return
-            shutil.copytree(src, own, dirs_exist_ok=True)
-            info["copied_files"] = sum(1 for p in own.rglob("*") if p.is_file())
         extra_env, extra_args = SETUPS[setup]
         env = {**server_env(gpus[slot], own), **COMMON_ENV, **extra_env}
         log = out_dir / "server_logs" / f"{label}.log"
@@ -166,8 +153,7 @@ def run_probe(name: str, runs: Path, folder: str, gpus: List[str], *, launch: Ca
             return
         info.update(start_seconds=round(time.time() - t0), max_model_len=server.get("max_model_len"),
                     env={k: env[k] for k in sorted({**COMMON_ENV, **extra_env})}, extra_args=extra_args)
-        say(f"[{label}] ready in {info['start_seconds']}s ({setup}"
-            + (f", from a copy of {copy_from}'s caches, {info.get('copied_files')} files" if copy_from else "") + ")")
+        say(f"[{label}] ready in {info['start_seconds']}s ({setup})")
         try:
             for rnd in range(1, ROUNDS.get(label, 1) + 1):
                 cache = out_dir / "replies" / f"{label}_round{rnd}"
@@ -187,19 +173,22 @@ def run_probe(name: str, runs: Path, folder: str, gpus: List[str], *, launch: Ca
                         replies.setdefault(label, {}).setdefault(rnd, {})[qid] = r
                     say(f"[{label}] round {rnd} {qid:14s} {tokens} tokens, {r['tokens_per_second']} tokens/s, "
                         f"finish {r['finish']}")
-                if label == "A1" and rnd == 1:
-                    a1_ready.set()
         except Exception as e:                                        # noqa: BLE001
             info["error"] = f"a request failed: {str(e)[:1500]}"
             say(f"[{label}] {info['error'][:300]}")
         finally:
             stop(server)
             info["log_lines"] = _log_signs(log)
+            info["pin"] = _pin_state(log)
+            info["triton_choices"] = _triton_choices(log)
+            if setup == "pinned" and not info["pin"]["triton"]:
+                info["error"] = (info.get("error", "") + " the pin did not load (no 'Triton tuning pinned' "
+                                 "in the log), so this server is NOT pinned").strip()
             time.sleep(settle)            # let the GPU's memory go before the next server on it
 
     def lane(slot: int) -> None:
-        for label, setup, copy_from in SCHEDULE[slot]:
-            one_server(slot, label, setup, copy_from)
+        for label, setup in SCHEDULE[slot]:
+            one_server(slot, label, setup)
 
     threads = [threading.Thread(target=lane, args=(i,)) for i in range(len(SCHEDULE))]
     for t in threads:
@@ -216,6 +205,34 @@ def run_probe(name: str, runs: Path, folder: str, gpus: List[str], *, launch: Ca
          "replies": replies}, indent=1))
     say(f"\nsaved -> {out_dir / 'probe.json'}")
     return report
+
+
+def _pin_state(log: Path) -> Dict[str, bool]:
+    try:
+        text = log.read_text(errors="replace")
+    except OSError:
+        text = ""
+    return {"triton": "Triton tuning pinned" in text, "torch_compile": "torch.compile tuning pinned" in text,
+            "not_pinned_message": "NOT PINNED" in text}
+
+
+def _triton_choices(log: Path) -> List[str]:
+    """Each Triton tuning choice the server printed (TRITON_PRINT_AUTOTUNING=1):
+    'kernel | key | config', without the time it took."""
+    try:
+        lines = log.read_text(errors="replace").splitlines()
+    except OSError:
+        return []
+    out = []
+    for i, line in enumerate(lines):
+        if "Triton autotuning for function" in line:
+            name = line.split("Triton autotuning for function", 1)[1].strip().rstrip(",")
+            key = next((l.split("with key as", 1)[1].strip().rstrip(",") for l in lines[i + 1:i + 4]
+                        if "with key as" in l), "?")
+            cfg = next((l.split("best config selected:", 1)[1].strip().rstrip(";") for l in lines[i + 1:i + 5]
+                        if "best config selected:" in l), "?")
+            out.append(f"{name} | {key} | {cfg}")
+    return sorted(out)
 
 
 def _log_signs(log: Path) -> List[str]:
@@ -257,9 +274,15 @@ def compare(replies, servers, earlier) -> Dict[str, Any]:
     for label, rounds in replies.items():
         tps = [r["tokens_per_second"] for by_case in rounds.values() for r in by_case.values() if r["tokens_per_second"]]
         speed[label] = round(sum(tps) / len(tps), 1) if tps else None
+    first = SCHEDULE[0][0][0]
+    base_choices = servers.get(first, {}).get("triton_choices")
+    choices = {l: {"count": len(s.get("triton_choices") or []),
+                   "same_as_" + first: (s.get("triton_choices") == base_choices) if base_choices is not None else None}
+               for l, s in servers.items()}
     return {"comparisons": rows, "agreement_with_earlier_runs": agree, "tokens_per_second": speed,
-            "servers": {l: {k: v for k, v in s.items() if k in ("setup", "start_seconds", "error",
-                                                                  "copied_files", "max_model_len")}
+            "triton_choices": choices,
+            "servers": {l: {k: v for k, v in s.items() if k in ("setup", "start_seconds", "error", "pin",
+                                                                  "max_model_len")}
                         for l, s in servers.items()}}
 
 
@@ -276,6 +299,13 @@ def _print_report(report: Dict[str, Any], say: Callable) -> None:
             say(f"    ! {p[:400]}")
     say("\nspeed, tokens a second: " + ", ".join(f"{l} {v}" for l, v in sorted(report["tokens_per_second"].items())))
     say("server start, seconds : " + ", ".join(f"{l} {s.get('start_seconds')}" for l, s in sorted(report["servers"].items())))
+    say("pin loaded (Triton / torch.compile): " + ", ".join(
+        f"{l} {'yes' if (s.get('pin') or {}).get('triton') else 'NO'}/{'yes' if (s.get('pin') or {}).get('torch_compile') else 'no'}"
+        for l, s in sorted(report["servers"].items())))
+    say("Triton tuning choices: " + ", ".join(
+        f"{l} {c['count']}" + "".join(f" ({k.replace('_', ' ')}: {'yes' if v else 'NO'})" for k, v in c.items()
+                                      if k != "count" and v is not None and l != SCHEDULE[0][0][0])
+        for l, c in sorted(report["triton_choices"].items())))
     for l, s in sorted(report["servers"].items()):
         if s.get("max_model_len") not in (None, 73728):
             say(f"  note: {l} started with max_model_len {s['max_model_len']}, not 73728")

@@ -13,9 +13,9 @@
 #                into parser_runs_faster/repeat_NAME/ with its own empty model
 #                cache (so every reply is a new model call). Then compare:
 #                $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py NAME
-#   probe NAME   why replies change from one server start to the next: one job
-#                on 4 GPUs (hprc/repeat_probe.py); the result is at the end of
-#                its log, and in parser_runs_faster/probe_NAME/probe.json
+#   probe NAME   do servers started separately give the same reply? One job on
+#                4 GPUs (hprc/repeat_probe.py, with hprc/pin_tuning); the result
+#                is at the end of its log, and in parser_runs_faster/probe_NAME/
 #
 #   retrieval : 1 A100, the retrieval check on 154 DEV cases (the gate) + Kq
 #   parse     : GPUS A100s, one parser server on each, the plans
@@ -68,7 +68,7 @@ submit() {   # stage gpus cpus mem time
     echo "$id"
 }
 if [ -n "$PROBE" ]; then
-    echo "submitting the probe '$PROBE' (account $ACCT, 4 GPUs): 7 server starts, about 45-75 minutes"
+    echo "submitting the probe '$PROBE' (account $ACCT, 4 GPUs): 4 servers with the tuning pin, about 25-35 minutes"
     if [ -d "$MRAG_BASE_DIR/parser_runs_faster/probe_$PROBE" ]; then
         echo "probe_$PROBE has been used already -- choose a new NAME"; exit 1
     fi
