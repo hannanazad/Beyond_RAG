@@ -31,7 +31,8 @@ import sys
 from pathlib import Path
 
 # manifest fields that may differ between two runs without changing a plan
-_FREE = {"commit", "slurm_job", "gpu", "servers", "server_command"}
+# (model_path_used: each job reads its own copy of the model on its node's disk)
+_FREE = {"commit", "slurm_job", "gpu", "servers", "server_command", "model_path_used"}
 
 
 def load(path):

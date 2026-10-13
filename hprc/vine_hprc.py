@@ -347,7 +347,38 @@ def stage_retrieval(R: Run) -> int:
 # --------------------------------------------------------------------------- #
 # Stage 2: the plans, one vLLM server per GPU
 # --------------------------------------------------------------------------- #
+def job_running(job: str) -> bool:
+    """Whether Slurm still has this job (waiting or running). If squeue cannot
+    be asked, say no: never block a run on that."""
+    try:
+        out = subprocess.run(["squeue", "-h", "-j", str(job), "-o", "%T"], capture_output=True, text=True,
+                             timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out.returncode == 0 and bool(out.stdout.strip())
+
+
 def stage_parse(R: Run) -> int:
+    """One job at a time per run folder: two would overwrite each other's plans
+    (12 Oct: a second job for the same repeat name was queued by mistake)."""
+    lock = R.run_dir / ".parse_job"
+    other = lock.read_text().strip() if lock.exists() else ""
+    if other and other != R.job and job_running(other):
+        say(f"STOPPED: job {other} is already making the plans in {R.run_dir}; two jobs in one folder would "
+            f"overwrite each other's plans. Cancel one of them (scancel {R.job} or scancel {other}).")
+        return 1
+    lock.write_text(R.job)
+    try:
+        return _stage_parse(R)
+    finally:
+        try:
+            if lock.read_text().strip() == R.job:
+                lock.unlink()
+        except OSError:
+            pass
+
+
+def _stage_parse(R: Run) -> int:
     from mrag.kg_vine import VineKG
     from mrag.vine import table_data, vllm_client as vc
     from mrag.vine.parser import make_semantic_parser

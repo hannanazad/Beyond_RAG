@@ -63,6 +63,11 @@ submit() {   # stage gpus cpus mem time
     id=$(sbatch --parsable --account="$ACCT" --job-name="vine_$1" --export="$EXPORT,STAGE=$1" \
          --gres="gpu:a100:$2" --cpus-per-task="$3" --mem="$4G" --time="$5" \
          --output="$LOG/vine_$1_%j.log" "${dep[@]}" hprc/vine_job.slurm)
+    if ! [[ "$id" =~ ^[0-9]+ ]]; then
+        echo "  $1: Slurm did not return a job number. The job may still have been made (a 'Socket timed out'" >&2
+        echo "  error can do that): look with  squeue -u $USER  before submitting again." >&2
+        exit 1
+    fi
     echo "  $1: job $id  (log: $LOG/vine_$1_$id.log)" >&2
     dep=(--dependency="afterok:$id" --kill-on-invalid-dep=yes)
     echo "$id"

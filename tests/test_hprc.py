@@ -907,6 +907,62 @@ def test_launch_passes_its_start_limit_on():
     assert got == [2400, 5400]                     # the Colab default is unchanged
 
 
+
+# --------------------------------------------------------------------------- #
+# Clean-ups after 12 Oct: the model path may differ; a failed submission stops;
+# one parse job per run folder
+# --------------------------------------------------------------------------- #
+def test_compare_allows_each_job_its_own_copy_of_the_model():
+    import json
+    with tempfile.TemporaryDirectory() as d:
+        runs = _make_runs(d)
+        for m, path in ((runs / "e2e_rabc_sdef_p123" / "parse_manifest.json", "/tmp/job.1/model/rev"),
+                        (runs / "repeat_r1" / "e2e_rabc_sdef_p123" / "parse_manifest.json", "/tmp/job.2/model/rev")):
+            m.write_text(json.dumps(dict(json.loads(m.read_text()), model_path_used=path)))
+        code, v, report = _verdicts(runs)
+        assert code == 0 and report["folders"][0]["settings_differ"] == []
+
+
+def test_run_sh_stops_when_slurm_gives_no_job_number():
+    import shutil
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        scratch, stubs = d / "scratch", d / "stubs"
+        (scratch / "vine").mkdir(parents=True)
+        (scratch / "vine" / ".done_models").write_text("")
+        stubs.mkdir()
+        (stubs / "sbatch").write_text('#!/bin/bash\necho "sbatch: error: Socket timed out on send/recv operation" >&2\n')
+        (stubs / "sbatch").chmod(0o755)
+        env = {"PATH": f"{stubs}:/usr/bin:/bin", "HOME": str(d / "home"), "SCRATCH": str(scratch), "USER": "u"}
+        p = subprocess.run([shutil.which("bash"), str(REPO / "hprc" / "run.sh"), "123", "6", "repeat", "k9"],
+                           env=env, capture_output=True, text=True, timeout=60)
+        assert p.returncode == 1 and "squeue -u" in p.stdout + p.stderr, p.stdout + p.stderr
+        assert "parse: job  (log" not in p.stdout + p.stderr
+
+
+def test_one_parse_job_per_run_folder():
+    V = _vine_hprc()
+    ran = []
+    with tempfile.TemporaryDirectory() as d:
+        R = _run(d, repeat="k9")
+        R.job = "222"
+        lock = R.run_dir / ".parse_job"
+        lock.write_text("111")
+        with _Patched([(V, "_stage_parse", lambda R: ran.append(R.job) or 0), (V, "job_running", lambda j: True)]):
+            assert V.stage_parse(R) == 1                     # job 111 is still at work in this folder
+        assert ran == [] and lock.read_text() == "111"
+        with _Patched([(V, "_stage_parse", lambda R: ran.append(R.job) or 0), (V, "job_running", lambda j: False)]):
+            assert V.stage_parse(R) == 0                     # 111 has ended: its lock is old
+        assert ran == ["222"] and not lock.exists()           # and this job's lock is gone when it ends
+        with _Patched([(V, "_stage_parse", lambda R: 1 / 0)]):
+            try:
+                V.stage_parse(R)
+            except ZeroDivisionError:
+                pass
+        assert not lock.exists()                             # also when the stage stops with an error
+
+
 if __name__ == "__main__":
     for _name, _f in sorted(globals().items()):
         if _name.startswith("test_") and callable(_f):
