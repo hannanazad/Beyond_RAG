@@ -83,7 +83,8 @@ bash hprc/run.sh ACCOUNT 8
 - Watch: `squeue -u $USER`. Logs: `$SCRATCH/vine/logs/vine_<stage>_<job>.log`.
 - Results: `$SCRATCH/Beyond_RAG/parser_runs_faster/` and `$SCRATCH/Beyond_RAG/retrieval_dev_results_faster/` (apart from the Colab runs). The answers file is `answers_sample_<time>.txt` in the run folder.
 - Every stage carries on where it stopped. To start again from one stage: `bash hprc/run.sh ACCOUNT 8 parse` (or `execute`).
-- Why one question at a time on each GPU: on Colab, one running server asked the same question twice gave the same plan (3 of 3). That check never started the server again. Across server starts the plans did NOT repeat on 12 October (1 of 11, section 5); section 6 tests why.
+- Why one question at a time on each GPU: so a reply never depends on what else the server is doing. That alone was not enough: across server starts the plans did NOT repeat (12 October, 1 of 11, section 5), because kernels tune themselves by timing when a server starts (section 6).
+- **Every parser server loads the tuning pin** (`hprc/pin_tuning/sitecustomize.py`): each self-tuning kernel keeps its first working option, so servers started separately make the same choices. Its hash is in the run folder's name (`e2e_r…_s…_p…_k<pin>`) and in every model-cache key, so plans made before it (the 11-12 October folders without `_k`) are never reused. A server whose log does not show the pin loaded is not used.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
 
 ## 5. The repeat test: does the same question give the same plan?
@@ -94,6 +95,14 @@ $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py r1     # when the 
 ```
 
 The first line submits the parse stage only, for the 11 DEV questions, into `parser_runs_faster/repeat_r1/`. That folder has its own model cache, which starts empty, so every plan comes from a new model call; Kq is the same file the first run read. The second line compares each plan with the first run's: the prompt, the model's whole reply (reasoning and answer) and the plan must be the same, byte for byte. Which GPU made a plan does not matter. For another test later, use another name (`r2`, ...); the same name carries on in the same folder.
+
+To compare two repeat runs with each other (for example two runs made with the tuning pin, when the main run was made without it):
+
+```bash
+bash hprc/run.sh ACCOUNT 6 repeat k1
+bash hprc/run.sh ACCOUNT 6 repeat k2
+$SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py k2 --against k1     # when both have finished
+```
 
 The code is `hprc/vine_hprc.py` (the steps of `notebooks/VINE_Run.ipynb`) and `hprc/vine_job.slurm`.
 
@@ -106,4 +115,4 @@ bash hprc/run.sh ACCOUNT 4 probe p2
 One job on 4 GPUs, no API cost (`hprc/repeat_probe.py`). It asks parser servers, each started fresh, the same 3 DEV prompts (the ones the first run sent), and compares the first 4,096 tokens of each reply byte for byte. The result is at the end of the job's log (after `RESULT`), and in `parser_runs_faster/probe_NAME/probe.json`. A name can be used once.
 
 - **probe_p1 (12 Oct):** one server asked twice gave the same reply (3 of 3); two servers started fresh did not (0 of 3), nor did a server started from a copy of another's caches (0 of 3), nor two with `--enforce-eager` (0 of 3, and 3 times slower). `VLLM_BATCH_INVARIANT=1` did not start (an 8-bit weight kernel failed to build). The cause, read in the code: kernels that tune themselves by timing the first time they run (Triton's autotuner, used by vLLM's FLA kernels for the GDN layers, and torch.compile's kernels). Timing noise makes servers keep different options, which round the last bit differently.
-- **The fix being tested (p2):** `hprc/pin_tuning/sitecustomize.py`, loaded only by the parser servers (PYTHONPATH, `VINE_PIN_TUNING=1`), makes every such step keep the first working option instead of the fastest. 4 servers with it, each started fresh; their replies, and their Triton choices, must be the same.
+- **probe_p2 (12 Oct), the fix:** `hprc/pin_tuning/sitecustomize.py`, loaded only by the parser servers (PYTHONPATH, `VINE_PIN_TUNING=1`), makes every such step keep the first working option instead of the fastest. 4 servers with it, each started fresh: **9 of 9 replies the same**, the same 6 Triton choices in all 4, the pin loaded in all 4, 37.8 tokens a second (as before). Since then the parse stage always uses it.

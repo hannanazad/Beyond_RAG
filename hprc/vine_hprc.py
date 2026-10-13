@@ -57,6 +57,15 @@ from mrag.vine.parser import PARSER_TASK, PARSER_CONTRACT, build_parser_prompt  
 MODEL_ID = "Qwen/Qwen3.8-27B-FP8"
 REVISION = "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
 VLLM_VERSION = "0.31.0"
+# Every parser server loads hprc/pin_tuning/sitecustomize.py: each kernel that
+# tunes itself keeps its first working option, not the fastest by timing, so
+# servers started separately compute the same numbers and give the same reply
+# (12 Oct 2026: without it 1 of 11 DEV plans repeated; with it 9 of 9 probe
+# replies were the same, at the same speed). Its hash is part of the run folder's
+# name and of every model-cache key, so a plan made without it is never reused.
+PIN_DIR = REPO / "hprc" / "pin_tuning"
+PIN_SHA = hashlib.sha256((PIN_DIR / "sitecustomize.py").read_bytes()).hexdigest()[:8]
+ENGINE = f"vllm {VLLM_VERSION} + pin_tuning {PIN_SHA}"
 SEED, EFFORT = 42, "xhigh"
 GPU_UTIL = 0.90
 # the checkers, as in the notebook
@@ -128,7 +137,9 @@ class Run:
         # a repeat run: its own folder, so its own (empty) model cache
         self.runs = base / f"repeat_{self.repeat}" if self.repeat else base
         self.model_cache = self.runs / "model_cache"
-        self.run_dir = self.runs / f"e2e_r{self.retr_commit}_s{self.store_tag}_p{self.instructions_sha[:8]}"
+        # the folder of the runs before the tuning pin (11-12 Oct), where the probe's prompts are
+        self.unpinned_run_name = f"e2e_r{self.retr_commit}_s{self.store_tag}_p{self.instructions_sha[:8]}"
+        self.run_dir = self.runs / f"{self.unpinned_run_name}_k{PIN_SHA}"
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.plans_file = self.run_dir / "plans.json"
         self.settings = {k: getattr(CFG, k) for k in SETTING_NAMES}
@@ -180,13 +191,22 @@ def parser_model_path() -> Path:
 
 
 def parser_server_env(gpu: str, own: Path) -> dict:
-    """The environment of one parser server: its GPU, and its compile caches in
-    its own folder `own` (on the node's own disk)."""
+    """The environment of one parser server: its GPU, its compile caches in its
+    own folder `own` (on the node's own disk), and the tuning pin (PIN_DIR)."""
     return {"CUDA_VISIBLE_DEVICES": gpu, "HF_HUB_OFFLINE": "1",
+            "PYTHONPATH": str(PIN_DIR), "VINE_PIN_TUNING": "1",
             # FlashInfer's sampler failed to build on Colab; seeded requests never use it
             "VLLM_USE_FLASHINFER_SAMPLER": "0",
             "VLLM_CACHE_ROOT": str(own / "vllm"), "TRITON_CACHE_DIR": str(own / "triton"),
             "TORCHINDUCTOR_CACHE_DIR": str(own / "inductor"), "FLASHINFER_WORKSPACE_BASE": str(own)}
+
+
+def pin_loaded(log: Path) -> bool:
+    """Whether a parser server's log shows the tuning pin loaded (sitecustomize.py says so)."""
+    try:
+        return "Triton tuning pinned" in Path(log).read_text(errors="replace")
+    except OSError:
+        return False
 
 
 def first_port(job: str) -> int:
@@ -352,12 +372,16 @@ def stage_parse(R: Run) -> int:
         return 1
     max_len = min(s["max_model_len"] for s in live)
     max_tokens = min(49152, max_len - 21504)
-    engine = f"vllm {VLLM_VERSION}"
+    engine = ENGINE
     say(f"{len(live)} servers ready | max_model_len {max_len} | max_tokens {max_tokens}")
 
     asks = []
     for i, s in enumerate(servers):
         if not s:
+            continue
+        if not pin_loaded(log_dir / f"vllm_{R.job}_gpu{i}.log"):
+            say(f"[gpu{i}] the tuning pin did not load (no 'Triton tuning pinned' in its log): not used")
+            vc.stop_server(s)
             continue
         probe = vc.make_ask_vllm(s["base_url"], "parser", model_id=MODEL_ID, revision=REVISION, engine=engine,
                                  seed=SEED, max_tokens=2048, reasoning_effort="low")
@@ -376,7 +400,7 @@ def stage_parse(R: Run) -> int:
     if not asks:
         for s in live:
             vc.stop_server(s)
-        say("STOPPED: no server answered the probe. Send this log.")
+        say("STOPPED: no server can be used (see the lines above). Send this log.")
         return 1
 
     vr.save_json(R.run_dir / "parse_manifest.json", {
@@ -386,7 +410,9 @@ def stage_parse(R: Run) -> int:
         "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix5",
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job,
-        "one_request_at_a_time": True})
+        "one_request_at_a_time": True, "engine": engine,
+        "pin_tuning": {"file": "hprc/pin_tuning/sitecustomize.py", "sha256_8": PIN_SHA,
+                       "rule": "each self-tuning kernel keeps its first working option, not the fastest"}})
 
     order = [q for q in R.dev_ids if q in to_parse] + [q for q in to_parse if q not in R.dev_ids]
     work: "queue.Queue[str]" = queue.Queue()
@@ -604,13 +630,14 @@ def stage_probe(R: Run) -> int:
     gpus = [g for g in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",") if g.strip()]
     os.environ["CUDA_VISIBLE_DEVICES"] = ""            # this process itself never uses them
     say(f"GPUs: {len(gpus)} -> {gpu_names()}")
-    say(f"probe '{R.probe}': the prompts of {', '.join(rp.PROBE_CASES)} from the first run in {R.run_dir}")
+    say(f"probe '{R.probe}': the prompts of {', '.join(rp.PROBE_CASES)} from the first run in "
+        f"{R.runs / R.unpinned_run_name}")
     report = rp.run_probe(
-        R.probe, R.runs, R.run_dir.name, gpus, launch=vc.launch, stop=vc.stop_server,
+        R.probe, R.runs, R.unpinned_run_name, gpus, launch=vc.launch, stop=vc.stop_server,
         make_ask=vc.make_ask_vllm, server_env=parser_server_env, server_kwargs=PARSER_SERVER,
         vllm_bin=str(Path(os.environ["VLLM_ENV"]) / "bin" / "vllm"), model_path=str(parser_model_path()),
         tmp=Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}"), port0=first_port(R.job),
-        ask_kwargs={"model_id": MODEL_ID, "revision": REVISION, "engine": f"vllm {VLLM_VERSION}",
+        ask_kwargs={"model_id": MODEL_ID, "revision": REVISION, "engine": ENGINE,
                     "seed": SEED, "max_tokens": rp.PROBE_TOKENS, "reasoning_effort": EFFORT},
         say=say)
     if not report["comparisons"][0]["of"]:

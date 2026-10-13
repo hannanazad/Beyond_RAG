@@ -1,6 +1,7 @@
 """hprc/compare_plans.py -- did the repeat run make the same DEV plans as the first run?
 
     $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py NAME
+    $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py NAME --against OTHER
 
 NAME is the repeat run's name (bash hprc/run.sh ACCOUNT GPUS repeat NAME). For
 every plan in parser_runs_faster/repeat_NAME/e2e_<...>/plans.json, this checks it
@@ -16,6 +17,9 @@ parser instructions, so the two folders have the same name):
                         and the plan made from it are the same, byte for byte
 
 Which GPU made a plan, and how long it took, are allowed to differ.
+
+With --against OTHER the plans are compared with another repeat run's,
+parser_runs_faster/repeat_OTHER/, instead of with the main run's.
 
 It only reads files (and writes compare.json in the repeat folder). Exit 0 when
 every plan is the same, 1 when any differs, 2 when it cannot compare.
@@ -117,9 +121,11 @@ def compare_one(old, new, old_cache, new_cache):
     return "SAME", d
 
 
-def compare(runs, name):
+def compare(runs, name, against=None):
     runs = Path(runs)
     root = runs / f"repeat_{name}"
+    base = runs / f"repeat_{against}" if against else runs      # where the plans compared with are
+    what = f"repeat run {against}" if against else "first run"
     found = sorted(root.glob("e2e_*/plans.json"))
     if not found:
         print(f"no plans in {root}/e2e_*/ -- has the repeat job finished? (squeue -u $USER)")
@@ -128,29 +134,29 @@ def compare(runs, name):
     all_same = True
     for new_file in found:
         folder = new_file.parent.name
-        old_file = runs / folder / "plans.json"
+        old_file = base / folder / "plans.json"
         print(f"repeat run : {new_file}")
-        print(f"first run  : {old_file}")
+        print(f"{what:11s}: {old_file}")
         if not old_file.exists():
-            print(f"\nCANNOT COMPARE: there is no first run in {runs / folder}. Its name holds the retrieval\n"
+            print(f"\nCANNOT COMPARE: there is no {what} in {base / folder}. Its name holds the retrieval\n"
                   "code, the store and the parser instructions, so one of them changed between the two runs.")
             return 2, None
         old_plans, new_plans = load(old_file), load(new_file)
         # the settings the servers ran with
-        mo = (load(runs / folder / "parse_manifest.json") if (runs / folder / "parse_manifest.json").exists() else {})
+        mo = (load(base / folder / "parse_manifest.json") if (base / folder / "parse_manifest.json").exists() else {})
         mn = (load(new_file.parent / "parse_manifest.json") if (new_file.parent / "parse_manifest.json").exists() else {})
         diff = sorted(k for k in set(mo) | set(mn) if k not in _FREE and not same_json(mo.get(k), mn.get(k)))
         if mo and mn:
             print("settings   : " + ("the same (model, revision, vLLM, seed, sampling, effort, max_tokens, window, "
                                      "instructions, Kq, retrieval)" if not diff else "DIFFERENT in " + ", ".join(diff)))
-            print(f"servers    : {mo.get('servers')} in the first run (job {mo.get('slurm_job')}), "
+            print(f"servers    : {mo.get('servers')} in the {what} (job {mo.get('slurm_job')}), "
                   f"{mn.get('servers')} now (job {mn.get('slurm_job')})")
         print()
         print(f"{'question':26s} {'result':20s} {'GPU':8s} {'seconds':13s} why")
         rows = []
         for qid in new_plans:
             old, new = old_plans.get(qid), new_plans[qid]
-            verdict, d = compare_one(old, new, runs / "model_cache", root / "model_cache")
+            verdict, d = compare_one(old, new, base / "model_cache", root / "model_cache")
             gpu = f"{(old or {}).get('gpu_slot', '-')} -> {new.get('gpu_slot', '-')}"
             secs = f"{(old or {}).get('seconds', 0):5.0f} / {new.get('seconds', 0):5.0f}"
             print(f"{qid:26s} {verdict:20s} {gpu:8s} {secs:13s} {d.get('why', '')}")
@@ -169,10 +175,10 @@ def compare(runs, name):
         all_same = all_same and same == len(rows) and not diff
         by_length = sum(1 for r in rows if r["verdict"] == "SAME"
                         and any("by length only" in n for n in r.get("notes") or []))
-        print(f"\n{same} of {len(rows)} plans are the same as in the first run "
+        print(f"\n{same} of {len(rows)} plans are the same as in the {what} "
               "(the prompt, the model's reasoning and reply, and the plan).")
         if by_length:
-            print(f"BUT for {by_length} of them a cached reply was missing ({runs / 'model_cache'} or "
+            print(f"BUT for {by_length} of them a cached reply was missing ({base / 'model_cache'} or "
                   f"{root / 'model_cache'}),\nso the model's reasoning was compared by its length only, "
                   "not byte for byte.")
         elif same:
@@ -187,10 +193,14 @@ def compare(runs, name):
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("name", help="the repeat run's NAME")
+    ap.add_argument("--against", help="compare with this other repeat run instead of the main run")
     ap.add_argument("--runs", help="the parser_runs_faster folder (default: $SCRATCH/Beyond_RAG/parser_runs_faster)")
     a = ap.parse_args(argv)
     runs = a.runs or (Path(os.environ.get("SCRATCH", "")) / "Beyond_RAG" / "parser_runs_faster")
-    return compare(runs, a.name)[0]
+    if a.against == a.name:
+        print("--against must name another repeat run")
+        return 2
+    return compare(runs, a.name, a.against)[0]
 
 
 if __name__ == "__main__":

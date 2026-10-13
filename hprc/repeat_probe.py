@@ -46,7 +46,8 @@ PROBE_TOKENS = 4096
 PIN_DIR = str(Path(__file__).resolve().parent / "pin_tuning")
 COMMON_ENV = {"TRITON_PRINT_AUTOTUNING": "1"}
 SETUPS = {
-    "default": ({}, []),
+    # the parse stage's servers are pinned now (vine_hprc.parser_server_env); "unpinned" turns it off
+    "unpinned": ({"PYTHONPATH": "", "VINE_PIN_TUNING": "0"}, []),
     "pinned": ({"PYTHONPATH": PIN_DIR, "VINE_PIN_TUNING": "1"}, []),
 }
 # each GPU's servers, one after the other: (label, set-up)

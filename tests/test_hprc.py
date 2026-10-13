@@ -176,10 +176,17 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
     from mrag.vine import table_data, vllm_client as vc
     import mrag.vine.parser as parser_mod
     V = _vine_hprc()
-    caches, prompts = [], []
+    caches, prompts, engines, launched = [], [], [], []
+
+    def fake_launch(vllm_bin, model, log_path, port, env, say, **kw):
+        launched.append({"env": dict(env), "kw": dict(kw)})
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(log_path).write_text("[vine-pin pid 9] Triton tuning pinned (...)\n")
+        return {"base_url": f"http://127.0.0.1:{port}", "max_model_len": 73728, "cmd": ["vllm"]}
 
     def fake_make_ask_vllm(url, name, **k):
         caches.append(k.get("cache_dir"))
+        engines.append(k.get("engine"))
 
         def ask(prompt, images=None):
             prompts.append(prompt)
@@ -222,7 +229,7 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
             (CFG, "base_dir", base),
             (kg_vine, "VineKG", lambda *a, **k: type("KG", (), {"is_known_citation": staticmethod(lambda r: True)})()),
             (table_data, "load", lambda p: []),
-            (vc, "launch", lambda *a, **k: {"base_url": "http://127.0.0.1:1", "max_model_len": 73728, "cmd": ["vllm"]}),
+            (vc, "launch", fake_launch),
             (vc, "make_ask_vllm", fake_make_ask_vllm),
             (vc, "stop_server", lambda s: None),
             (V.vr, "BudgetedAsk", FakeBudgetedAsk),
@@ -239,6 +246,11 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
         assert sorted(plans) == sorted(first.dev_ids)                  # the 11 DEV plans, nothing else
         # per GPU: a probe client (no cache at all) and the parser's client (the repeat's own cache)
         assert caches == [None, str(rep.model_cache)] * 2, caches
+        assert engines == [V.ENGINE] * 4                                    # the pin is in every cache key
+        assert all(x["env"]["VINE_PIN_TUNING"] == "1" and x["env"]["PYTHONPATH"] == str(V.PIN_DIR)
+                   for x in launched) and len(launched) == 2
+        assert all(x["kw"] == {k: v for k, v in V.PARSER_SERVER.items()} for x in launched)
+        assert json.loads((rep.run_dir / "parse_manifest.json").read_text())["pin_tuning"]["sha256_8"] == V.PIN_SHA
         assert sorted(p for p in prompts if p.startswith("PLAN FOR ")) == \
             sorted("PLAN FOR " + first.questions[q] for q in first.dev_ids)
         assert first.plans_file.read_text() == before                  # the first run is untouched
@@ -553,6 +565,7 @@ def test_parser_server_settings_are_unchanged():
                                "gpu_memory_utilization": 0.90, "seed": 42, "stop_others": False}
     assert V.parser_server_env("3", Path("/x")) == {
         "CUDA_VISIBLE_DEVICES": "3", "HF_HUB_OFFLINE": "1", "VLLM_USE_FLASHINFER_SAMPLER": "0",
+        "PYTHONPATH": str(REPO / "hprc" / "pin_tuning"), "VINE_PIN_TUNING": "1",
         "VLLM_CACHE_ROOT": "/x/vllm", "TRITON_CACHE_DIR": "/x/triton", "TORCHINDUCTOR_CACHE_DIR": "/x/inductor",
         "FLASHINFER_WORKSPACE_BASE": "/x"}
     assert V.first_port("3198937") == 20000 + (3198937 % 400) * 10 and V.first_port("nojob") == 20000
@@ -650,10 +663,10 @@ def test_probe_stage_passes_the_parse_stages_settings():
             assert V.stage_probe(R) == 0
         first = _run(d)
     assert got["name"] == "p1" and got["gpus"] == ["4", "5", "6", "7"]
-    assert got["runs"] == first.runs and got["folder"] == first.run_dir.name     # the first run's folder
+    assert got["runs"] == first.runs and got["folder"] == first.unpinned_run_name  # the 11 Oct prompts
     assert got["launch"] is vc.launch and got["stop"] is vc.stop_server and got["make_ask"] is vc.make_ask_vllm
     assert got["server_kwargs"] is V.PARSER_SERVER and got["server_env"] is V.parser_server_env
-    assert got["ask_kwargs"] == {"model_id": V.MODEL_ID, "revision": V.REVISION, "engine": "vllm 0.31.0",
+    assert got["ask_kwargs"] == {"model_id": V.MODEL_ID, "revision": V.REVISION, "engine": V.ENGINE,
                                  "seed": 42, "max_tokens": P.PROBE_TOKENS, "reasoning_effort": "xhigh"}
     assert got["port0"] == V.first_port("3199700") and got["tmp"] == base / "tmp"
     assert got["vllm_bin"] == str(base / "venv" / "bin" / "vllm") and got["model_path"] == str(hub)
@@ -739,6 +752,87 @@ def test_without_the_pin_the_choice_follows_the_timing():
     assert len(got["triton"]) > 1 and len(got["inductor"]) > 1, got      # the noise decides
     assert "out_of_resources" not in got["triton"] and "spills" not in got["inductor"]
     assert "pinned" not in err
+
+
+
+# --------------------------------------------------------------------------- #
+# The tuning pin in the parse stage
+# --------------------------------------------------------------------------- #
+def test_plans_made_with_the_pin_never_mix_with_plans_made_without():
+    import hashlib
+    from mrag.vine import vllm_client as vc
+    V = _vine_hprc()
+    pin_file = REPO / "hprc" / "pin_tuning" / "sitecustomize.py"
+    assert V.PIN_DIR == pin_file.parent
+    assert V.PIN_SHA == hashlib.sha256(pin_file.read_bytes()).hexdigest()[:8]
+    assert V.PIN_SHA in V.ENGINE and V.ENGINE.startswith("vllm 0.31.0")
+    with tempfile.TemporaryDirectory() as d:
+        R = _run(d)
+        # its own run folder (so the 11 Oct plans are not taken as made already) ...
+        assert R.run_dir.name == f"{R.unpinned_run_name}_k{V.PIN_SHA}"
+        assert R.run_dir.name.startswith("e2e_r") and R.unpinned_run_name.count("_") == 3
+    # ... and its own model-cache keys (so an 11 Oct reply is never handed back)
+    key = lambda engine: vc._key({"model": V.MODEL_ID, "revision": V.REVISION, "engine": engine, "prompt": "p",
+                                  "seed": 42, "sampling": vc.QWEN_THINKING, "max_tokens": 49152,
+                                  "reasoning_effort": "xhigh", "enable_thinking": True})
+    assert key(V.ENGINE) != key("vllm 0.31.0")
+
+
+def test_parse_stage_refuses_a_server_without_the_pin():
+    import json
+    from mrag.config import CFG
+    from mrag import kg_vine
+    from mrag.vine import table_data, vllm_client as vc
+    V = _vine_hprc()
+    stopped, asked = [], []
+
+    def fake_launch(vllm_bin, model, log_path, port, env, say, **kw):
+        Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(log_path).write_text("INFO the server started, but nothing about the pin\n")
+        return {"base_url": f"http://127.0.0.1:{port}", "max_model_len": 73728, "cmd": ["vllm"]}
+
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        rep = _run(d, repeat="r9")
+        kq = {q: {"question": t, "chunks": [], "figures": []} for q, t in rep.questions.items()}
+        rep.kq_file.write_text(json.dumps(kq))
+        hub = base / "hf" / "models--Qwen--Qwen3.8-27B-FP8" / "snapshots" / V.REVISION
+        hub.mkdir(parents=True)
+        (hub / "config.json").write_text("{}")
+        patches = [(CFG, "base_dir", base), (kg_vine, "VineKG", lambda *a, **k: object()),
+                   (table_data, "load", lambda p: []), (vc, "launch", fake_launch),
+                   (vc, "make_ask_vllm", lambda *a, **k: asked.append(k) or (lambda *x: '{"ok": true}')),
+                   (vc, "stop_server", lambda s: stopped.append(s["base_url"]))]
+        env = {"CUDA_VISIBLE_DEVICES": "0,1", "VLLM_ENV": str(base / "venv"), "HF_HUB_CACHE": str(base / "hf"),
+               "TMPDIR": str(base / "tmp"), "VINE_REPEAT": "r9", "VINE_QUESTIONS": None}
+        with _Patched(patches, env):
+            assert V.stage_parse(rep) == 1
+        assert asked == []                                  # no server was asked anything
+        assert len(stopped) >= 2 and not rep.plans_file.exists()
+
+
+def test_compare_two_repeat_runs_with_each_other():
+    import json
+    import shutil
+    with tempfile.TemporaryDirectory() as d:
+        runs = _make_runs(d)
+        # make the main run's plans into a second repeat run "r0", and remove the main run
+        shutil.copytree(runs / "e2e_rabc_sdef_p123", runs / "repeat_r0" / "e2e_rabc_sdef_p123")
+        shutil.copytree(runs / "model_cache", runs / "repeat_r0" / "model_cache")
+        shutil.rmtree(runs / "e2e_rabc_sdef_p123")
+        shutil.rmtree(runs / "model_cache")
+        C = _compare_mod()
+        code, report = C.compare(runs, "r1", against="r0")
+        assert code == 0 and all(r["verdict"] == "SAME" for r in report["folders"][0]["rows"])
+        assert not any("by length only" in n for r in report["folders"][0]["rows"] for n in r["notes"])
+        assert C.compare(runs, "r1")[0] == 2                 # there is no main run to compare with
+        assert C.main(["r1", "--against", "r1", "--runs", str(runs)]) == 2
+        p = runs / "repeat_r1" / "e2e_rabc_sdef_p123" / "plans.json"
+        plans = json.loads(p.read_text())
+        plans["P01"]["raw_replies"] = ["something else"]
+        p.write_text(json.dumps(plans))
+        code, report = C.compare(runs, "r1", against="r0")
+        assert code == 1 and {r["case_id"]: r["verdict"] for r in report["folders"][0]["rows"]}["P01"] != "SAME"
 
 
 if __name__ == "__main__":
