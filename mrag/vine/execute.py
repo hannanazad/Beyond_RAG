@@ -69,14 +69,35 @@ Verifier = Callable[[Operation, CertificateStore], Certificate]
 # --------------------------------------------------------------------------- #
 # Typed merges (S3.2)
 # --------------------------------------------------------------------------- #
-def _non_blocking(cert: Certificate) -> Status:
-    """How one input counts where a FALSE would otherwise BLOCK the merge.
+def _non_blocking(cert: Certificate, merge_authority: Authority = Authority.STANDARD) -> Status:
+    """How one input counts where a FALSE would otherwise BLOCK the merge, in a
+    merge whose own heading is `merge_authority`.
 
-    A FALSE does not always mean the rule failed:
+    A merge answers its own claim at its own heading (the parser gives a merge
+    "the heading of the rule it stands for"). An input printed under a WEAKER
+    heading cannot refute that claim:
 
-        STANDARD FALSE  ->  FALSE          refutes
-        GUIDANCE FALSE  ->  TRUE           records non-conformance, does not refute
-        OPTION   FALSE  ->  TRUE           the option was simply not taken
+        merge STANDARD, input GUIDANCE FALSE -> TRUE   not doing what is
+                                                       recommended breaks no
+                                                       requirement; it is
+                                                       recorded as non-conformance
+        merge STANDARD or GUIDANCE,
+                        input OPTION FALSE   -> TRUE   the option was not taken
+                                                       (or does not apply); a
+                                                       permission demands nothing
+        input at the merge's own heading,
+                        or stronger, FALSE   -> FALSE
+
+    The last line is the change of 12 Oct 2026. Before it, every non-Standard
+    FALSE counted as TRUE whatever the merge, so a merge whose claim IS the
+    weaker provision came out wrong: "this Guidance is followed" (GUIDANCE)
+    held although one of its Guidance items was not followed, and "this
+    Option may be used here" (OPTION) held although one of the Option's
+    conditions was not met. The manual's own headings settle it: a Guidance
+    item says what should be done, so a claim that it IS done is false when it
+    is not done, even though no requirement is broken; an Option is a
+    permission, so where its condition is not met there is no permission. A
+    merge at Standard heading behaves exactly as before.
 
     This adjustment applies ONLY where FALSE blocks, i.e. inside a conjunction
     and to the base rule of an exception merge. It must NOT be applied to a
@@ -85,12 +106,12 @@ def _non_blocking(cert: Certificate) -> Status:
     apply (OPTION, FALSE) rescue a rule whose mandatory threshold had failed,
     certifying a design as warranted when it was not.
 
-    Derived from the normative_authority table in the annotation schema. The
-    paper states what each authority means for a failed check but not the
-    merge-level treatment, so this reading is recorded in the merged
-    certificate's provenance.
+    The paper states what each authority means for a failed check but not the
+    merge-level treatment, so the adjusted statuses are recorded in the merged
+    certificate's provenance ("blocking_adjusted").
     """
-    if cert.status is Status.FALSE and cert.normative_authority is not Authority.STANDARD:
+    if (cert.status is Status.FALSE and cert.normative_authority is not Authority.STANDARD
+            and stronger(merge_authority, cert.normative_authority)):
         return Status.TRUE
     return cert.status
 
@@ -116,8 +137,8 @@ def _applies(cert: Certificate) -> bool:
 
 
 def _merge_once(kind: MergeType, inputs: Sequence[Certificate],
-                threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None
-                ) -> Status:
+                threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None,
+                authority: Authority = Authority.STANDARD) -> Status:
     """A typed merge (S3.2) over inputs taken as they are. Inputs that do not
     apply are left out: a branch that is not relevant neither satisfies a rule
     nor breaks it."""
@@ -127,7 +148,7 @@ def _merge_once(kind: MergeType, inputs: Sequence[Certificate],
         # nothing to relax, and the merge does not apply either.
         if not inputs or not _applies(inputs[0]):
             return Status.NOT_APPLICABLE
-        base = _non_blocking(inputs[0])
+        base = _non_blocking(inputs[0], authority)
         if base is Status.TRUE:
             return Status.TRUE
         # only an exception that actually APPLIES relaxes the rule; an UNKNOWN
@@ -140,7 +161,7 @@ def _merge_once(kind: MergeType, inputs: Sequence[Certificate],
         return Status.NOT_APPLICABLE
     if kind is MergeType.CONJUNCTION:
         # every branch must hold, so FALSE blocks -> adjust by authority
-        return _kleene_and([_non_blocking(c) for c in live])
+        return _kleene_and([_non_blocking(c, authority) for c in live])
     if kind is MergeType.ALTERNATIVE:
         # a branch has to SATISFY; a recommendation not followed or an option
         # not taken satisfies nothing, so raw status is what counts
@@ -156,8 +177,8 @@ _MAX_UNCERTAIN_MERGE_INPUTS = 10
 
 
 def merge_outcomes(kind: MergeType, inputs: Sequence[Certificate],
-                   threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None
-                   ) -> set:
+                   threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None,
+                   authority: Authority = Authority.STANDARD) -> set:
     """Every result the merge could have had, had it been known whether each
     input of unknown applicability applies. Such an input is UNKNOWN if it
     applies (and three-valued logic already covers TRUE and FALSE), or
@@ -171,29 +192,31 @@ def merge_outcomes(kind: MergeType, inputs: Sequence[Certificate],
         for i, dead in zip(unsure, mask):
             if dead:
                 trial[i] = replace(inputs[i], status=Status.NOT_APPLICABLE)
-        out.add(_merge_once(kind, trial, threshold_fn))
+        out.add(_merge_once(kind, trial, threshold_fn, authority))
     return out
 
 
 def merge_statuses(kind: MergeType, inputs: Sequence[Certificate],
-                   threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None
-                   ) -> Status:
+                   threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None,
+                   authority: Authority = Authority.STANDARD) -> Status:
     """The merge's result: definite only if it is the same however every
-    input of unknown applicability turns out (S3.2), else UNKNOWN."""
-    outcomes = merge_outcomes(kind, inputs, threshold_fn)
+    input of unknown applicability turns out (S3.2), else UNKNOWN. `authority`
+    is the merge's own heading (see `_non_blocking`)."""
+    outcomes = merge_outcomes(kind, inputs, threshold_fn, authority)
     return next(iter(outcomes)) if len(outcomes) == 1 else Status.UNKNOWN
 
 
-def _failed_inputs(kind: MergeType, inputs: Sequence[Certificate]) -> List[Certificate]:
+def _failed_inputs(kind: MergeType, inputs: Sequence[Certificate],
+                   authority: Authority = Authority.STANDARD) -> List[Certificate]:
     """The inputs that make a merge come out FALSE, read the way the merge
     reads them (see `_merge_once`)."""
     if kind is MergeType.EXCEPTION:
-        if inputs and _applies(inputs[0]) and _non_blocking(inputs[0]) is Status.FALSE:
+        if inputs and _applies(inputs[0]) and _non_blocking(inputs[0], authority) is Status.FALSE:
             return [inputs[0]]
         return []
     live = [c for c in inputs if _applies(c)]
     if kind is MergeType.CONJUNCTION:
-        return [c for c in live if _non_blocking(c) is Status.FALSE]
+        return [c for c in live if _non_blocking(c, authority) is Status.FALSE]
     if kind is MergeType.ALTERNATIVE:
         return [c for c in live if c.status is Status.FALSE]
     return []
@@ -215,7 +238,7 @@ def merge_authority(kind: MergeType, inputs: Sequence[Certificate],
     """
     if status is not Status.FALSE:
         return declared, []
-    failed = _failed_inputs(kind, inputs)
+    failed = _failed_inputs(kind, inputs, declared)
     best = declared
     for c in failed:
         if stronger(c.normative_authority, best):
@@ -540,7 +563,7 @@ def _run_merge(op: Operation, store: CertificateStore,
                            verifier="merge", obligation_id=op.id,
                            provenance={"merge": op.merge.value, "missing": missing})
     fn = (threshold_fns or {}).get(op.id)
-    outcomes = merge_outcomes(op.merge, inputs, threshold_fn=fn)
+    outcomes = merge_outcomes(op.merge, inputs, threshold_fn=fn, authority=op.normative_authority)
     status = next(iter(outcomes)) if len(outcomes) == 1 else Status.UNKNOWN
 
     # The decision rests on the inputs that apply. Those that do not are
@@ -565,7 +588,7 @@ def _run_merge(op: Operation, store: CertificateStore,
         provenance={
             "merge": op.merge.value,
             "inputs": {s: c.status.value for s, c in zip(op.merge_inputs, inputs)},
-            "blocking_adjusted": {s: _non_blocking(c).value
+            "blocking_adjusted": {s: _non_blocking(c, op.normative_authority).value
                                   for s, c in zip(op.merge_inputs, inputs)},
             "non_conformance": [s for s, c in zip(op.merge_inputs, inputs)
                                 if c.non_conformance()],

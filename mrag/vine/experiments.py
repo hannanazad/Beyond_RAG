@@ -191,7 +191,7 @@ def reference_terminal(net: Network, scenario: Scenario) -> Status:
             if sum(len(o) > 1 for o in options) > _MAX_FLAGGED_MERGE_INPUTS:
                 result = (U, True)
             else:
-                result = settle({_merge_plain(op.merge, list(combo), authorities)
+                result = settle({_merge_plain(op.merge, list(combo), authorities, op.normative_authority)
                                  for combo in itertools.product(*options)})
             if result[0] is F:
                 carries[state] = _authority_plain(op.merge, [st for st, _m in ins],
@@ -246,20 +246,24 @@ def _authority_of(op: Optional[Operation]) -> Authority:
     return op.normative_authority if op is not None else Authority.STANDARD
 
 
-def _blocking(status: Status, authority: Authority) -> Status:
-    """The S3.2 reading, restated over bare statuses for the reference."""
-    if status is Status.FALSE and authority is not Authority.STANDARD:
+def _blocking(status: Status, authority: Authority, merge_authority: Authority) -> Status:
+    """The S3.2 reading, restated over bare statuses for the reference: a
+    FALSE printed under a heading WEAKER than the merge's own does not refute
+    the merge's claim (see execute._non_blocking)."""
+    if (status is Status.FALSE and authority is not Authority.STANDARD
+            and _STRENGTH[authority] < _STRENGTH[merge_authority]):
         return Status.TRUE
     return status
 
 
 def _merge_plain(kind: MergeType, inputs: Sequence[Status],
-                 authorities: Sequence[Authority]) -> Status:
+                 authorities: Sequence[Authority],
+                 merge_authority: Authority = Authority.STANDARD) -> Status:
     NA = Status.NOT_APPLICABLE
     if kind is MergeType.EXCEPTION:
         if not inputs or inputs[0] is NA:
             return NA                       # no rule to relax
-        base = _blocking(inputs[0], authorities[0])
+        base = _blocking(inputs[0], authorities[0], merge_authority)
         if base is Status.TRUE:
             return Status.TRUE
         return _kleene_or([base] + [s for s in inputs[1:] if s is not NA])
@@ -267,7 +271,7 @@ def _merge_plain(kind: MergeType, inputs: Sequence[Status],
     if not pairs:
         return NA
     if kind is MergeType.CONJUNCTION:
-        return _kleene_and([_blocking(s, a) for s, a in pairs])
+        return _kleene_and([_blocking(s, a, merge_authority) for s, a in pairs])
     if kind is MergeType.ALTERNATIVE:
         return _kleene_or([s for s, _a in pairs])
     return Status.UNKNOWN
@@ -285,10 +289,10 @@ def _authority_plain(kind: MergeType, inputs: Sequence[Status],
     NA = Status.NOT_APPLICABLE
     if kind is MergeType.EXCEPTION:
         failed = ([authorities[0]] if inputs and inputs[0] is not NA
-                  and _blocking(inputs[0], authorities[0]) is Status.FALSE else [])
+                  and _blocking(inputs[0], authorities[0], declared) is Status.FALSE else [])
     elif kind is MergeType.CONJUNCTION:
         failed = [a for s, a in zip(inputs, authorities)
-                  if s is not NA and _blocking(s, a) is Status.FALSE]
+                  if s is not NA and _blocking(s, a, declared) is Status.FALSE]
     elif kind is MergeType.ALTERNATIVE:
         failed = [a for s, a in zip(inputs, authorities) if s is Status.FALSE]
     else:
@@ -405,7 +409,7 @@ def run_sequential(net: Network, scenario: Scenario,
             status = Status.UNKNOWN
             authority = op.normative_authority
         else:
-            status = merge_statuses(op.merge, inputs)
+            status = merge_statuses(op.merge, inputs, authority=op.normative_authority)
             # the same typed merges as VINE, so the same authority rule
             authority = merge_authority(op.merge, inputs, op.normative_authority, status)[0]
         store.add(op.produces, Certificate(

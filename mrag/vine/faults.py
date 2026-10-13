@@ -252,7 +252,7 @@ def _sequential_trace(net: Network, verifier: Callable,
     for op in [o for o in chain.operations if o.merge is not None]:
         inputs = [store.latest(s) for s in op.merge_inputs]
         status = (Status.UNKNOWN if any(c is None for c in inputs)
-                  else merge_statuses(op.merge, inputs))
+                  else merge_statuses(op.merge, inputs, authority=op.normative_authority))
         authority = (op.normative_authority if any(c is None for c in inputs)
                      else merge_authority(op.merge, inputs, op.normative_authority, status)[0])
         store.add(op.produces, Certificate(
