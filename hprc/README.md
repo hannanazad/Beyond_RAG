@@ -85,6 +85,7 @@ bash hprc/run.sh ACCOUNT 8
 - Every stage carries on where it stopped. To start again from one stage: `bash hprc/run.sh ACCOUNT 8 parse` (or `execute`).
 - Why one question at a time on each GPU: so a reply never depends on what else the server is doing. That alone was not enough: across server starts the plans did NOT repeat (12 October, 1 of 11, section 5), because kernels tune themselves by timing when a server starts (section 6).
 - **Every parser server loads the tuning pin** (`hprc/pin_tuning/sitecustomize.py`): each self-tuning kernel keeps its first working option, so servers started separately make the same choices. Its hash is in the run folder's name (`e2e_r…_s…_p…_k<pin>`) and in every model-cache key, so plans made before it (the 11-12 October folders without `_k`) are never reused. A server whose log does not show the pin loaded is not used.
+- **The parse stage copies the model to the node's own disk** (`$TMPDIR`) once, and every server reads it from there. On 12 October (evening) the shared disk was so slow that 6 servers reading the same 29 GB from scratch were still starting after 40 minutes. The servers' start limit is now 90 minutes. The copy is the same bytes, so the plans do not change; if the node's disk has no room, the servers read the shared copy as before.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
 
 ## 5. The repeat test: does the same question give the same plan?

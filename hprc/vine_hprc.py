@@ -35,6 +35,7 @@ import json
 import os
 import queue
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -179,8 +180,11 @@ def gpu_names() -> list:
 # --------------------------------------------------------------------------- #
 # The parser's server: one place, so every stage starts it the same way
 # --------------------------------------------------------------------------- #
+# ready_timeout: on 12 Oct (evening) the shared disk was so slow that 6 servers were
+# still starting after 40 minutes (the old limit); 90 minutes leaves room.
 PARSER_SERVER = {"served_name": "parser", "max_model_len": 73728, "min_model_len": 65536,
-                 "gpu_memory_utilization": GPU_UTIL, "seed": SEED, "stop_others": False}
+                 "gpu_memory_utilization": GPU_UTIL, "seed": SEED, "stop_others": False,
+                 "ready_timeout": 5400}
 
 
 def parser_model_path() -> Path:
@@ -188,6 +192,44 @@ def parser_model_path() -> Path:
             / "snapshots" / REVISION)
     assert (path / "config.json").exists(), f"the parser's model is not at {path} -- run hprc/setup.sh"
     return path
+
+
+def local_model_copy(src: Path, tmp: Path, say=say, workers: int = 8) -> Path:
+    """The parser's model, copied once to this node's own disk (tmp), so that
+    every server reads it from there and not from the shared disk: on 12 Oct
+    (evening) six servers reading the same 29 GB from scratch at once were
+    still loading after 40 minutes. The files are the same bytes (the copy is
+    checked by size), so nothing the model computes changes. If the node's disk
+    has no room, or the copy fails, the shared copy is used as before."""
+    from concurrent.futures import ThreadPoolExecutor
+    files = sorted(p for p in Path(src).rglob("*") if p.is_file())       # follows the snapshot's links
+    size = sum(p.stat().st_size for p in files)
+    dst = Path(tmp) / "model" / Path(src).name
+    try:
+        Path(tmp).mkdir(parents=True, exist_ok=True)
+        free = shutil.disk_usage(tmp).free
+        if free < size * 1.2:
+            say(f"the node's own disk has {free / 1e9:.0f} GB free, the model needs {size / 1e9:.0f} GB: "
+                f"the servers read it from {src}")
+            return Path(src)
+        say(f"copying the parser's model to this node's own disk: {len(files)} files, {size / 1e9:.1f} GB ...")
+        t0 = time.time()
+
+        def copy_one(p: Path) -> None:
+            out = dst / p.relative_to(src)
+            out.parent.mkdir(parents=True, exist_ok=True)
+            if not out.exists() or out.stat().st_size != p.stat().st_size:
+                shutil.copyfile(p, out)                                    # the bytes, not the link
+
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            list(pool.map(copy_one, files))
+        bad = [p.name for p in files if (dst / p.relative_to(src)).stat().st_size != p.stat().st_size]
+        assert not bad, f"copied with the wrong size: {bad[:5]}"
+        say(f"  copied in {time.time() - t0:.0f}s -> {dst}")
+        return dst
+    except Exception as e:                                                  # noqa: BLE001
+        say(f"the copy to the node's own disk failed ({e!r}): the servers read the model from {src}")
+        return Path(src)
 
 
 def parser_server_env(gpu: str, own: Path) -> dict:
@@ -338,8 +380,8 @@ def stage_parse(R: Run) -> int:
         tables.setdefault(t.table_id, []).append(t)
 
     vllm_env = Path(os.environ["VLLM_ENV"])
-    model_path = parser_model_path()
     tmp = Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}")
+    model_path = local_model_copy(parser_model_path(), tmp)
     port0 = first_port(R.job)
     log_dir = R.run_dir / "server_logs"
 
@@ -357,7 +399,8 @@ def stage_parse(R: Run) -> int:
         except Exception as e:                                   # noqa: BLE001
             errors.append((i, e))
 
-    say(f"starting {n} parser servers (5-15 minutes) ...")
+    say(f"starting {n} parser servers (usually 10-20 minutes; the limit is "
+        f"{PARSER_SERVER['ready_timeout'] // 60} minutes) ...")
     starters = [threading.Thread(target=start, args=(i,)) for i in range(n)]
     for t in starters:
         t.start()
@@ -410,7 +453,7 @@ def stage_parse(R: Run) -> int:
         "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix5",
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job,
-        "one_request_at_a_time": True, "engine": engine,
+        "one_request_at_a_time": True, "engine": engine, "model_path_used": str(model_path),
         "pin_tuning": {"file": "hprc/pin_tuning/sitecustomize.py", "sha256_8": PIN_SHA,
                        "rule": "each self-tuning kernel keeps its first working option, not the fastest"}})
 
@@ -635,7 +678,8 @@ def stage_probe(R: Run) -> int:
     report = rp.run_probe(
         R.probe, R.runs, R.unpinned_run_name, gpus, launch=vc.launch, stop=vc.stop_server,
         make_ask=vc.make_ask_vllm, server_env=parser_server_env, server_kwargs=PARSER_SERVER,
-        vllm_bin=str(Path(os.environ["VLLM_ENV"]) / "bin" / "vllm"), model_path=str(parser_model_path()),
+        vllm_bin=str(Path(os.environ["VLLM_ENV"]) / "bin" / "vllm"),
+        model_path=str(local_model_copy(parser_model_path(), Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}"))),
         tmp=Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}"), port0=first_port(R.job),
         ask_kwargs={"model_id": MODEL_ID, "revision": REVISION, "engine": ENGINE,
                     "seed": SEED, "max_tokens": rp.PROBE_TOKENS, "reasoning_effort": EFFORT},

@@ -212,7 +212,7 @@ def stop_server(server: Dict[str, Any], wait: float = 120) -> None:
 def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
            env: Optional[Dict[str, str]] = None, say: Callable[[str], None] = print,
            min_model_len: Optional[int] = None, stop_others: bool = True,
-           **kw) -> Dict[str, Any]:
+           ready_timeout: float = 2400, **kw) -> Dict[str, Any]:
     """Start the server and wait for it. Any server already running is
     stopped first, so the one that answers is the one started here. If this
     vLLM does not know `--language-model-only`, start again with the older
@@ -225,7 +225,9 @@ def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
     result. Returns {"proc", "base_url", "cmd", "seconds", "max_model_len"}.
 
     stop_others=False: leave other servers running (several servers, one per
-    GPU, on one machine); only the server started here is stopped on a retry."""
+    GPU, on one machine); only the server started here is stopped on a retry.
+
+    ready_timeout: seconds to wait for the server to answer before giving up."""
     base_url = f"http://127.0.0.1:{port}"
     if stop_others:
         stop_servers(say)
@@ -239,7 +241,7 @@ def launch(vllm_bin: str, model: str, log_path: str, port: int = 8000,
         say("starting: " + " ".join(cmd))
         proc = start_server(cmd, log_path, env)
         try:
-            secs = wait_until_ready(base_url, proc, log_path, say=say)
+            secs = wait_until_ready(base_url, proc, log_path, timeout=ready_timeout, say=say)
             if proc.poll() is not None:
                 raise ServerFailed("something answered on the port, but the server "
                                    "started here has exited.\n" + log_tail(log_path))

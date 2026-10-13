@@ -179,7 +179,7 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
     caches, prompts, engines, launched = [], [], [], []
 
     def fake_launch(vllm_bin, model, log_path, port, env, say, **kw):
-        launched.append({"env": dict(env), "kw": dict(kw)})
+        launched.append({"env": dict(env), "kw": dict(kw), "model": model})
         Path(log_path).parent.mkdir(parents=True, exist_ok=True)
         Path(log_path).write_text("[vine-pin pid 9] Triton tuning pinned (...)\n")
         return {"base_url": f"http://127.0.0.1:{port}", "max_model_len": 73728, "cmd": ["vllm"]}
@@ -250,7 +250,12 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
         assert all(x["env"]["VINE_PIN_TUNING"] == "1" and x["env"]["PYTHONPATH"] == str(V.PIN_DIR)
                    for x in launched) and len(launched) == 2
         assert all(x["kw"] == {k: v for k, v in V.PARSER_SERVER.items()} for x in launched)
-        assert json.loads((rep.run_dir / "parse_manifest.json").read_text())["pin_tuning"]["sha256_8"] == V.PIN_SHA
+        manifest = json.loads((rep.run_dir / "parse_manifest.json").read_text())
+        assert manifest["pin_tuning"]["sha256_8"] == V.PIN_SHA
+        # the servers read the model from the node's own disk, a copy of the shared one
+        local = base / "tmp" / "model" / V.REVISION
+        assert all(x["model"] == str(local) for x in launched) and manifest["model_path_used"] == str(local)
+        assert (local / "config.json").read_text() == "{}"
         assert sorted(p for p in prompts if p.startswith("PLAN FOR ")) == \
             sorted("PLAN FOR " + first.questions[q] for q in first.dev_ids)
         assert first.plans_file.read_text() == before                  # the first run is untouched
@@ -562,7 +567,8 @@ def test_probe_needs_the_first_runs_prompts():
 def test_parser_server_settings_are_unchanged():
     V = _vine_hprc()
     assert V.PARSER_SERVER == {"served_name": "parser", "max_model_len": 73728, "min_model_len": 65536,
-                               "gpu_memory_utilization": 0.90, "seed": 42, "stop_others": False}
+                               "gpu_memory_utilization": 0.90, "seed": 42, "stop_others": False,
+                               "ready_timeout": 5400}
     assert V.parser_server_env("3", Path("/x")) == {
         "CUDA_VISIBLE_DEVICES": "3", "HF_HUB_OFFLINE": "1", "VLLM_USE_FLASHINFER_SAMPLER": "0",
         "PYTHONPATH": str(REPO / "hprc" / "pin_tuning"), "VINE_PIN_TUNING": "1",
@@ -669,7 +675,8 @@ def test_probe_stage_passes_the_parse_stages_settings():
     assert got["ask_kwargs"] == {"model_id": V.MODEL_ID, "revision": V.REVISION, "engine": V.ENGINE,
                                  "seed": 42, "max_tokens": P.PROBE_TOKENS, "reasoning_effort": "xhigh"}
     assert got["port0"] == V.first_port("3199700") and got["tmp"] == base / "tmp"
-    assert got["vllm_bin"] == str(base / "venv" / "bin" / "vllm") and got["model_path"] == str(hub)
+    assert got["vllm_bin"] == str(base / "venv" / "bin" / "vllm")
+    assert got["model_path"] == str(base / "tmp" / "model" / V.REVISION)          # the node's own copy
 
 
 
@@ -833,6 +840,71 @@ def test_compare_two_repeat_runs_with_each_other():
         p.write_text(json.dumps(plans))
         code, report = C.compare(runs, "r1", against="r0")
         assert code == 1 and {r["case_id"]: r["verdict"] for r in report["folders"][0]["rows"]}["P01"] != "SAME"
+
+
+
+# --------------------------------------------------------------------------- #
+# A slow shared disk: the model copied to the node's own disk; a longer start limit
+# --------------------------------------------------------------------------- #
+def _fake_snapshot(d):
+    """A Hugging Face snapshot: files that are links to blobs."""
+    hub = Path(d) / "hf" / "models--X" / "snapshots" / "rev1"
+    blobs = Path(d) / "hf" / "models--X" / "blobs"
+    hub.mkdir(parents=True)
+    blobs.mkdir(parents=True)
+    content = {"config.json": b"{}", "model-00001.safetensors": os.urandom(300_000),
+               "model-00002.safetensors": os.urandom(200_000), "tokenizer.json": b'{"t": 1}'}
+    for name, data in content.items():
+        (blobs / ("b_" + name)).write_bytes(data)
+        (hub / name).symlink_to(Path("../../blobs") / ("b_" + name))
+    return hub, content
+
+
+def test_the_model_is_copied_to_the_nodes_own_disk():
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        hub, content = _fake_snapshot(d)
+        said = []
+        out = V.local_model_copy(hub, Path(d) / "tmp", say=said.append)
+        assert out == Path(d) / "tmp" / "model" / "rev1"
+        for name, data in content.items():
+            assert not (out / name).is_symlink() and (out / name).read_bytes() == data   # the bytes, not links
+        assert any("copied in" in m for m in said)
+        # run again (a resumed job): nothing breaks, same answer
+        assert V.local_model_copy(hub, Path(d) / "tmp", say=said.append) == out
+
+
+def test_the_shared_model_is_used_when_the_copy_cannot_be_made():
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        hub, content = _fake_snapshot(d)
+        said = []
+        Usage = type("U", (), {"free": 10})
+        with _Patched([(V.shutil, "disk_usage", lambda p: Usage)]):
+            assert V.local_model_copy(hub, Path(d) / "tmp1", say=said.append) == hub      # no room
+        assert any("GB free" in m for m in said)
+
+        def broken(a, b):
+            raise OSError("disk went away")
+        with _Patched([(V.shutil, "copyfile", broken)]):
+            assert V.local_model_copy(hub, Path(d) / "tmp2", say=said.append) == hub      # the copy failed
+        assert any("failed" in m for m in said)
+
+
+def test_launch_passes_its_start_limit_on():
+    from mrag.vine import vllm_client as vc
+    got = []
+
+    class P:
+        pid, returncode = 12345, None
+        def poll(self): return None
+
+    with _Patched([(vc, "start_server", lambda cmd, log, env=None: P()),
+                   (vc, "wait_until_ready", lambda *a, **k: got.append(k.get("timeout")) or 1.0)]):
+        vc.launch("vllm", "M", "/tmp/none.log", port=8001, say=lambda m: None, stop_others=False)
+        vc.launch("vllm", "M", "/tmp/none.log", port=8001, say=lambda m: None, stop_others=False,
+                  ready_timeout=5400)
+    assert got == [2400, 5400]                     # the Colab default is unchanged
 
 
 if __name__ == "__main__":
