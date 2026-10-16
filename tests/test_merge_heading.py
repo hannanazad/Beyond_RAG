@@ -95,8 +95,8 @@ check(mg.status is F and mg.normative_authority is Authority.GUIDANCE,
 check(mg.non_conformance(), "... and it is recorded as a non-conformance with Guidance")
 check(tr.terminal.status is T, "the Standard-level decision still holds: a Guidance departure does not refute it")
 ans = compose("made-up test", net, tr)
-check("non-conformance with Guidance" in ans.text and "placement Guidance is followed" in ans.text,
-      "the answer says the decision holds and names the Guidance not followed")
+check("non-conformance with Guidance" in ans.text and "placed at the recommended distance" in ans.text,
+      "the answer says the decision holds and names the Guidance item not followed")
 net, tr = run(g, ms, "m_final", {"s1": F, "g1": T, "g2": T})
 check(tr.terminal.status is F, "a failed Standard still refutes the decision")
 

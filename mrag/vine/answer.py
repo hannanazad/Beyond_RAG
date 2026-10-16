@@ -44,8 +44,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set
 
 from .certificate import Authority, Certificate, Status
-from .execute import ExecutionTrace
-from .network import Network
+from .execute import ExecutionTrace, _failed_inputs
+from .network import MergeType, Network
 
 __all__ = ["Answer", "supporting_certificates", "build_answer_prompt",
            "compose", "answer"]
@@ -140,6 +140,91 @@ def _terminal_op(net: Network) -> str:
     return op.id if op else ""
 
 
+def _found_false(net: Network, trace: ExecutionTrace) -> List[Certificate]:
+    """The checks a FALSE decision rests on.
+
+    Walk down from the terminal through the inputs that made each merge FALSE,
+    read the way the executor read them (`_failed_inputs`: in a conjunction
+    only an input that blocks at the merge's own heading), down to the checks
+    themselves. For an exception that came out FALSE, the exceptions that were
+    not available are walked too: they are why the failed base was not saved.
+    Without this an answer said only that the final claim "does not hold",
+    and a reader could not tell which requirement failed.
+    """
+    producer = {op.produces: op for op in net.operations}
+    out: List[Certificate] = []
+    seen: Set[str] = set()
+
+    def walk(state: str) -> None:
+        if state in seen:
+            return
+        seen.add(state)
+        op, cert = producer.get(state), trace.store.latest(state)
+        if op is None or cert is None or cert.status is not Status.FALSE:
+            return
+        if op.merge is None:
+            out.append(cert)
+            return
+        inputs = [trace.store.latest(s) for s in op.merge_inputs]
+        if any(c is None for c in inputs):
+            return
+        failed = {id(c) for c in _failed_inputs(op.merge, inputs, op.normative_authority)}
+        if op.merge is MergeType.EXCEPTION:
+            failed |= {id(c) for c in inputs[1:] if c.status is Status.FALSE}
+        if not failed:          # a threshold merge: every input that failed
+            failed = {id(c) for c in inputs if c.status is Status.FALSE}
+        for s, c in zip(op.merge_inputs, inputs):
+            if id(c) in failed:
+                walk(s)
+
+    if net.terminal:
+        walk(net.terminal)
+    return out
+
+
+def _excused(net: Network, trace: ExecutionTrace) -> Set[str]:
+    """States whose failure the network itself set aside: the base of an
+    exception that applied, and the inputs of an alternative that was met
+    another way. A Guidance item under them was not departed from -- the
+    manual's exception or alternative covers it -- so it is not reported as
+    a non-conformance."""
+    producer = {op.produces: op for op in net.operations}
+    out: Set[str] = set()
+
+    def under(state: str) -> None:
+        if state in out:
+            return
+        out.add(state)
+        op = producer.get(state)
+        if op is not None and op.merge is not None:
+            for s in op.merge_inputs:
+                under(s)
+
+    for op in net.operations:
+        cert = trace.store.latest(op.produces)
+        if op.merge is None or not op.merge_inputs or cert is None or cert.status is not Status.TRUE:
+            continue
+        if op.merge is MergeType.EXCEPTION:
+            base = trace.store.latest(op.merge_inputs[0])
+            if base is not None and base.status is Status.FALSE:
+                under(op.merge_inputs[0])
+        elif op.merge is MergeType.ALTERNATIVE:
+            for s in op.merge_inputs:
+                c = trace.store.latest(s)
+                if c is not None and c.status is Status.FALSE:
+                    under(s)
+    return out
+
+
+def _heading(cert: Certificate) -> str:
+    return cert.normative_authority.value.capitalize()
+
+
+def _bare(claim: str) -> str:
+    """A claim without its closing full stop, to be listed inside a sentence."""
+    return str(claim or "").strip().rstrip(".").strip()
+
+
 def _facts(net: Network, trace: ExecutionTrace) -> Dict[str, Any]:
     terminal = trace.terminal
     support = supporting_certificates(net, trace)
@@ -149,10 +234,35 @@ def _facts(net: Network, trace: ExecutionTrace) -> Dict[str, Any]:
     # the UPSTREAM check that left it open.
     upstream = [c for c in support if c.obligation_id != _terminal_op(net)]
     unresolved = [c.claim for c in upstream if c.status is Status.UNKNOWN]
+    producer = {op.produces: op for op in net.operations}
+    check_ids = {op.id for op in net.operations if op.merge is None}
+    state_of = {op.id: op.produces for op in net.operations}
+    # Why a FALSE decision does not hold: the checks it rests on.
+    found_false = (_found_false(net, trace)
+                   if terminal is not None and terminal.status is Status.FALSE else [])
+    # What still holds of a decision that does not: the parts of the final
+    # conjunction that came out TRUE. A question with several parts gets one
+    # final claim joining them, and "does not hold" alone hid that most of
+    # them did.
+    still_true: List[str] = []
+    top = producer.get(net.terminal) if net.terminal else None
+    if found_false and top is not None and top.merge is MergeType.CONJUNCTION:
+        for s in top.merge_inputs:
+            c = trace.store.latest(s)
+            if c is not None and c.status is Status.TRUE:
+                still_true.append(c.claim)
     # A Guidance check that failed is NOT a refutation -- the executor lets it
     # pass a conjunction -- but it is a finding, and an answer that dropped it
-    # would be complete only by omission.
-    non_conf = [c.claim for c in upstream if c.non_conformance()]
+    # would be complete only by omission. Checks only: a Guidance merge that
+    # failed repeats the item that failed in it, in vaguer words. Not one the
+    # network set aside (an exception or an alternative covered it), and not
+    # one already listed as a reason the decision fails.
+    excused = _excused(net, trace)
+    listed = {c.obligation_id for c in found_false}
+    non_conf = [c.claim for c in upstream
+                if c.non_conformance() and c.obligation_id in check_ids
+                and state_of.get(c.obligation_id) not in excused
+                and c.obligation_id not in listed]
     # Checks found not to apply, and the established results that decided
     # that. Leaving them out would hide why part of the rule was not used.
     not_applicable = [c.claim for c in upstream
@@ -172,6 +282,7 @@ def _facts(net: Network, trace: ExecutionTrace) -> Dict[str, Any]:
     return {
         "terminal": terminal, "support": support,
         "unresolved": unresolved, "non_conformances": non_conf,
+        "found_false": found_false, "still_true": still_true,
         "not_applicable": not_applicable, "deciding": deciding,
         "citations": _citations(support),
         # A merge is as weak as its weakest input, and the terminal already
@@ -213,14 +324,24 @@ def compose(query: str, net: Network, trace: ExecutionTrace) -> Answer:
     else:
         verdict = "holds" if status is Status.TRUE else "does not hold"
         text = f"{terminal.claim} — this {verdict}."
+        # Each claim is written as a statement that would make the check pass,
+        # so it is named as found NOT true; printed bare it read as if it held.
+        # A one-check plan's check is the final claim itself: not repeated.
+        why = [c for c in f["found_false"] if _bare(c.claim) != _bare(terminal.claim)]
+        if why:
+            items = [f"{_bare(c.claim)} ({_heading(c)})" for c in why]
+            text += (" It does not hold because these were found not true: "
+                     + "; ".join(items[:6]) + ("." if len(items) <= 6 else "; and others."))
+        if f["still_true"]:
+            text += (" These parts do hold: " + "; ".join(_bare(c) for c in f["still_true"][:4]) + ".")
         if f["non_conformances"]:
             # "does not refute" only makes sense next to a decision that holds;
             # beside one that does not, it read as if the Guidance item were
             # the reason for the decision, or excused it.
             lead = (" Recorded as non-conformance with Guidance, which does "
-                    "not refute the decision: " if status is Status.TRUE
-                    else " Also recorded as non-conformance with Guidance: ")
-            text += lead + "; ".join(f["non_conformances"][:3]) + "."
+                    "not refute the decision (found not true): " if status is Status.TRUE
+                    else " Also recorded as non-conformance with Guidance (found not true): ")
+            text += lead + "; ".join(_bare(c) for c in f["non_conformances"][:3]) + "."
         if f["not_applicable"]:
             text += (" Not applicable here: "
                      + "; ".join(f["not_applicable"][:3])
@@ -230,6 +351,7 @@ def compose(query: str, net: Network, trace: ExecutionTrace) -> Answer:
                   citations=f["citations"], unresolved=f["unresolved"],
                   non_conformances=f["non_conformances"],
                   provenance={"query": query, "verbalized": False,
+                              "found_false": [c.obligation_id for c in f["found_false"]],
                               "supporting_certificates": len(f["support"]),
                               "synchronization_depth": trace.synchronization_depth,
                               "operations_run": trace.operations_run})
@@ -271,7 +393,18 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
             "The decision above has already been established by executing a "
             "verification network. Do not re-decide it, do not soften it, and "
             "do not add reasoning of your own. Write the answer a reader needs, "
-            "using only the claims and evidence listed.")
+            "using only the claims, reasons and evidence listed: the decision "
+            "first; if it does not hold, which checks were found not true and "
+            "what the manual requires there, as their reasons state; the parts "
+            "that do hold; and any Guidance not followed, named as a "
+            "recommendation rather than a requirement. Each claim listed is "
+            "written as the statement that was checked, so a claim found not "
+            "true must be reported as not true. Plain prose, no headings, at "
+            "most 200 words.")
+
+    def reason(cert: Certificate) -> str:
+        r = str(cert.provenance.get("reason") or "").strip()
+        return f"\n  the checker's reason: {r[:600]}" if r else ""
 
     parts = [
         f"QUESTION\n{query}",
@@ -281,12 +414,21 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
         "",
         "SUPPORTING CERTIFICATES\n" + ("\n".join(lines) or "(none)"),
     ]
+    if f["found_false"]:
+        parts += ["", "WHY IT DOES NOT HOLD (each of these was found NOT true)\n"
+                  + "\n".join(f"- {c.claim}  [{c.normative_authority.value}]" + reason(c)
+                              for c in f["found_false"])]
+    if f["still_true"]:
+        parts += ["", "PARTS THAT DO HOLD\n"
+                  + "\n".join(f"- {c}" for c in f["still_true"])]
     if f["unresolved"]:
         parts += ["", "LEFT UNRESOLVED\n"
                   + "\n".join(f"- {c}" for c in f["unresolved"])]
     if f["non_conformances"]:
-        parts += ["", "NON-CONFORMANCE WITH GUIDANCE (does not refute)\n"
-                  + "\n".join(f"- {c}" for c in f["non_conformances"])]
+        nc = {c.claim: c for c in f["support"] if c.non_conformance()}
+        parts += ["", "NON-CONFORMANCE WITH GUIDANCE (found NOT true; does not refute)\n"
+                  + "\n".join(f"- {c}" + (reason(nc[c]) if c in nc else "")
+                              for c in f["non_conformances"])]
     if f["not_applicable"]:
         parts += ["", "FOUND NOT TO APPLY HERE\n"
                   + "\n".join(f"- {c}" for c in f["not_applicable"])]
@@ -313,6 +455,9 @@ def answer(query: str, net: Network, trace: ExecutionTrace,
         return base
 
     prompt = build_answer_prompt(query, net, trace)
+    # the composed text is kept beside the model's, so the two can be read
+    # side by side and the model's prose checked against the certificates
+    base.provenance["template_text"] = base.text
     try:
         text = (verbalize(prompt, []) or "").strip()
     except Exception as e:                                    # noqa: BLE001

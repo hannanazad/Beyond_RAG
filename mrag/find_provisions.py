@@ -31,7 +31,8 @@ More places to look, one judge, several views of the question:
 
     candidates  = search(whole question)
                 + search(each informative sentence of the question)
-                + search(each manual term whose definition matches the question)
+                + search(each manual term whose definition matches the question,
+                         and the best one for each informative sentence)
                 + the normative paragraphs of the sections whose headings
                   match the question
     ranked by   the cross-encoder, reading each paragraph WITH its Part,
@@ -392,6 +393,20 @@ class ProvisionFinder:
         dense, sparse = self.text.encode_both(texts)
         terms = self.manual_terms(query, dense[0], sparse[0],
                                   int(getattr(cfg, "compile_term_queries", 2)))
+        for t in terms:
+            t["from"] = "question"
+        # Each informative sentence's own best term, judged against that
+        # sentence: the same reason the search itself looks sentence by
+        # sentence (cause 1 above) holds for the definitions. A side fact in
+        # the whole question otherwise takes every term place.
+        taken = {t["term"] for t in terms}
+        per_sentence = int(getattr(cfg, "compile_sentence_terms", 1))
+        for i, s in enumerate(sents, start=1):
+            for t in self.manual_terms(s, dense[i], sparse[i], per_sentence):
+                if t["term"] not in taken:
+                    taken.add(t["term"])
+                    t["from"] = f"sentence {i}"
+                    terms.append(t)
         term_texts: List[str] = []
         for t in terms:
             term_texts.append(t["term"])

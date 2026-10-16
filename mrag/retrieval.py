@@ -413,7 +413,7 @@ class Retriever:
             found = finder.candidates(query, scored_lists)
             result.debug["find"] = {
                 "sentences": found["sentences"],
-                "terms": [{k2: t[k2] for k2 in ("term", "see", "score")} for t in found["terms"]],
+                "terms": [{k2: t.get(k2) for k2 in ("term", "see", "score", "from")} for t in found["terms"]],
                 "headings": found["headings"], "pool": len(found["pool"]),
                 "pool_ids": list(found["pool"]),
                 "pool_sections": [str(found["payloads"][c].get("section_id") or "")
@@ -576,6 +576,9 @@ class Retriever:
                     else getattr(CFG, "compile_closure_budget", 40)),
                 tuple(getattr(CFG, "compile_closure_kinds",
                               ("cited_section", "note", "definition", "sibling_item"))),
+                # with the finder on, an anchor section too long to take whole
+                # gives the paragraphs that match the question best
+                query=query if finder is not None else None,
             )
             result.chunks = final_chunks + extra
             counts = {}
@@ -619,7 +622,8 @@ class Retriever:
         return list(dict.fromkeys(out))
 
     # ------------------------------------------------------------------
-    def _close_kq(self, seed, budget, kinds, max_depth: Optional[int] = None):
+    def _close_kq(self, seed, budget, kinds, max_depth: Optional[int] = None,
+                  query: Optional[str] = None):
         """Close the retrieved set under the relations a provision depends on.
 
         Search returns provisions. A provision is not self-contained: its
@@ -702,6 +706,8 @@ class Retriever:
                     # it. Only a Standard, Guidance or Option can become an
                     # obligation, and notes have their own closure kind.
                     ids.sort(key=self._normative_first)
+                    if query:
+                        ids = self._best_in_section(query, ids, per_section)
                     add(ids[:per_section], "anchor_section")
 
             # A SECTION reference is followed only near the seed; a PARAGRAPH
@@ -803,6 +809,28 @@ class Retriever:
             frontier = arrived        # expand only what is new
 
         return collected
+
+    def _best_in_section(self, query: str, ids: List[str], want: int) -> List[str]:
+        """A section's chunks with its normative paragraphs in the order the
+        cross-encoder ranks them against the question, the rest after them in
+        page order. Only when the normative paragraphs do not all fit in
+        `want`: a section that fits is taken whole either way.
+
+        An engineer who has found the section reads all of it for the rule
+        that answers the question. Taking the first `want` in page order
+        instead lost a long section's later paragraphs to its early list
+        items (9E.09 Paragraph 11, behind some 23 normative pieces).
+        """
+        from .find_provisions import _NORMATIVE, _NOTE_SOURCES, ranking_text
+        recs = getattr(self.kg, "_chunk", {}) or {}
+        norm = [c for c in ids if (recs.get(c) or {}).get("content_type") in _NORMATIVE
+                and (recs.get(c) or {}).get("source") not in _NOTE_SOURCES]
+        if len(norm) <= want or self.rerank is None:
+            return ids
+        ranked = [norm[i] for i, _ in self.rerank.rank(query, [ranking_text(recs[c]) for c in norm],
+                                                       top_k=len(norm))]
+        ranked += [c for c in norm if c not in ranked]
+        return ranked + [c for c in ids if c not in set(norm)]
 
     def _normative_first(self, cid: str):
         node = self.kg.g.nodes.get(f"chunk:{cid}") or {}

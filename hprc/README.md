@@ -78,7 +78,7 @@ bash hprc/run.sh ACCOUNT 8
 |---|---|---|---|
 | `retrieval` | 1 | the retrieval check on 154 DEV cases (**the gate**), then Kq for every question | 30-60 min |
 | `parse` | 8 | one parser server on each GPU (Qwen3.8-27B-FP8, xhigh, seed 42, one question at a time each); the plans | about 7 min a question, shared out over the GPUs |
-| `execute` | 1 | the checkers (Claude Sonnet 5.5) execute every plan; the answers | 15-30 min |
+| `execute` | 1 | the checkers (Claude Sonnet 5.5) execute every plan; the same model writes each answer from the certificates (Eq 6) | 15-30 min |
 
 - Watch: `squeue -u $USER`. Logs: `$SCRATCH/vine/logs/vine_<stage>_<job>.log`.
 - Results: `$SCRATCH/Beyond_RAG/parser_runs_faster/` and `$SCRATCH/Beyond_RAG/retrieval_dev_results_faster/` (apart from the Colab runs). The answers file is `answers_sample_<time>.txt` in the run folder.
@@ -87,6 +87,8 @@ bash hprc/run.sh ACCOUNT 8
 - **Every parser server loads the tuning pin** (`hprc/pin_tuning/sitecustomize.py`): each self-tuning kernel keeps its first working option, so servers started separately make the same choices. Its hash is in the run folder's name (`e2e_r…_s…_p…_k<pin>`) and in every model-cache key, so plans made before it (the 11-12 October folders without `_k`) are never reused. A server whose log does not show the pin loaded is not used.
 - **The parse stage copies the model to the node's own disk** (`$TMPDIR`) once, and every server reads it from there. On 12 October (evening) the shared disk was so slow that 6 servers reading the same 29 GB from scratch were still starting after 40 minutes. The servers' start limit is now 90 minutes. The copy is the same bytes, so the plans do not change; if the node's disk has no room, the servers read the shared copy as before.
 - **One parse job per run folder.** A second job for the same folder (for example the same repeat name submitted twice) stops at once instead of overwriting the first one's plans. If Slurm answers a submission with an error and no job number, `run.sh` stops and says to look at `squeue -u $USER` first: the job may have been made anyway.
+- **The gate has two sides** (15 October). The retrieval check is compared with the 7 October method, as before, and with the last retrieval accepted on FASTER (`retrieval_dev_results_faster/retrieval_check_r005fcc2_s0c3805.json`, 142 of 154). The run stops if any DEV case that the accepted retrieval found is lost, even if others are gained.
+- **The answers are written by the checker model** from the certificates, after the decision is fixed (S3.4, Eq 6): which checks were found not true, the parts that hold, and any Guidance not followed. It cannot change the decision. The composed text it is given is kept in each record (`answer.provenance.template_text`), and stands if the model call fails.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
 
 ## 5. The repeat test: does the same question give the same plan?

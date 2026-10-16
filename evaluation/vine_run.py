@@ -42,6 +42,13 @@ RETRIEVAL_FILES = ["mrag/retrieval.py", "mrag/find_provisions.py", "mrag/kg_vine
 # not changed since, until mrag/find_provisions.py).
 EARLIER_RETRIEVAL_TEST = "retrieval_dev_results/retrieval_test_20261007_052206.json"
 
+# The last retrieval check accepted on FASTER (11 Oct 2026, retrieval code
+# 005fcc2: 142 of 154 DEV cases). A change to the retrieval is also compared
+# with this one, and stops if any case that passed here fails now: the gate
+# against the 7 Oct method alone would let a change give back what 005fcc2
+# gained.
+ACCEPTED_RETRIEVAL_CHECK = "retrieval_dev_results_faster/retrieval_check_r005fcc2_s0c3805.json"
+
 
 # --------------------------------------------------------------------------- #
 # Files
@@ -86,6 +93,21 @@ def retrieval_commit(repo_dir: str) -> str:
     out = subprocess.run(["git", "-C", repo_dir, "log", "-1", "--format=%h", "--"] + RETRIEVAL_FILES,
                          capture_output=True, text=True).stdout.strip()
     return out or "nocommit"
+
+
+def gate_against_accepted(now: Sequence[Dict[str, Any]], accepted: Dict[str, Any], n_store: int,
+                          gate_fn: Callable) -> Optional[Dict[str, Any]]:
+    """The retrieval check now, against the last accepted one (see
+    ACCEPTED_RETRIEVAL_CHECK): None when there is nothing to compare with (no
+    results, or made on another store). `ok` is False when any case that
+    passed in the accepted run does not pass now, when any case crashed, or
+    when fewer pass in all."""
+    if not accepted.get("results") or accepted.get("store_items") not in (None, n_store):
+        return None
+    g = gate_fn(list(now), list(accepted["results"]))
+    g["lost_or_crashed"] = list(dict.fromkeys(list(g["lost"]) + list(g["errors"])))
+    g["ok"] = bool(not g["lost_or_crashed"] and g["pass_now"] >= g["pass_before"])
+    return g
 
 
 def store_tag(base_dir: str) -> str:

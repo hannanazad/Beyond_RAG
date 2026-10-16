@@ -78,7 +78,7 @@ SETTING_NAMES = (
     "expansion_reserved_slots", "compile_closure_budget", "compile_find_provisions",
     "compile_sentence_queries", "compile_list_depth", "compile_term_queries", "compile_term_candidates",
     "compile_heading_sections", "compile_heading_candidates", "compile_heading_paragraphs",
-    "compile_pool_cap")
+    "compile_pool_cap", "compile_sentence_terms", "anchor_sections", "anchor_section_chunks")
 
 
 def say(*a) -> None:
@@ -301,9 +301,24 @@ def stage_retrieval(R: Run) -> int:
     rc.print_gate(gate)
     say("\nper style, before:")
     rc.print_summary(rc.summarize(before))
+    # and against the last retrieval accepted on FASTER: no case it found may be lost
+    accepted_file = Path(CFG.base_dir) / vr.ACCEPTED_RETRIEVAL_CHECK
+    accepted = vr.load_json(accepted_file, {}) if accepted_file.resolve() != check_file.resolve() else {}
+    lost_accepted: list = []
+    g2 = vr.gate_against_accepted(now, accepted, n_store, rc.gate)
+    if g2 is not None:
+        say(f"\n=== the last accepted retrieval ({accepted_file.name}) -> now ===")
+        rc.print_gate(g2)
+        gate["accepted"] = {"file": accepted_file.name, **g2}
+        lost_accepted = g2["lost_or_crashed"]
+        gate["ok"] = bool(gate["ok"] and g2["ok"])
+    else:
+        say(f"\nno accepted retrieval check to compare with ({accepted_file.name} is missing, is this run's own "
+            "file, or was made on another store)")
     miss_now = {r["case_id"] for r in now if not rc.passes(r)}
     miss_before = {r["case_id"] for r in before if not rc.passes(r)}
-    show = [c["case_id"] for c in R.dev_all if c["case_id"] in miss_now | miss_before]
+    miss_accepted = {r["case_id"] for r in accepted.get("results") or [] if not rc.passes(r)}
+    show = [c["case_id"] for c in R.dev_all if c["case_id"] in miss_now | miss_before | miss_accepted]
     say(f"\n=== {len(show)} cases that miss now or missed before: where each target came from ===")
     rc.print_targets(now, show)
     vr.save_json(check_file, {"commit": R.commit, "retrieval_commit": R.retr_commit, "settings": R.settings,
@@ -311,8 +326,12 @@ def stage_retrieval(R: Run) -> int:
                               "results": now, "machine": "FASTER", "gpu": gpu_names()})
     say("\nsaved ->", check_file, f"| {time.time() - t0:.0f}s")
     if not gate["ok"]:
-        say(f"\nSTOPPED: the new retrieval finds the target provisions for FEWER DEV cases than before "
-            f"({gate['pass_before']} -> {gate['pass_now']}). The parser jobs will not start. Send this log.")
+        if lost_accepted:
+            say(f"\nSTOPPED: the new retrieval loses DEV cases that the last accepted retrieval found: "
+                f"{lost_accepted}. The parser jobs will not start. Send this log.")
+        else:
+            say(f"\nSTOPPED: the new retrieval finds the target provisions for FEWER DEV cases than before "
+                f"({gate['pass_before']} -> {gate['pass_now']}). The parser jobs will not start. Send this log.")
         return 1
 
     # --- Kq for every question (the notebook's CELL 6) ---
@@ -564,7 +583,7 @@ def stage_execute(R: Run) -> int:
     from mrag.vine.compile import NetworkSpec, instantiate
     from mrag.vine.run import build_verifiers
     from mrag.vine.execute import execute
-    from mrag.vine.answer import compose
+    from mrag.vine.answer import answer as write_answer
     from mrag.vine.model_verifiers import READING_RULES, LOOKUP_RULES
 
     records = vr.load_json(R.plans_file, {})
@@ -617,6 +636,10 @@ def stage_execute(R: Run) -> int:
                 "model_options": model_options, "hand_over": True, "kq_file": R.kq_file.name,
                 "checker_tools": tools_digest(TOOL_SPECS),
                 "checker_rules_sha256": hashlib.sha256((READING_RULES + LOOKUP_RULES).encode()).hexdigest(),
+                # Eq 6 (S3.4): the checker model writes the answer from the
+                # certificates, after the decision is fixed; the composed text
+                # is kept in answer.provenance.template_text
+                "answer_writer": CHECKER_MODEL,
                 "machine": "FASTER", "slurm_job": R.job}
     vr.save_json(R.run_dir / f"exec_manifest_{R.commit}.json", manifest)
 
@@ -630,7 +653,10 @@ def stage_execute(R: Run) -> int:
         verifiers = build_verifiers(tables=table_list, kg=kg, retriever=retriever, ask=ask0,
                                     query=q, hand_over=True, model_options=model_options)
         trace = execute(plan["net"], verifiers)
-        answer = compose(q, plan["net"], trace)
+        # Eq 6: a = f_LM(q, C*, Pi_q). The decision, citations and confidence
+        # come from the certificates; the model only writes the prose, and if
+        # it fails the composed text stands.
+        answer = write_answer(q, plan["net"], trace, verbalize=ask0)
         rec = ec.make_exec_record(qid, q, plan["spec"], plan["net"], trace, answer,
                                   ask0.calls[n0:], time.time() - t0, None)
         rec["cost_usd"] = ac.cost_usd(ask0.calls[n0:], CHECKER_MODEL)

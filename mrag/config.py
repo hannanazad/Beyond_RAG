@@ -331,6 +331,12 @@ class Config:
     # defers to "the provisions of this Section" cites no paragraph, so its
     # siblings arrive no other way.
     anchor_sections: int = 2
+    # With the finder on, a section with more normative paragraphs than this
+    # gives the ones that best match the question, read by the cross-encoder,
+    # not the first ones in page order (15 Oct 2026). In page order a long
+    # section's list items used up the places: 9E.09 has some 23 normative
+    # pieces before its Paragraph 11, so the paragraph naming the sign used
+    # with or instead of the marking never reached Kq (DEV P47).
     anchor_section_chunks: int = 12
     # How many top-ranked chunks contribute their section's citations
     # to cross-reference expansion.
@@ -356,6 +362,13 @@ class Config:
     compile_sentence_queries: int = 5     # informative sentences used on their own
     compile_list_depth: int = 15          # candidates kept per sentence / term search
     compile_term_queries: int = 2         # manual terms added from the definitions
+    # ...and the best term for EACH informative sentence, matched against that
+    # sentence (15 Oct 2026). Matched against the whole question only, a side
+    # fact won the two places: "speed limit signs" brought Posted Speed Limit
+    # and Changeable Message Sign as the terms, while the sentence about a
+    # QR-style pattern never reached Scanning Graphic (1C.02 item 209: "includes ... quick-
+    # response (QR) codes"), so 5B.01 never entered the pool (DEV P33).
+    compile_sentence_terms: int = 1
     compile_term_candidates: int = 10     # definitions shown to the cross-encoder
     compile_heading_sections: int = 2     # sections added from their headings
     compile_heading_candidates: int = 15  # headings shown to the cross-encoder
