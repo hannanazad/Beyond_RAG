@@ -413,6 +413,9 @@ class ProvisionFinder:
             if t["see"]:
                 term_texts.append(t["see"])
         term_texts = list(dict.fromkeys(term_texts))
+        # the searches the sentence terms added, beyond the whole question's own
+        whole_texts = {x for t in terms if t.get("from") == "question" for x in (t["term"], t["see"]) if x}
+        n_added = sum(1 for x in term_texts if x not in whole_texts)
         heads = self.heading_sections(query, dense[0], sparse[0],
                                       int(getattr(cfg, "compile_heading_sections", 2)))
 
@@ -449,13 +452,20 @@ class ProvisionFinder:
                     head_ids.append(cid)
         ranked_lists.append(head_ids)
         pool = [cid for cid, _ in rrf(ranked_lists)]
-        cap = int(getattr(cfg, "compile_pool_cap", 90))
+        # The pool grows by what the sentence terms' searches can add, so they
+        # never push out a candidate the other ways of looking brought. Each
+        # added search has at most `per_list` candidates; a candidate already
+        # in the pool only gains rank from them. So anything within the cap
+        # without those searches is still within it with them (15 Oct 2026:
+        # with a fixed cap of 90, DEV P41 lost the paragraph its last sentence
+        # had found, which the cross-encoder then ranked first).
+        cap = int(getattr(cfg, "compile_pool_cap", 90)) + per_list * n_added
         # what the whole-question search found first always stays in the pool
         first = ranked_lists[0][:whole_depth] if ranked_lists else []
         pool = list(dict.fromkeys(first + pool))[:max(cap, len(first))]
         return {"pool": pool, "payloads": payloads, "sources": dict(sources),
                 "views": texts, "sentences": sents, "terms": terms,
-                "term_queries": term_texts, "headings": heads}
+                "term_queries": term_texts, "headings": heads, "pool_cap": cap}
 
     def rank(self, views: List[str], pool: List[str], payloads: Dict[str, Dict[str, Any]],
              want: int) -> Tuple[List[Tuple[str, float]], Dict[str, List[str]]]:

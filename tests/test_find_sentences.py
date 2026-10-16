@@ -199,6 +199,18 @@ check("Y20_Standard_01" in new["pool"] and "term: Ripple Mark" in new["sources"]
 check(new["pool"][:len(old["pool"][:6])] == old["pool"][:6],
       "the whole question's own top results still come first")
 check(len(new["terms"]) == len({t["term"] for t in new["terms"]}), "a term is not taken twice")
+# the sentence terms only ever ADD candidates: with a cap that binds, the pool
+# without them is still all in the pool with them
+for cap in (6, 8, 10, 13):
+    fp0, s0, c0 = finder(0)
+    c0.compile_pool_cap = cap
+    p0 = fp0.candidates(Q, scored_lists(s0, c0))
+    fp1, s1, c1 = finder(1)
+    c1.compile_pool_cap = cap
+    p1 = fp1.candidates(Q, scored_lists(s1, c1))
+    assert set(p0["pool"]) <= set(p1["pool"]), (cap, set(p0["pool"]) - set(p1["pool"]))
+    assert p1["pool_cap"] == cap + c1.compile_list_depth * 1, p1["pool_cap"]
+check(True, "with the cap binding (6 to 13), every candidate found without the sentence terms is kept with them")
 
 # --------------------------------------------------------------------------- #
 print("2. A long topic section gives the paragraphs that match the question")

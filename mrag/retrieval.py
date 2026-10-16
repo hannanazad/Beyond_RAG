@@ -415,6 +415,7 @@ class Retriever:
                 "sentences": found["sentences"],
                 "terms": [{k2: t.get(k2) for k2 in ("term", "see", "score", "from")} for t in found["terms"]],
                 "headings": found["headings"], "pool": len(found["pool"]),
+                "pool_cap": found.get("pool_cap"),
                 "pool_ids": list(found["pool"]),
                 "pool_sections": [str(found["payloads"][c].get("section_id") or "")
                                   for c in found["pool"]],
