@@ -443,6 +443,133 @@ def evaluate_rule(expr: Expr, facts: Dict[str, Fact],
 
 
 # --------------------------------------------------------------------------- #
+# 4b. A comparison the claim states itself, its value given in the question
+# --------------------------------------------------------------------------- #
+# "The panel flow of 1,250 units per hour is 1,000 units per hour or more."
+# (made up) The claim names the case's value (1,250) and the provision's bound
+# (1,000, from the paragraph the obligation was taken from), and asks only how
+# they compare. That is arithmetic, and S3.3 prefers a deterministic operator
+# "whenever the obligation admits a more constrained verification mechanism"
+# ("a threshold should be checked numerically"). Facts given in the question
+# are text, not measurements, so nothing above read them and such checks went
+# to the language model -- whose correct answer, citing only the question's
+# fact, was then set aside as ungrounded (15 and 16 Oct 2026).
+#
+# Decided only when it is unambiguous: exactly one comparison phrase; exactly
+# one other value in the claim that a fact given in the question also states;
+# no fraction; no multiplier; no "not", "no" or "n't" outside the phrase; both
+# numbers with units of one kind (lengths and times converted, anything else
+# only the same unit). Anything else stays UNKNOWN and goes to the
+# interpreting verifier, as before.
+# a number, not a piece of a code or an id: "R1-1", "2B.21" and "W9-6" hold none
+_NUM = r"(?<![A-Za-z\d.,-])(\d[\d,]*(?:\.\d+)?)(?![\d.]*[A-Za-z]\.\d)(?![A-Za-z\d])"
+_THE = r"(?:the\s+)?"
+_STATED = [   # (pattern, comparator); a longer phrase is listed before its part
+    (r"\bis\s+not\s+(?:less|fewer)\s+than\s+" + _THE + _NUM, ">="),
+    (r"\bis\s+not\s+(?:more|greater)\s+than\s+" + _THE + _NUM, "<="),
+    (r"\b(?:not\s+less\s+than|no\s+less\s+than|not\s+fewer\s+than|no\s+fewer\s+than|at\s+least|"
+     r"a\s+minimum\s+of)\s+"
+     + _THE + _NUM, ">="),
+    (r"\b(?:not\s+more\s+than|no\s+more\s+than|not\s+greater\s+than|no\s+greater\s+than|"
+     r"does\s+not\s+exceed|do\s+not\s+exceed|not\s+exceeding|at\s+most|a\s+maximum\s+of)\s+"
+     + _THE + _NUM, "<="),
+    (_NUM + r"[\s-]*(?:[a-z]+[\s-]+){0,3}?or\s+(?:more|greater|larger|higher|above|longer|wider)\b", ">="),
+    (_NUM + r"[\s-]*(?:[a-z]+[\s-]+){0,3}?or\s+(?:less|fewer|lower|below|shorter|narrower)\b", "<="),
+    (r"\b(?:more\s+than|greater\s+than|in\s+excess\s+of|exceeds|exceeding|larger\s+than|"
+     r"higher\s+than|longer\s+than|wider\s+than)\s+" + _THE + _NUM, ">"),
+    (r"\b(?:less\s+than|fewer\s+than|lower\s+than|shorter\s+than|narrower\s+than)\s+" + _THE + _NUM, "<"),
+]
+# Units read as such. Lengths and times are converted (to inches, to seconds);
+# anything else is compared only with the same unit ("12 lanes" with "3 lanes",
+# "1,250 units" with "1,000 units"), never with a different one.
+_SCALE = {"ft": 12.0, "feet": 12.0, "foot": 12.0, "in": 1.0, "inch": 1.0, "inches": 1.0,
+          "mi": 63360.0, "mile": 63360.0, "miles": 63360.0, "yd": 36.0, "yard": 36.0,
+          "yards": 36.0, "mm": 1 / 25.4, "millimeter": 1 / 25.4, "millimeters": 1 / 25.4,
+          "meter": 1000 / 25.4, "meters": 1000 / 25.4, "km": 1e6 / 25.4,
+          "kilometer": 1e6 / 25.4, "kilometers": 1e6 / 25.4,
+          "second": 1.0, "seconds": 1.0, "sec": 1.0, "secs": 1.0, "minute": 60.0,
+          "minutes": 60.0, "min": 60.0, "mins": 60.0, "hour": 3600.0, "hours": 3600.0,
+          "hr": 3600.0, "hrs": 3600.0}
+_TIMES = {"second", "seconds", "sec", "secs", "minute", "minutes", "min", "mins", "hour",
+          "hours", "hr", "hrs"}
+_UNIT_KIND = {u: ("time" if u in _TIMES else "length") for u in _SCALE}
+# a "not", "no" or "n't" anywhere outside the comparison phrase turns it round
+# ("no higher than", "is not at least"): such a claim is not read here
+_NEGATION = re.compile(r"\b(?:not|no|never|neither|nor|none|without|cannot)\b|n't\b", re.I)
+
+
+def _num(s: str) -> float:
+    return float(s.replace(",", ""))
+
+
+def _unit_after(text: str, end: int) -> Optional[str]:
+    """The word after a number, lower case ("percent" for %), or None."""
+    m = re.match(r"[\s-]*([A-Za-z%]+)", text[end:])
+    if not m:
+        return None
+    w = m.group(1).lower()
+    return "percent" if w == "%" else w
+
+
+def _same_word(a: str, b: str) -> bool:
+    return a == b or a.rstrip("s") == b.rstrip("s")
+
+
+def stated_comparison(claim: str, given: Sequence[Tuple[str, str]]) -> Optional[Dict[str, Any]]:
+    """Decide a claim that states its own comparison, when the value it names
+    is also stated by a fact given in the question. `given` is (fact id, text).
+    None when it is not exactly that."""
+    text = str(claim or "")
+    if re.search(r"\d\s*/\s*\d|[\u00bc-\u00be\u2150-\u215e]", text):
+        return None                                  # a fraction: not read here
+    found = []
+    for pat, cmp_ in _STATED:
+        for m in re.finditer(pat, text, re.I):
+            found.append((m.start(), m.end(), m.start(1), m.end(1), cmp_))
+    found = [f for f in found if not any(g is not f and g[0] <= f[0] and f[1] <= g[1]
+                                         and (g[0], g[1]) != (f[0], f[1]) for g in found)]
+    spans = {(f[0], f[1]) for f in found}
+    if len(spans) != 1:
+        return None
+    s, e, bs, be, cmp_ = next(f for f in found)
+    if _NEGATION.search(text[:s]) or _NEGATION.search(text[e:]):
+        return None                                  # "no higher than": not read here
+    if re.match(r"\s*(?:times\b|x\b|\u00d7|percent\s+of\b|%\s+of\b)", text[be:], re.I):
+        return None                                  # "3 times the width": a multiplier
+    bound = _num(text[bs:be])
+    b_unit = _unit_after(text, be)
+    # The claim's one other number is the case's value. A second one (an arm
+    # length beside a sheeting height, a period beside a count) leaves it open
+    # which is compared, so nothing is decided.
+    others = [m for m in re.finditer(_NUM, text) if not (s <= m.start() < e)]
+    if len({_num(m.group(1)) for m in others}) != 1:
+        return None
+    m = others[0]
+    value = _num(m.group(1))
+    v_unit = _unit_after(text, m.end(1))
+    confirming = [fid for fid, ft in given
+                  if any(abs(_num(x) - value) < 1e-9 for x in re.findall(_NUM, str(ft)))]
+    if not confirming:
+        return None
+    values = [(value, v_unit, confirming)]
+    # both numbers carry a unit, and the units are of one kind: converted when
+    # they are lengths or times, otherwise only the same unit
+    if not v_unit or not b_unit:
+        return None
+    if v_unit in _SCALE and b_unit in _SCALE:
+        if _UNIT_KIND[v_unit] != _UNIT_KIND[b_unit]:
+            return None
+        value, bound = value * _SCALE[v_unit], bound * _SCALE[b_unit]
+    elif not _same_word(v_unit, b_unit):
+        return None
+    held = {">=": value >= bound, "<=": value <= bound, ">": value > bound,
+            "<": value < bound}[cmp_]
+    return {"status": Status.TRUE if held else Status.FALSE, "value": values[0][0],
+            "value_unit": v_unit, "comparator": cmp_, "bound": _num(text[bs:be]),
+            "bound_unit": b_unit, "phrase": text[s:e], "facts": confirming}
+
+
+# --------------------------------------------------------------------------- #
 # 5. The verifier
 # --------------------------------------------------------------------------- #
 def _condition_text(op: Operation, tables_by_id: Dict[str, List[Table]]
@@ -502,6 +629,17 @@ def make_rule_evaluator(tables: Sequence[Table] = ()) -> Callable[
         if footnote is not None and footnote.chunk_id:
             evidence.append(Evidence("chunk", footnote.chunk_id))
 
+        if status is Status.UNKNOWN and not condition_id:
+            given = [(c.obligation_id, c.claim) for c in store.all()
+                     if c.verifier == "given" and c.status is Status.TRUE and c.obligation_id]
+            stated = stated_comparison(op.claim, given)
+            if stated is not None:
+                status = stated["status"]
+                provenance["stated_comparison"] = {k: v for k, v in stated.items() if k != "status"}
+                evidence.extend(Evidence("given", fid) for fid in stated["facts"])
+                if op.source_chunk:
+                    # the bound is the provision's: the paragraph the obligation came from
+                    evidence.append(Evidence("chunk", op.source_chunk))
         if status is Status.UNKNOWN:
             provenance["reason"] = (
                 "the condition could not be decided from established facts; "

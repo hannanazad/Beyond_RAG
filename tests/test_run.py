@@ -41,6 +41,8 @@ GOOD_SPEC = {
     ],
     "merges": [{"id": "m1", "claim": "the requirement is met",
                 "kind": "conjunction", "inputs": ["o1", "o2"]}],
+    "asked": [{"id": "a1", "ask": "Which horizontal alignment sign is required here",
+               "answered_by": ["m1"]}],
 }
 
 

@@ -47,6 +47,9 @@ GOOD = {
     ],
     "merges": [{"id": "m1", "claim": "the sign requirement is met",
                 "kind": "conjunction", "inputs": ["o2", "o3"]}],
+    # what the question asks, and the step that answers it (17 Oct 2026)
+    "asked": [{"id": "a1", "ask": "Which horizontal alignment sign is required on this curve",
+               "answered_by": ["m1"]}],
 }
 
 
@@ -164,9 +167,9 @@ print("9. an exception merge whose first input is the exception is rejected")
 # ---- 10. a cycle is caught ------------------------------------------------
 cyc = {"terminal": "o1",
        "obligations": [
-           {"id": "o1", "claim": "a", "authority": "STANDARD",
+           {"id": "o1", "authority": "STANDARD", "claim": "first",
             "requires": ["o2"], "source_chunk": "c1"},
-           {"id": "o2", "claim": "b", "authority": "STANDARD",
+           {"id": "o2", "authority": "STANDARD", "claim": "second",
             "requires": ["o1"], "source_chunk": "c1"}],
        "merges": []}
 spec, report = make_semantic_parser(say(cyc), max_attempts=1)(

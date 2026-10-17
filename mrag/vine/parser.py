@@ -68,6 +68,29 @@ A plan that fails any of these goes back to the model with the problems,
 phrased in the ids the model wrote. A model naming its own verifier is
 overruled: the rule in `compile.assign_verifier` decides.
 
+WHAT THE PLAN COVERS (added 17 October 2026)
+--------------------------------------------
+The checks above are on structure and on references. Nothing checked that a
+plan covers the question, and nothing at run time can: each checker sees one
+claim, never the question or the plan (S3.3). Four rules, read from the IR and
+the graph (`coverage_problems`, section 4c):
+
+  A. When the facts tell several cases of one kind apart by a label, every
+     claim names the case it is about, or says it holds for each. The checker
+     sees all the facts and never the obligation's id.
+  B. When the provision a check rests on names its own exception ("Except as
+     provided in Paragraph 7"), and that paragraph was shown, a check rests
+     on the exception too. The prompt marks these: "exceptions it names".
+  C. The parser lists what the question asks ("asked", an IR field the
+     executor never reads), each item answered by a step the terminal
+     depends on.
+  D. An exception obligation is never an input of a conjunction: there it
+     would make the plan fail whenever the exception does not cover the case.
+
+They go back for repair like the rest. A plan left with only these is still
+used (the fewest left wins), and what is left is recorded: a plan the
+checkers can decide is worth more than no plan.
+
 WHY THERE IS A FALLBACK
 -----------------------
 If every attempt fails, `compile_section` produces a spec from the printed
@@ -91,8 +114,9 @@ from .network import MergeType, ObligationType
 log = logging.getLogger("mrag.vine.parser")
 
 __all__ = ["ParseReport", "make_semantic_parser", "build_parser_prompt",
-           "read_spec", "grounding_problems", "fact_problems", "PARSER_TASK",
-           "PARSER_CONTRACT", "HINT_TYPES"]
+           "read_spec", "grounding_problems", "fact_problems", "coverage_problems",
+           "named_exceptions_shown", "exceptions_from_graph", "case_labels",
+           "PARSER_TASK", "PARSER_CONTRACT", "HINT_TYPES"]
 
 NORMATIVE = ("Standard", "Guidance", "Option")
 HINT_TYPES = ("table", "column", "part", "sheet", "figure", "section")
@@ -143,6 +167,15 @@ Step 3. Structure.
   - A provision that applies only under a condition is a guarded branch: give
     it a "guard".
   - A rule that needs several results together is a merge.
+  - A provision shown with "exceptions it names" says which paragraphs relax
+    it. When one of them is shown above and could cover this case, it is an
+    exception obligation of its own, merged with the rule in an exception
+    merge (the rule first).
+  - Give an applicability check only for a condition of scope that the
+    provision states (a kind of road, device or place; a speed; a time) and
+    that the facts might not meet, and guard on it only the checks that
+    depend on it. Do not put every check of the plan behind one check that a
+    Section applies: if that one check fails, nothing else is checked.
 For example, if a provision applies only to a particular class, requires two
 independent conditions to be satisfied, and contains a separate exception:
 the classification is an upstream obligation that the others require; the two
@@ -153,12 +186,21 @@ Step 4. Evidence. Say where each obligation's evidence is, in
 "evidence_hint". Do not choose a checker: the obligation's type and hints
 decide which checker runs.
 
+Step 5. What is asked. List each thing the question asks in "asked", and
+name the obligations or merges whose results answer it. Every part of the
+question has at least one check: a part with no check is a part the answer
+cannot cover.
+
 THE JSON OBJECT
 
 {{
   "terminal": "<id of the merge or obligation whose result answers the question>",
   "facts": [
     {{"id": "f1", "fact": "<one fact the question states about the case, in its words>"}}
+  ],
+  "asked": [
+    {{"id": "a1", "ask": "<one thing the question asks, in its words>",
+      "answered_by": ["<ids of the obligations or merges whose results answer it>"]}}
   ],
   "obligations": [
     {{"id": "o1",
@@ -193,6 +235,12 @@ facts
   about a case (it only asks what the manual says), give an empty list. A
   fact is not a step: never put its id in "requires", "inputs" or a guard.
 
+asked
+  One item per thing the question asks: a question that asks two things
+  gives two items. "ask" is in the question's words; "answered_by" names the
+  obligations or merges whose results answer it, and the terminal depends on
+  each of them. Ids a1, a2, ...; never a fact id.
+
 claim
   One statement, never a question, about the situation in the question. Write
   it so that TRUE means the situation meets the provision (or, for a
@@ -207,9 +255,25 @@ claim
   it is about, as written in the question. Do not decide
   whether the claim is true. Do not work out a value that a table, figure or
   provision holds; say where it is, in evidence_hint.
+  - When the facts describe more than one case, design, alternative or item
+    of the same kind, each told apart by a label, every claim names the one
+    it is about, or says that it holds for each of them. The checker sees
+    all the facts and never the id, so a claim that names none is judged
+    over all of them.
+  - When a claim restates a fact, use the fact's own words. Do not widen or
+    narrow it with qualifiers the fact does not have: the checker can then
+    no longer match it with the fact.
+  - When the question asks which of several items meet a condition, write
+    one claim per item, each saying that item meets it. Never one claim
+    that all of them do, or that none of them do.
 
 type: what kind of check it is. The type decides the checker.
-  applicability     does a provision apply to the situation at all
+  applicability     does a provision apply to the situation at all: is the
+                    case of the kind, place or situation the provision
+                    covers, and do the conditions it states for when it
+                    applies hold. Not whether the case obeys the provision,
+                    and not whether an exception excuses it: those are
+                    claims of their own.
                     -> language model
   classification    which category something falls in
                     -> language model (vision model when only a figure shows it)
@@ -304,6 +368,13 @@ RULES (a plan that breaks one is sent back to you)
 - Every table, figure and section in evidence_hint exists in the manual.
 - Every claim is a statement, not a question.
 - Do not name a checker.
+- Every thing the question asks is an item of "asked", answered by at least
+  one obligation or merge that the terminal depends on.
+- When the facts describe several labelled cases of one kind, every claim
+  names the one it is about, or says that it holds for each.
+- When a provision a check rests on names an exception that is shown above,
+  that exception is checked too, in an exception merge with the rule first.
+- An exception obligation is never an input of a conjunction.
 
 Reply with the JSON object only: no text before or after it, and no markdown
 fence."""
@@ -327,6 +398,15 @@ GROUNDING_RULES = [
     "names the manual or says what is required or allowed only if they do",
     "the first input of an exception merge is the base rule (a claim that the "
     "situation MEETS a rule), never an applicability or exception obligation",
+    "every thing the question asks is an item of \"asked\", and each item names "
+    "in \"answered_by\" obligations or merges that the terminal depends on",
+    "when the facts describe several labelled cases of one kind, every claim "
+    "names the one it is about, or says that it holds for each",
+    "when the provision a check rests on names an exception that is shown, "
+    "that exception is checked too: an exception obligation from it, in an "
+    "exception merge whose first input is the rule",
+    "an exception obligation is never an input of a conjunction: it goes after "
+    "the rule it relaxes, in an exception merge",
 ]
 
 
@@ -407,11 +487,19 @@ def _sort_key(c: Dict[str, Any]):
             _natural(str(c.get("item") or "")), _natural(str(c.get("chunk_id"))))
 
 
-def format_provisions(chunks: Sequence[Dict[str, Any]]) -> str:
+def format_provisions(chunks: Sequence[Dict[str, Any]],
+                      exceptions: Optional[Dict[str, List[str]]] = None) -> str:
     """Kq grouped by section, sections in the order retrieval ranked them,
     each section's items in the manual's own order. A list's lead-in is
     printed once, above its first item, because it carries the list's
-    condition and repeating it per item only adds length."""
+    condition and repeating it per item only adds length.
+
+    `exceptions`: {chunk id: ids of the shown provisions it names as its
+    exceptions} (`named_exceptions_shown`). The manual names a rule's
+    exceptions in the rule ("Except as provided in Paragraph 7"), and the
+    graph resolves them to paragraphs; the parser is told which of those it
+    can see, so it can check them (17 Oct 2026)."""
+    exceptions = exceptions or {}
     order: List[str] = []
     by_sec: Dict[str, List[Dict[str, Any]]] = {}
     seen: set = set()
@@ -455,6 +543,9 @@ def format_provisions(chunks: Sequence[Dict[str, Any]]) -> str:
                 last_lead = None
             entry.append(text)
             refs = "" if kind in ("TableRow", "FigureReading") else _refs_line(c)
+            named = [x for x in exceptions.get(str(c.get("chunk_id")), []) if x]
+            if named and kind not in ("TableRow", "FigureReading"):
+                refs += "\n  exceptions it names: " + ", ".join(f"[{x}]" for x in named)
             lines.append("\n".join(entry) + refs)
         blocks.append("\n\n".join(lines))
     return "\n\n".join(blocks) or "(none)"
@@ -475,16 +566,18 @@ def format_figures(figures: Sequence[Dict[str, Any]]) -> str:
 def build_parser_prompt(query: str, chunks: Sequence[Dict[str, Any]],
                         section_id: str = "",
                         repair: Optional[Dict[str, Any]] = None,
-                        figures: Sequence[Dict[str, Any]] = ()) -> str:
+                        figures: Sequence[Dict[str, Any]] = (),
+                        exceptions: Optional[Dict[str, List[str]]] = None) -> str:
     """The task, the provisions, the question, the contract, and -- on a
     second attempt -- what was wrong with the first.
 
     `section_id` is accepted for the fallback's sake and is not shown: the
     parser reads everything retrieval returned, not one section chosen for it.
+    `exceptions` is `named_exceptions_shown(...)`, or None.
     """
     parts = [PARSER_TASK, "",
              "PROVISIONS (retrieved for this question; ids in square brackets)",
-             "", format_provisions(chunks)]
+             "", format_provisions(chunks, exceptions)]
     figs = format_figures(figures)
     if figs:
         parts += ["", "FIGURES THE VISION MODEL CAN BE GIVEN", figs]
@@ -906,6 +999,235 @@ def fact_problems(spec: NetworkSpec) -> List[str]:
 
 
 # --------------------------------------------------------------------------- #
+# 4c. Coverage: what the plan checks, beside what it says about the manual
+# --------------------------------------------------------------------------- #
+# S3.1 checks a plan's structure; nothing checked that it covers the question.
+# Four rules, each read from the IR and the graph, never from an answer:
+#   A  several labelled cases in the facts: every claim names its case;
+#   B  a rule whose provision names an exception that was shown: the exception
+#      is checked;
+#   C  every thing asked has a check that the terminal depends on;
+#   D  an exception obligation is not an input of a conjunction.
+# They go back to the model for repair like any problem. A plan whose only
+# remaining problems are these is still used (see `make_semantic_parser`):
+# the decision rests on the checkers, and no plan at all answers nothing.
+
+# The kinds of thing a question tells apart by a label: "Case A" and "Case B",
+# "Option 1" and "Option 2", "Sign 2", "Designs A and B".
+_CASE_HEADS = ("alternative", "alt", "approach", "assembly", "case", "concept",
+               "configuration", "corridor", "crossing", "design", "device", "face",
+               "head", "installation", "intersection", "lane", "layout", "location",
+               "option", "panel", "phase", "plan", "project", "proposal", "ramp", "road",
+               "route", "scenario", "segment", "sign", "site", "stage", "street", "unit",
+               "variant", "version", "zone")
+_HEADS = "|".join(sorted(_CASE_HEADS, key=len, reverse=True))
+_LIST_SEP = r"\s*(?:,\s*(?:and|or)\b|,|/|&|\band\b|\bor\b)\s*"
+_LETTERS = rf"[A-Z](?:{_LIST_SEP}[A-Z])*"
+_DIGITS = rf"\d{{1,2}}(?:{_LIST_SEP}\d{{1,2}})*"
+# "a lane 12 feet wide" is a size, not "Lane 12"
+_UNIT_NEXT = (r"(?!\s*-?\s*(?:in\.|(?:feet|foot|ft|inch(?:es)?|miles?|mi|mph|km|kilomet(?:er|re)s?|"
+              r"met(?:er|re)s?|yards?|yd|percent|%|seconds?|sec|minutes?|min|hours?|hr|"
+              r"days?|weeks?|months?|years?|vehicles?|vph|vpd|trains?|degrees?|pounds?|lbs?|"
+              r"tons?|students?|pedestrians?|lanes?|signs?|times?)\b))")
+# a letter label after any head ("design A"); a number label only after a
+# capitalised head ("Sign 2", not "a sign 30 feet away")
+_CASE_LABELS = re.compile(
+    rf"\b(?:(?i:(?P<h1>{_HEADS}))(?i:e?s)?[ -](?P<l1>{_LETTERS})(?![\w-])"
+    rf"|(?=[A-Z])(?i:(?P<h2>{_HEADS}))(?i:e?s)?[ -](?P<l2>{_DIGITS})(?![\w-])(?!\.\d){_UNIT_NEXT})")
+_FOR_EACH = re.compile(r"\b(?:both|each|every|either|neither)\b", re.I)
+
+
+def case_labels(text: str) -> Dict[str, List[str]]:
+    """{kind: [labels]} named in the text: "Designs A and B ... Case 2" ->
+    {"design": ["A", "B"], "case": ["2"]}."""
+    out: Dict[str, List[str]] = {}
+    for m in _CASE_LABELS.finditer(text or ""):
+        head = (m.group("h1") or m.group("h2")).lower()
+        labels = re.split(_LIST_SEP, m.group("l1") or m.group("l2"))
+        out.setdefault(head, [])
+        out[head] += [x for x in labels if x and x not in out[head]]
+    return out
+
+
+def _names_label(text: str, head: str, labels: Sequence[str]) -> bool:
+    """Whether the text writes one of these labels after its kind, in any
+    case and in a list ("for sign 1", "Signs 1, 2 and 3")."""
+    for x in labels:
+        if re.search(rf"\b(?i:{re.escape(head)})(?i:e?s)?[ -](?:[A-Z\d]{{1,2}}{_LIST_SEP})*"
+                     rf"{re.escape(x)}(?![\w-])", text or ""):
+            return True
+    return False
+
+
+def several_cases(spec: NetworkSpec) -> Dict[str, List[str]]:
+    """The kinds the FACTS tell apart by two or more labels. The facts, not
+    the question: they are what every checker is shown."""
+    seen: Dict[str, List[str]] = {}
+    for f in spec.facts:
+        for head, labels in case_labels(f.text).items():
+            seen.setdefault(head, [])
+            seen[head] += [x for x in labels if x not in seen[head]]
+    return {h: v for h, v in seen.items() if len(v) >= 2}
+
+
+def _support(spec: NetworkSpec) -> set:
+    """Every obligation and merge the terminal depends on (inputs, requires
+    and guards), the terminal included."""
+    by_id: Dict[str, Any] = {o.id: o for o in spec.obligations}
+    by_id.update({m.id: m for m in spec.merges})
+    seen: set = set()
+    todo = [spec.terminal] if spec.terminal else []
+    while todo:
+        x = todo.pop()
+        if x in seen or x not in by_id:
+            continue
+        seen.add(x)
+        item = by_id[x]
+        nxt = list(getattr(item, "inputs", []) or []) + list(getattr(item, "requires", []) or [])
+        if item.guard:
+            nxt += list(item.guard.states())
+        todo.extend(nxt)
+    return seen
+
+
+def named_exceptions_shown(chunks: Sequence[Dict[str, Any]],
+                           exceptions_of: Optional[Callable[[Dict[str, Any]], List[str]]],
+                           ) -> Dict[str, List[str]]:
+    """{shown provision: the shown provisions it names as its exceptions}.
+
+    `exceptions_of(chunk) -> [chunk ids]` comes from the graph
+    (`exceptions_from_graph`: the EXCEPTS links and the "except as provided
+    in ..." clauses, `lookup.ManualView.links`). Only provisions printed
+    under a normative heading (NORMATIVE), on both sides: a check rests on
+    one of those, and only a shown one can be a source_chunk."""
+    if exceptions_of is None:
+        return {}
+    shown = {str(c.get("chunk_id")): c for c in chunks if c.get("chunk_id")}
+    normative = {cid for cid, c in shown.items()
+                 if str(c.get("content_type") or "") in NORMATIVE}
+    out: Dict[str, List[str]] = {}
+    for cid in shown:
+        if cid not in normative:
+            continue
+        try:
+            named = list(exceptions_of(shown[cid]) or [])
+        except Exception as e:                                # noqa: BLE001
+            log.warning("exceptions of %s could not be read: %r", cid, e)
+            named = []
+        keep = [x for x in dict.fromkeys(str(n) for n in named) if x in normative and x != cid]
+        if keep:
+            out[cid] = keep
+    return out
+
+
+def exceptions_from_graph(kg) -> Optional[Callable[[Dict[str, Any]], List[str]]]:
+    """chunk -> the chunk ids of the exceptions it names, read from the VINE
+    graph the way the checkers read them. None without the graph."""
+    if kg is None or not hasattr(kg, "_chunk_sentences"):
+        return None
+    from .lookup import ManualView
+    view = ManualView(kg)
+
+    def named(chunk: Dict[str, Any]) -> List[str]:
+        return list(view.links(chunk).exception_ids)
+    return named
+
+
+def coverage_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]] = (),
+                      exceptions: Optional[Dict[str, List[str]]] = None) -> List[str]:
+    """What the plan leaves unchecked or ambiguous (rules A-D above).
+
+    `exceptions` is `named_exceptions_shown(chunks, ...)`; without it rule B
+    is skipped. Checked against `spec.query` for rule C.
+    """
+    out: List[str] = []
+    obligations = {o.id: o for o in spec.obligations}
+    merges = {m.id: m for m in spec.merges}
+    support = _support(spec)
+
+    # A. A claim the checker would judge over every case of the question.
+    for head, labels in several_cases(spec).items():
+        kind = head.capitalize()
+        for o in spec.obligations:
+            if o.type == ObligationType.DEFINITIONAL.value:
+                continue
+            named = {x for v in case_labels(o.claim).values() for x in v}
+            if (named & set(labels) or _names_label(o.claim, head, labels)
+                    or _FOR_EACH.search(o.claim)
+                    or re.search(rf"\ball\b(?:\s+\w+){{0,3}}?\s+(?i:{re.escape(head)})", o.claim)):
+                continue
+            out.append(f"{o.id}: the facts describe several of one kind "
+                       f"({', '.join(f'{kind} {x}' for x in labels)}), and the claim names "
+                       f"none of them; the checker sees the claim and all the facts, never "
+                       f"the id, so say which one it is about (for example \"for {kind} "
+                       f"{labels[0]}\"), or that it holds for each of them")
+
+    # B. A rule whose own text names an exception that is in front of the parser.
+    if exceptions:
+        by_src: Dict[str, List[str]] = {}
+        for o in spec.obligations:
+            if o.type in (ObligationType.EXCEPTION.value, ObligationType.DEFINITIONAL.value,
+                          ObligationType.APPLICABILITY.value):
+                continue
+            if o.id in support and exceptions.get(o.source_chunk):
+                by_src.setdefault(o.source_chunk, []).append(o.id)
+        used = {o.source_chunk for o in spec.obligations if o.id in support}
+        for src, ids in by_src.items():
+            named = exceptions[src]
+            if any(x in used for x in named):
+                continue
+            out.append(f"{', '.join(ids)}: {src!r} names its exception(s) "
+                       f"{', '.join(repr(x) for x in named)}, shown above, and no check "
+                       f"rests on them; check whether one covers this case: an exception "
+                       f"obligation from it, in an exception merge whose first input is "
+                       f"the rule and whose other inputs are the exceptions")
+
+    # C. Every part of the question has a check, and the terminal reads it.
+    asks = [x for x in _sentences(spec.query or "")
+            if x.rstrip("\"'\u201d\u2019)] ").endswith("?") and len(_words(x)) >= 3]
+    if not spec.asked:
+        out.append("\"asked\" is missing or empty: list each thing the question asks, "
+                   "with the obligations or merges that answer it")
+    else:
+        if len(spec.asked) < len(asks):
+            out.append(f"\"asked\" has {len(spec.asked)} item(s), but the question has "
+                       f"{len(asks)} questions; give one item per thing it asks")
+        taken = set(obligations) | set(merges) | {f.id for f in spec.facts}
+        for a in spec.asked:
+            if a.id in taken:
+                out.append(f"asked {a.id!r}: the id is already used by a step or a fact; "
+                           f"use a1, a2, ...")
+            if not a.answered_by:
+                out.append(f"asked {a.id!r} (\"{a.ask[:80]}\"): no obligation or merge "
+                           f"answers it; add the checks for it and name them in answered_by")
+                continue
+            unknown = [x for x in a.answered_by if x not in obligations and x not in merges]
+            if unknown:
+                out.append(f"asked {a.id!r}: answered_by names {unknown}, which are not "
+                           f"obligations or merges of this plan")
+            unread = [x for x in a.answered_by if x not in unknown and x not in support]
+            if unread:
+                out.append(f"asked {a.id!r}: answered_by names {unread}, but the terminal "
+                           f"does not depend on them, so their results are not part of the "
+                           f"answer; merge them into what the terminal depends on")
+
+    # D. A conjunction needs every input to hold; "an exception covers this
+    #    case" is not something the case must meet.
+    for m in spec.merges:
+        if m.kind != MergeType.CONJUNCTION.value:
+            continue
+        for i in m.inputs:
+            o = obligations.get(i)
+            if o is not None and o.type == ObligationType.EXCEPTION.value:
+                out.append(f"{m.id}: {i!r} is an exception obligation, but {m.id} is a "
+                           f"conjunction, which fails whenever an input fails: the plan would "
+                           f"fail when the exception does not cover the case even if the rule "
+                           f"is met. Put the rule it relaxes first and {i!r} after it, in an "
+                           f"exception merge")
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # 5. The parser
 # --------------------------------------------------------------------------- #
 @dataclass
@@ -917,11 +1239,15 @@ class ParseReport:
     notes: List[str] = field(default_factory=list)
     raw: List[str] = field(default_factory=list)              # every reply, whole
     calls: List[Dict[str, Any]] = field(default_factory=list)  # model-call records
+    # coverage problems still open in the plan that was used (rules A-D, 4c)
+    open_problems: List[str] = field(default_factory=list)
+    used_attempt: int = 0                                      # which reply became the plan
 
     def as_dict(self) -> Dict[str, Any]:
         return {"source": self.source, "attempts": self.attempts,
                 "problems": self.problems, "notes": self.notes,
-                "calls": self.calls}
+                "calls": self.calls, "open_problems": self.open_problems,
+                "used_attempt": self.used_attempt}
 
 
 def _dedupe(items: Iterable[str]) -> List[str]:
@@ -932,11 +1258,22 @@ def make_semantic_parser(ask: Callable[[str, List[str]], str],
                          max_attempts: int = 3,
                          fall_back_to_baseline: bool = True,
                          check_ref: Optional[Callable[[str, str], bool]] = None,
-                         tables: Optional[Dict[str, List[Any]]] = None):
+                         tables: Optional[Dict[str, List[Any]]] = None,
+                         exceptions_of: Optional[Callable[[Dict[str, Any]], List[str]]] = None):
     """Build the parser. `ask(prompt, images) -> str`, the same contract the
     verifiers use, so one model call site serves the whole pipeline. If `ask`
     carries a `last` dict after each call (the vLLM client does), it is kept
     in the report.
+
+    `exceptions_of(chunk) -> [chunk ids]` is `exceptions_from_graph(kg)`: the
+    exceptions each provision names. With it, the prompt shows which shown
+    provisions are a provision's exceptions, and rule B (4c) is checked.
+
+    A plan with a problem in what it says about the manual or in its
+    structure is never used. A plan whose only problems are coverage problems
+    (4c) is sent back for repair too; if none of the attempts clears them,
+    the one with the fewest is used (the later on a tie), and its open
+    problems are kept in `report.open_problems`.
 
     Returns `parse(query, chunks, section_id="", figures=()) ->
     (NetworkSpec | None, ParseReport)`.
@@ -946,10 +1283,13 @@ def make_semantic_parser(ask: Callable[[str, List[str]], str],
               ) -> Tuple[Optional[NetworkSpec], ParseReport]:
         report = ParseReport()
         repair: Optional[Dict[str, Any]] = None
+        exceptions = named_exceptions_shown(chunks, exceptions_of)
+        best: Optional[Tuple[int, int, NetworkSpec, List[str]]] = None
 
         for attempt in range(1, max_attempts + 1):
             report.attempts = attempt
-            prompt = build_parser_prompt(query, chunks, section_id, repair, figures)
+            prompt = build_parser_prompt(query, chunks, section_id, repair, figures,
+                                         exceptions)
             try:
                 raw = ask(prompt, [])
             except Exception as e:                            # noqa: BLE001
@@ -973,13 +1313,28 @@ def make_semantic_parser(ask: Callable[[str, List[str]], str],
                 _net, built = instantiate(spec)
             except (CompileError, ValueError, KeyError) as e:
                 built = [f"the plan could not be built: {e}"]
-            problems = _dedupe(problems + list(built))
+            hard = _dedupe(problems + list(built))
+            open_ = [] if hard else _dedupe(coverage_problems(spec, chunks, exceptions))
+            problems = hard + open_
             if not problems:
                 report.source = "semantic_parser"
+                report.used_attempt = attempt
                 return spec, report
+            if not hard and (best is None or len(open_) <= best[0]):
+                best = (len(open_), attempt, spec, open_)
             report.problems.append(problems)
             repair = repair_request(spec, problems)
             repair["rules"] = _dedupe(list(repair["rules"]) + GROUNDING_RULES)
+
+        if best is not None:
+            _n, attempt, spec, open_ = best
+            report.source = "semantic_parser"
+            report.used_attempt = attempt
+            report.open_problems = list(open_)
+            report.notes.append(f"used the plan of attempt {attempt}: its structure and its "
+                                f"references to the manual are valid; {len(open_)} coverage "
+                                f"problem(s) were not cleared by repair")
+            return spec, report
 
         if fall_back_to_baseline and section_id:
             try:

@@ -400,7 +400,7 @@ def stage_parse(R: Run) -> int:
 def _stage_parse(R: Run) -> int:
     from mrag.kg_vine import VineKG
     from mrag.vine import table_data, vllm_client as vc
-    from mrag.vine.parser import make_semantic_parser
+    from mrag.vine.parser import exceptions_from_graph, make_semantic_parser
     from mrag.vine.compile import instantiate
 
     kq = vr.load_json(R.kq_file, {})
@@ -500,7 +500,7 @@ def _stage_parse(R: Run) -> int:
         "commit": R.commit, "model": MODEL_ID, "revision": REVISION, "vllm": VLLM_VERSION,
         "server_command": live[0]["cmd"], "servers": len(asks), "gpu": names, "seed": SEED,
         "sampling": vc.QWEN_THINKING, "reasoning_effort": EFFORT, "max_tokens": max_tokens,
-        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix5",
+        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix6 (17 Oct: asked items, cases, named exceptions)",
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job,
         "one_request_at_a_time": True, "engine": engine, "model_path_used": str(model_path),
@@ -515,8 +515,10 @@ def _stage_parse(R: Run) -> int:
     done = [0]
 
     def worker(i: int, ask) -> None:
+        # each worker reads the named exceptions through its own view of the graph
         parse = make_semantic_parser(ask, max_attempts=3, fall_back_to_baseline=False,
-                                     check_ref=kg.is_known_citation, tables=tables)
+                                     check_ref=kg.is_known_citation, tables=tables,
+                                     exceptions_of=exceptions_from_graph(kg))
         while True:
             try:
                 qid = work.get_nowait()
@@ -558,7 +560,8 @@ def _stage_parse(R: Run) -> int:
     others = [records[q] for q in R.questions if q not in R.dev_ids and q in records]
     if R.answer_set:
         say(f"{R.set_name} plans: " + ", ".join(f"{k} {sum(1 for r in others if r['outcome'] == k)}"
-                                              for k in ("valid first time", "valid after repair", "failed")))
+                                              for k in ("valid first time", "valid after repair", "valid, open problems",
+                                                        "failed")))
     for r in dev_plans:
         say()
         pc.print_plan(r)

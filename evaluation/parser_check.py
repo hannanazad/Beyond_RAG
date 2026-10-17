@@ -3,6 +3,7 @@
 Everything here is measured against the MANUAL and the run itself:
 
   outcome      did the plan pass every check first time, after repair, or not
+               ("valid, open problems": only coverage problems were left)
   shape        how many obligations, dependencies, guards and merges, how deep
   numbers      does every number in a claim come from the question or the
                retrieved manual text, or did the model make it up
@@ -241,6 +242,9 @@ def make_record(case_id: str, question: str, kq: Dict[str, Any], spec, report,
         "completion_tokens": tokens,
         "calls": report.calls if report else [],
         "raw_replies": report.raw if report else [],
+        # coverage problems (parser.coverage_problems) still open in the plan used
+        "open_problems": list(getattr(report, "open_problems", []) or []) if report else [],
+        "used_attempt": int(getattr(report, "used_attempt", 0) or 0) if report else 0,
     }
     if case is not None:
         rec["target"] = target_check(spec, case, chunks)
@@ -252,6 +256,8 @@ def _outcome(report) -> str:
         return "not run"
     if report.source != "semantic_parser":
         return report.source or "failed"
+    if getattr(report, "open_problems", None):
+        return "valid, open problems"
     return "valid first time" if report.attempts == 1 else "valid after repair"
 
 
@@ -275,6 +281,7 @@ def summarize(records: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         "mean_seconds": round(sum(r["seconds"] for r in records) / n, 1) if n else 0,
         "mean_completion_tokens": (round(sum(r["completion_tokens"] for r in records) / n)
                                    if n else 0),
+        "open_problems": sum(len(r.get("open_problems") or []) for r in records),
     }
     if ok:
         st = [r["stats"] for r in ok]
@@ -311,6 +318,8 @@ def print_summary(s: Dict[str, Any]) -> None:
     print(f"  questions                 : {s['n']}")
     print(f"  outcome                   : {s['outcome']}")
     print(f"  mean attempts             : {s['mean_attempts']}")
+    if s.get("open_problems"):
+        print(f"  coverage problems left    : {s['open_problems']} (plans used anyway)")
     print(f"  mean seconds / tokens     : {s['mean_seconds']} s / {s['mean_completion_tokens']} tokens")
     if "mean_obligations" in s:
         if "plans_with_facts" in s:

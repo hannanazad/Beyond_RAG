@@ -167,7 +167,9 @@ basis
   evidence. For FALSE, the provision the claim fails against.
 
 A TRUE or FALSE needs at least one piece of the manual: the facts of the case
-alone never settle what the manual requires."""
+alone never settle what the manual requires. When the claim compares a fact
+with a value or condition a provision states, that provision is the basis:
+name it as basis and list it under evidence with the facts."""
 
 _WHERE_STATIC = "shown under EVIDENCE"
 _WHERE_LOOKUPS = "shown under EVIDENCE or returned by a lookup"
@@ -180,10 +182,13 @@ READING_RULES = """HOW TO READ THE CLAIM
   manual says otherwise for this case: a different value, a prohibition, or an
   exception, condition or Option that covers this case. A general rule that is
   changed for this case cannot support TRUE.
-- "Provision P applies" (or "is applicable", "governs"): TRUE when this case
-  falls under P, that is, P's subject and P's conditions fit the facts. FALSE
-  when a fact or another provision puts this case outside P. It does not ask
-  whether the case obeys P.
+- "Provision P applies" (or "is applicable", "governs"): TRUE when the thing
+  the claim names falls under P, that is, P's subject and P's conditions fit
+  the facts. FALSE when a fact or another provision puts that thing outside
+  P. It does not ask whether the case obeys P, nor whether an exception
+  excuses a breach of P. An exception for something else (another item, or
+  only a part of the thing the claim names) does not put the thing itself
+  outside P.
 - "The case meets / complies with P": TRUE when the facts satisfy what P
   requires; FALSE when a fact breaks it; UNKNOWN when a fact it needs is not
   given.
@@ -244,8 +249,32 @@ lookups for this claim. Everything they return may be cited by its id.
 - When you have what you need, reply with the JSON object only."""
 
 
-def _contract(lookups: bool) -> str:
-    return _CONTRACT.replace("{WHERE}", _WHERE_LOOKUPS if lookups else _WHERE_STATIC)
+# A claim that a provision APPLIES is a claim about scope. A model asked it
+# tends to jump to the bottom line ("is the rule broken here?"), so the reply
+# first states P's subject and conditions and whether the facts fit them, and
+# the status follows from that (17 Oct 2026).
+_SCOPE = """THIS CLAIM IS ABOUT WHETHER A PROVISION APPLIES
+Put a "scope" field first in the JSON object, before "status":
+ "scope": "<what the provision covers (its subject) and the conditions it states for when it applies; then, for each, whether the facts of the case fit it>"
+Then decide the status from it. The thing the claim names falls under the
+provision when it is of the kind the provision covers and the provision's
+conditions hold; it is outside only when a fact or another provision puts it
+outside. The claim is TRUE when it says what that gives (that the provision
+applies, or that it does not), and FALSE when it says the opposite. Whether
+the case obeys the provision is not asked here."""
+
+
+def is_scope_claim(op: Operation) -> bool:
+    """An applicability obligation. Only that: a compliance claim may also
+    say "applicable" ("meets the applicable height rule"), and for it the
+    scope block would say the wrong thing."""
+    t = getattr(op, "obligation_type", None)
+    return getattr(t, "value", t) == "applicability"
+
+
+def _contract(lookups: bool, scope: bool = False) -> str:
+    text = _CONTRACT.replace("{WHERE}", _WHERE_LOOKUPS if lookups else _WHERE_STATIC)
+    return f"{text}\n\n{_SCOPE}" if scope else text
 
 
 def _evidence_block(chunks: Sequence[Dict[str, Any]],
@@ -336,7 +365,7 @@ def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
     parts += [
         f"EVIDENCE\n{evidence}",
         "",
-        _contract(bool(lookups)),
+        _contract(bool(lookups), scope=is_scope_claim(op)),
         "",
         f"THE CLAIM AGAIN\n{op.claim}",
     ]
@@ -361,6 +390,7 @@ class Reply:
     dropped: List[str]           # ids cited that were never supplied
     problem: str = ""
     basis: str = ""              # the supplied id the answer rests on most
+    scope: str = ""              # for a claim that a provision applies: its subject and conditions
 
 
 def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
@@ -403,8 +433,10 @@ def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
     basis = str(data.get("basis") or "").strip()
     if basis not in permitted:
         basis = ""
+    scope = data.get("scope")
+    scope = (json.dumps(scope) if isinstance(scope, (dict, list)) else str(scope or "")).strip()
     return Reply(status, kept, confidence, str(data.get("reason", "")).strip(),
-                 dropped, basis=basis)
+                 dropped, basis=basis, scope=scope[:2000])
 
 
 # --------------------------------------------------------------------------- #
@@ -685,6 +717,8 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
             provenance["fabricated_evidence_ids"] = reply.dropped
         if reply.basis:
             provenance["basis"] = reply.basis
+        if reply.scope:
+            provenance["scope"] = reply.scope
         if given_ids:
             provenance["given_facts_shown"] = given_ids
         handed = set(gate_record.get("handed_over_exceptions") or [])
@@ -700,6 +734,20 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
 
         status = reply.status
         manual_cited = [e for e in reply.evidence if e not in set(given_ids)]
+        if (status is not Status.UNKNOWN and not manual_cited and reply.basis
+                and reply.basis not in set(given_ids)):
+            # The basis is "the one id from the manual your answer rests on
+            # most, also listed under evidence". A reply that names a supplied
+            # manual provision as its basis but lists only the facts it compared
+            # with it IS grounded in the manual (S3.3): comparing the facts with
+            # a value a provision states (made up: "a 30-foot clear zone is 30
+            # feet or more") has nothing else to cite. It is read as citing its basis.
+            # Without this a correct TRUE was turned into UNKNOWN, and one such
+            # check left a whole decision open (16 Oct 2026). A reply with no
+            # manual basis is still downgraded below.
+            reply.evidence = list(reply.evidence) + [reply.basis]
+            manual_cited = [reply.basis]
+            provenance["basis_counted_as_evidence"] = reply.basis
         if status is not Status.UNKNOWN and not reply.evidence:
             # A definitive answer resting on nothing that was shown is not a
             # verification result. S3.2 keeps it unresolved instead.

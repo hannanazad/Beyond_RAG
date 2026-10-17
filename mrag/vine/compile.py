@@ -56,7 +56,7 @@ from .certificate import Authority, Certificate, CertificateStore, Evidence, Sta
 from .network import Gate, MergeType, Network, ObligationType, Operation
 from .symbolic import Comparison, Conjunction, Disjunction, Negation, parse_rule
 
-__all__ = ["Obligation", "MergeSpec", "NetworkSpec", "GuardSpec", "GivenFact",
+__all__ = ["Obligation", "MergeSpec", "NetworkSpec", "GuardSpec", "GivenFact", "AskedItem",
            "instantiate", "assign_verifier", "repair_request",
            "compile_section", "CompileError"]
 
@@ -236,6 +236,45 @@ class GivenFact:
         return GivenFact(id=ident or f"f{k}", text=text)
 
 
+@dataclass
+class AskedItem:
+    """One thing the question asks, and the steps whose results answer it.
+
+    S3.1 rejects or returns for repair a network with unresolved references,
+    missing producers, invalid dependencies or an unreachable terminal: its
+    STRUCTURE. Nothing there says that every part of the question has a check.
+    The parser lists what is asked and links each item to obligations or
+    merges, so that a part left without a check can be returned for repair
+    too (`parser.coverage_problems`). The executor never reads this: it is a
+    record of coverage, not a step (17 Oct 2026)."""
+    id: str
+    ask: str
+    answered_by: List[str] = field(default_factory=list)
+
+    @staticmethod
+    def from_any(d: Any, k: int) -> Optional["AskedItem"]:
+        """Read leniently: this record decides nothing at run time, so a
+        malformed item is left out (and then reported as missing), never a
+        reason to reject the whole plan."""
+        if isinstance(d, str):
+            text, ident, ids = d, "", []
+        elif isinstance(d, dict):
+            text = d.get("ask", d.get("text", d.get("question", "")))
+            ident = d.get("id", "")
+            ids = d.get("answered_by", d.get("checks", d.get("ids", [])))
+        else:
+            return None
+        if isinstance(ids, str):
+            ids = [ids]
+        if not isinstance(ids, list):
+            ids = []
+        text = str(text or "").strip()
+        if not text:
+            return None
+        return AskedItem(id=str(ident or "").strip() or f"a{k}", ask=text,
+                         answered_by=[str(i).strip() for i in ids if str(i).strip()])
+
+
 # A fact id is shown to the checker and may be cited, so it must look like
 # nothing else: not a provision id, and not a sentence of its own.
 _FACT_ID = re.compile(r"^f\d{1,3}$")
@@ -254,6 +293,7 @@ class NetworkSpec:
     merges: List[MergeSpec] = field(default_factory=list)
     source: str = ""                       # how this spec was produced
     facts: List[GivenFact] = field(default_factory=list)   # for Γ0q
+    asked: List[AskedItem] = field(default_factory=list)   # coverage record, never executed
 
     # ---- structural checks on the IR itself --------------------------------
     def problems(self) -> List[str]:
@@ -354,6 +394,10 @@ class NetworkSpec:
         if self.facts:
             # only when there are some, so a spec without facts reads as before
             out["facts"] = [{"id": f.id, "fact": f.text} for f in self.facts]
+        if self.asked:
+            # likewise: a spec without it reads, and hashes, as before
+            out["asked"] = [{"id": a.id, "ask": a.ask, "answered_by": list(a.answered_by)}
+                            for a in self.asked]
         return out
 
     def to_json(self) -> str:
@@ -364,12 +408,18 @@ class NetworkSpec:
         facts = d.get("facts") or []
         if not isinstance(facts, list):
             raise CompileError('"facts" must be a list')
+        asked = d.get("asked") or []
+        if not isinstance(asked, list):
+            asked = []                     # reported by the parser's coverage check
+        asked_items = [a for a in (AskedItem.from_any(x, k) for k, x in enumerate(asked, 1))
+                       if a is not None]
         return NetworkSpec(
             query=str(d.get("query", "")), terminal=str(d.get("terminal", "")),
             obligations=[Obligation.from_dict(o) for o in (d.get("obligations") or [])],
             merges=[MergeSpec.from_dict(m) for m in (d.get("merges") or [])],
             source=str(d.get("source", "")),
-            facts=[GivenFact.from_any(f, k) for k, f in enumerate(facts, 1)])
+            facts=[GivenFact.from_any(f, k) for k, f in enumerate(facts, 1)],
+            asked=asked_items)
 
     @staticmethod
     def from_json(text: str) -> "NetworkSpec":

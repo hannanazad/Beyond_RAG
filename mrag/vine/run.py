@@ -58,7 +58,7 @@ from .compile import CompileError, NetworkSpec, compile_section, instantiate
 from .execute import ExecutionTrace, execute
 from .model_verifiers import make_llm_verifier, make_vlm_verifier
 from .network import Network
-from .parser import ParseReport, make_semantic_parser
+from .parser import ParseReport, exceptions_from_graph, make_semantic_parser
 from .symbolic import make_rule_evaluator
 from .table_data import Table
 from .verifiers import make_cross_reference_resolver
@@ -392,7 +392,8 @@ def ask_vine(question: str,
             ask, max_attempts=max_parse_attempts,
             fall_back_to_baseline=fall_back_to_baseline,
             check_ref=getattr(kg, "is_known_citation", None),
-            tables=by_table or None)
+            tables=by_table or None,
+            exceptions_of=exceptions_from_graph(kg))
         spec, report = parse(question, material, section_id, figures)
     else:
         # No model: the printed structure. Not a degraded mode -- it compiles
