@@ -17,12 +17,16 @@ export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 # the parser's servers are on this machine: never send those requests to a proxy
 export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1
 
-if [ "$STAGE" = execute ] || { [ "$STAGE" = parse ] && [ "${VINE_PARSER:-}" = api ]; }; then
-    module load WebProxy                     # the checkers (and an API parser) call the Anthropic API
+if [ "$STAGE" = execute ] || { [ "$STAGE" = parse ] && [ -n "${VINE_PARSER:-}" ]; }; then
+    module load WebProxy                     # the checkers (and an API parser) call an API
     export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1
     if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -s "$VINE_HOME/anthropic_key" ]; then
         ANTHROPIC_API_KEY="$(cat "$VINE_HOME/anthropic_key")"
         export ANTHROPIC_API_KEY
+    fi
+    if [ "${VINE_PARSER:-}" = alibaba ] && [ -z "${DASHSCOPE_API_KEY:-}" ] && [ -s "$VINE_HOME/alibaba_key" ]; then
+        DASHSCOPE_API_KEY="$(cat "$VINE_HOME/alibaba_key")"   # Qwen3.8-Max on Model Studio
+        export DASHSCOPE_API_KEY
     fi
 fi
 

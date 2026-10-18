@@ -280,8 +280,10 @@ def failed_plan_record(qid: str, question: str, error: str,
 
 # a failure of the machinery, not of the plan: worth trying again on the next run
 _RETRY = ("the model call failed", "the parse stopped")
-# ...except these, which come out the same every time
-_NO_RETRY = ("PromptTooLong", "answered 400", "answered 422")
+# ...except these, which come out the same every time ("refused by the API":
+# mrag/vine/alibaba_client.py, a refusal of the request itself, also one sent
+# inside a stream; an account problem there names no refusal, so it is retried)
+_NO_RETRY = ("PromptTooLong", "answered 400", "answered 422", "refused by the API")
 
 
 def plan_needs_retry(rec: Optional[Dict[str, Any]], question: str) -> bool:

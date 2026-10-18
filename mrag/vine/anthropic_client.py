@@ -2,7 +2,8 @@
 
 The checkers (the text and image verifiers) take one function,
 `ask(prompt, images) -> str` (see `model_verifiers.py`). This file supplies it
-for a Claude model. The parser keeps its own open model (`vllm_client.py`).
+for a Claude model. The parser has its own clients: `vllm_client.py` for the
+open model on our GPUs, `alibaba_client.py` for Qwen3.8-Max over its API.
 
 REPEATABLE BY CACHING, NOT BY TEMPERATURE
 -----------------------------------------

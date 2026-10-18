@@ -3,7 +3,9 @@
     retrieval : the retrieval check on the 154 DEV cases (with the gate),
                 then Kq for every question                          (1 GPU)
     parse     : the parser (Qwen3.8-27B-FP8, xhigh) writes every plan, with
-                one vLLM server per GPU, one question at a time each (N GPUs)
+                one vLLM server per GPU, one question at a time each (N GPUs);
+                or, with VINE_PARSER=alibaba, Qwen3.8-Max over the Model
+                Studio API, 8 plans at a time (1 GPU, no servers)
     execute   : the checkers (Claude Sonnet 5.5) execute every plan, and the
                 answers are written                                  (1 GPU)
 
@@ -22,6 +24,10 @@ The repeat run (VINE_REPEAT=NAME, the parse stage only): the 11 DEV plans made
 again from the same Kq, into parser_runs_faster/repeat_NAME/ with its own,
 empty model cache, so every reply comes from a new model call. Then
 hprc/compare_plans.py NAME compares them with the plans of the first run.
+With an API plan-writer (VINE_PARSER=alibaba or api, bash hprc/run.sh ACCOUNT 1
+repeat NAME alibaba): every question, planned and then answered, with empty reply
+caches for both the plans and the checks; compared offline with the first run of
+that plan-writer.
 
 The probe (VINE_PROBE=NAME, the probe stage only, 4 GPUs): why the parser's reply
 changes from one server start to the next; see hprc/repeat_probe.py.
@@ -80,6 +86,32 @@ CHECKER_MODEL, CHECKER_EFFORT, CHECKER_MAX_TOKENS = "claude-sonnet-5-5", "high",
 PARSER_API_MODEL, PARSER_API_EFFORT, PARSER_API_MAX_TOKENS = "claude-sonnet-5-5", "high", 32000
 PARSER_API_WORKERS = 8
 PARSER_API_TAG = "asonnet55-high"            # in the run folder's name, in place of the pin
+# The plan-writer when the run is given "alibaba" (bash hprc/run.sh ACCOUNT 1 parse
+# alibaba): Qwen3.8-Max on Alibaba Cloud Model Studio, over its OpenAI-compatible
+# API (mrag/vine/alibaba_client.py). It is not the checkers' model, nor from the
+# same company: a plan is never judged by the model that wrote it (S2.2: "verification
+# by an LLM is itself fallible"; S4.6 lists "a single LLM for all verification
+# operations" as an ablation). Same prompt, same checks on the plan, same repair loop.
+#   thinking budget 131,072   the model's own default when nothing is set, and the
+#                  effort the Qwen servers use (Model Studio maps 16,385-262,144 to
+#                  xhigh). About 3 times the longest reply Qwen3.8-27B wrote at xhigh
+#                  (45,569 tokens). Sent as a budget, not as "xhigh": xhigh alone
+#                  means a budget of 262,144, and at its budget the model stops
+#                  thinking and answers.
+#   163,840        max_completion_tokens: the budget plus 32,768 for the plan (the
+#                  longest plan on 17 Oct was 5,730 tokens), so a long think never
+#                  leaves no room for the plan
+#   seed 42        sent; no temperature is sent, so the model's own defaults are used.
+#                  A hosted model does not promise the same reply twice: the repeat
+#                  run measures what a fresh call changes.
+# The region is the one the key was made in (VINE_ALIBABA_REGION, default below).
+PARSER_ALIBABA_MODEL, PARSER_ALIBABA_THINKING, PARSER_ALIBABA_MAX_TOKENS = "qwen3.8-max", 131072, 163840
+PARSER_ALIBABA_WORKERS = 8
+PARSER_ALIBABA_TAG = f"aqwen38max-t{PARSER_ALIBABA_THINKING}"   # the model and its budget
+PARSER_ALIBABA_REGION = "singapore"
+# The API plan-writers: VINE_PARSER -> (model, tag in the run folder's name)
+API_PARSERS = {"api": (PARSER_API_MODEL, PARSER_API_TAG),
+               "alibaba": (PARSER_ALIBABA_MODEL, PARSER_ALIBABA_TAG)}
 MAX_IMAGES = 4
 FIG_KEYS = ("figure_id", "caption", "n_sheets", "image_paths", "image_path", "page_pdf", "source")
 SETTING_NAMES = (
@@ -121,6 +153,21 @@ class Run:
         qfile = os.environ.get("VINE_QUESTIONS", "").strip()
         self.repeat = os.environ.get("VINE_REPEAT", "").strip()
         self.probe = os.environ.get("VINE_PROBE", "").strip()
+        # who writes the plans: the Qwen servers on this job's GPUs (default), or an
+        # API model (VINE_PARSER=alibaba: Qwen3.8-Max; VINE_PARSER=api: the checkers'
+        # own model, for comparison only); run.sh always sets it, empty for Qwen
+        self.parser = (os.environ.get("VINE_PARSER", "").strip().lower() or "qwen")
+        assert self.parser == "qwen" or self.parser in API_PARSERS, \
+            f"VINE_PARSER={self.parser!r}: use alibaba or api, or leave it empty for the Qwen servers"
+        self.api = self.parser in API_PARSERS
+        assert not (self.api and self.probe), \
+            "the probe tests the Qwen servers -- leave VINE_PARSER empty"
+        self.alibaba_region = ""
+        if self.parser == "alibaba":
+            from mrag.vine.alibaba_client import base_url_for
+            self.alibaba_region = (os.environ.get("VINE_ALIBABA_REGION", "").strip().lower()
+                                   or PARSER_ALIBABA_REGION)
+            base_url_for(self.alibaba_region)       # an unknown region stops here, before any job work
         if self.probe:
             assert re.fullmatch(r"[A-Za-z0-9_-]{1,40}", self.probe), \
                 f"VINE_PROBE={self.probe!r}: use letters, digits, - and _ only"
@@ -128,8 +175,14 @@ class Run:
         if self.repeat:
             assert re.fullmatch(r"[A-Za-z0-9_-]{1,40}", self.repeat), \
                 f"VINE_REPEAT={self.repeat!r}: use letters, digits, - and _ only"
-            assert not qfile, "a repeat run makes the DEV plans only -- unset VINE_QUESTIONS"
-            self.answer_set, self.set_name = {}, "no other"
+            assert not qfile, "a repeat run never takes VINE_QUESTIONS -- unset it"
+            if self.api:
+                # the API repeat (17 Oct 2026): every question again, planned AND
+                # answered, with empty reply caches -- how often a fresh call changes
+                # a plan, and whether that changes the decision
+                self.answer_set, self.set_name = sample_questions(), "sample"
+            else:
+                self.answer_set, self.set_name = {}, "no other"
         elif qfile:
             self.answer_set, self.set_name = json.loads(Path(qfile).read_text()), "sealed"
         else:
@@ -141,14 +194,6 @@ class Run:
         self.retr_commit = vr.retrieval_commit(str(REPO))
         self.store_tag = vr.store_tag(CFG.base_dir)
         self.instructions_sha = hashlib.sha256((PARSER_TASK + PARSER_CONTRACT).encode()).hexdigest()
-        # who writes the plans: the Qwen servers on this job's GPUs (default), or
-        # the API model (VINE_PARSER=api); run.sh always sets it, empty for Qwen
-        self.parser = (os.environ.get("VINE_PARSER", "").strip().lower() or "qwen")
-        assert self.parser in ("qwen", "api"), \
-            f"VINE_PARSER={self.parser!r}: use api, or leave it empty for the Qwen servers"
-        if self.parser == "api":
-            assert not self.repeat and not self.probe, \
-                "the repeat test and the probe test the Qwen servers -- leave VINE_PARSER empty"
         base = Path(CFG.base_dir) / "parser_runs_faster"
         # Kq is always the shared one, so a repeat run reads exactly what the first run read
         self.kq_file = base / f"kq_r{self.retr_commit}_s{self.store_tag}.json"
@@ -158,19 +203,27 @@ class Run:
         # the folder of the runs before the tuning pin (11-12 Oct), where the probe's prompts are
         self.unpinned_run_name = f"e2e_r{self.retr_commit}_s{self.store_tag}_p{self.instructions_sha[:8]}"
         self.run_dir = self.runs / f"{self.unpinned_run_name}_k{PIN_SHA}"
-        if self.parser == "api":
-            # its own folder and reply cache: API plans never mix with Qwen plans
+        if self.api:
+            # its own folder and reply cache: API plans never mix with Qwen plans, nor
+            # one API model's plans with another's (the cache key holds the model too)
             self.model_cache = self.runs / "parser_api_cache"
-            self.run_dir = self.runs / f"{self.unpinned_run_name}_{PARSER_API_TAG}"
+            self.run_dir = self.runs / f"{self.unpinned_run_name}_{API_PARSERS[self.parser][1]}"
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.plans_file = self.run_dir / "plans.json"
         self.settings = {k: getattr(CFG, k) for k in SETTING_NAMES}
         self.job = os.environ.get("SLURM_JOB_ID", "nojob")
         say(f"code commit {self.commit} | retrieval code {self.retr_commit} | store {self.store_tag} "
             f"| parser instructions {self.instructions_sha[:12]} | plans by "
-            f"{PARSER_API_MODEL + ' (API)' if self.parser == 'api' else MODEL_ID}")
+            f"{API_PARSERS[self.parser][0] + ' (API)' if self.api else MODEL_ID}"
+            f"{' | region ' + self.alibaba_region if self.alibaba_region else ''}")
+        if self.parser == "api":
+            say("note: the plans are written by the checkers' own model -- a comparison run, "
+                "not the setup (S2.2, S4.6); the setup's API plan-writer is 'alibaba'")
         say(f"{len(self.questions)} questions: {len(self.dev)} DEV + {len(self.answer_set)} {self.set_name}")
-        if self.repeat:
+        if self.repeat and self.api:
+            say(f"REPEAT RUN '{self.repeat}' (API): every plan made again from {self.kq_file} with an "
+                f"empty reply cache {self.model_cache}, then answered with an empty checker cache")
+        elif self.repeat:
             say(f"REPEAT RUN '{self.repeat}': the DEV plans again, from {self.kq_file}, "
                 f"with their own model cache {self.model_cache}")
         say(f"run folder: {self.run_dir}")
@@ -443,6 +496,8 @@ def _stage_parse(R: Run) -> int:
     for t in table_data.load(Path(CFG.tables_jsonl)):
         tables.setdefault(t.table_id, []).append(t)
 
+    if R.parser == "alibaba":
+        return _parse_with_alibaba(R, kq, records, to_parse, kg, tables)
     if R.parser == "api":
         return _parse_with_api(R, kq, records, to_parse, kg, tables)
 
@@ -643,6 +698,70 @@ def _parse_with_api(R: Run, kq: dict, records: dict, to_parse: list, kg, tables:
     return code
 
 
+def _parse_with_alibaba(R: Run, kq: dict, records: dict, to_parse: list, kg, tables: dict) -> int:
+    """The plans written by Qwen3.8-Max on Model Studio (VINE_PARSER=alibaba):
+    the same prompt, checks on the plan and repair loop as the Qwen servers,
+    PARSER_ALIBABA_WORKERS plans at a time, no GPU. Each worker has its own
+    client (its own call record), all on one reply cache.
+
+    First a probe: one short question with exactly the plans' settings
+    (thinking budget, token limit, seed), not cached. A wrong key, a key from
+    another region, a model name the account does not have or a setting the
+    model refuses stops the job here, before any plan is asked for."""
+    from mrag.vine import alibaba_client as al
+    if not os.environ.get("DASHSCOPE_API_KEY"):
+        say("STOPPED: no Model Studio key (DASHSCOPE_API_KEY). Save it as hprc/README.md says.")
+        return 1
+    base = al.base_url_for(R.alibaba_region)
+    probe = al.make_ask_alibaba(PARSER_ALIBABA_MODEL, base_url=base, thinking_budget=PARSER_ALIBABA_THINKING,
+                                max_completion_tokens=PARSER_ALIBABA_MAX_TOKENS, seed=SEED,
+                                max_retries=2, say=say)
+    try:
+        reply = probe('Reply with this JSON object and nothing else: {"ok": true}', [])
+    except Exception as e:                                       # noqa: BLE001
+        say(f"STOPPED: the Model Studio probe failed ({base}, model {PARSER_ALIBABA_MODEL}): {e}")
+        say("  401 or 'InvalidApiKey': the key is wrong, or it was made in another region -- the region "
+            "is set with VINE_ALIBABA_REGION (singapore, us, beijing, hongkong; see hprc/README.md).")
+        say("  404 or 'model not found': this account or region does not offer that model name.")
+        say("  'account or its settings': no balance, no access to the model, or one of the above.")
+        return 1
+    last = probe.last or {}
+    say(f"API probe: {reply[:60]!r} | {last.get('finish_reason')} | {last.get('model_returned')} | {base} "
+        f"| thinking {last.get('reasoning_chars', 0)} characters | {last.get('seconds')}s")
+    if '"ok"' not in reply:
+        say("STOPPED: the API answered, but not with the JSON asked for. Send this log.")
+        return 1
+    if not last.get("reasoning_chars"):
+        say("note: the probe's reply came with no thinking text; the plans are asked for with thinking on")
+    n = max(1, min(PARSER_ALIBABA_WORKERS, len(to_parse)))
+    asks = [(i, al.make_ask_alibaba(PARSER_ALIBABA_MODEL, base_url=base,
+                                    thinking_budget=PARSER_ALIBABA_THINKING,
+                                    max_completion_tokens=PARSER_ALIBABA_MAX_TOKENS, seed=SEED,
+                                    cache_dir=str(R.model_cache), say=say))
+            for i in range(n)]
+    vr.save_json(R.run_dir / "parse_manifest.json", {
+        "commit": R.commit, "parser": "alibaba", "provider": "Alibaba Cloud Model Studio",
+        "model": PARSER_ALIBABA_MODEL, "model_returned": last.get("model_returned", ""),
+        "region": R.alibaba_region, "base_url": base, "enable_thinking": True,
+        "thinking_budget": PARSER_ALIBABA_THINKING, "reasoning_effort": "xhigh (Model Studio maps the budget to it)",
+        "max_completion_tokens": PARSER_ALIBABA_MAX_TOKENS,
+        "seed": SEED, "sampling": "not sent (the model's own defaults)", "stream": True,
+        "workers": n, "max_attempts": 3, "fallback": False, "reply_cache": str(R.model_cache),
+        "checker_model": CHECKER_MODEL,
+        "instructions": "fix7 (17 Oct: asked items, cases, named exceptions; conditions the facts are silent on)",
+        "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
+        "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job})
+    say(f"{n} API workers | {PARSER_ALIBABA_MODEL}, thinking budget {PARSER_ALIBABA_THINKING}, "
+        f"max_completion_tokens {PARSER_ALIBABA_MAX_TOKENS}, seed {SEED}, region {R.alibaba_region}")
+    code = _make_plans(R, kq, records, to_parse, asks, kg, tables, "api")
+    cost = al.cost_usd(probe.calls, PARSER_ALIBABA_MODEL) + sum(
+        al.cost_usd(a.calls, PARSER_ALIBABA_MODEL) for _i, a in asks)
+    cut = sum(1 for _i, a in asks for c in a.calls if not c.get("cached") and c.get("finish_reason") == "length")
+    say(f"cost of new parser calls in this job, at the list price: ${cost:.3f} "
+        f"(the Model Studio console has the bill)" + (f" | {cut} replies cut off by the token limit" if cut else ""))
+    return code
+
+
 # --------------------------------------------------------------------------- #
 # Stage 3: the checkers execute every plan; the answers
 # --------------------------------------------------------------------------- #
@@ -825,8 +944,10 @@ def main() -> int:
     say(f"=== VINE on FASTER: {args.stage} | {time.strftime('%Y-%m-%d %H:%M:%S')} | job {os.environ.get('SLURM_JOB_ID', '-')} "
         f"| node {os.uname().nodename} ===")
     R = Run()
-    if R.repeat and args.stage != "parse":
-        say(f"STOPPED: a repeat run (VINE_REPEAT={R.repeat}) makes plans only -- the parse stage, not {args.stage}")
+    allowed = ("parse", "execute") if R.api else ("parse",)
+    if R.repeat and args.stage not in allowed:
+        say(f"STOPPED: a repeat run (VINE_REPEAT={R.repeat}) runs only the {' and '.join(allowed)} "
+            f"stage{'s' if len(allowed) > 1 else ''}, not {args.stage}")
         return 2
     if bool(R.probe) != (args.stage == "probe"):
         say("STOPPED: the probe stage runs with VINE_PROBE set, and only then -- "

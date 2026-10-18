@@ -99,6 +99,7 @@ class _Patched:
 def _vine_hprc():
     sys.path.insert(0, str(REPO / "hprc"))
     sys.path.insert(0, str(REPO / "evaluation"))
+    import mrag.config  # noqa: F401  -- first, as on Colab: vine_hprc would set MRAG_ENV=hprc
     return importlib.import_module("vine_hprc")
 
 
@@ -329,8 +330,8 @@ def test_api_run_has_its_own_folder_and_reply_cache_and_the_same_kq():
         assert api.run_dir != qwen.run_dir and api.run_dir.is_dir()
         assert api.model_cache == api.runs / "parser_api_cache" != qwen.model_cache
         assert api.kq_file == qwen.kq_file and api.questions == qwen.questions
-        for env in ({"VINE_PARSER": "gpt"}, {"VINE_PARSER": "api", "VINE_REPEAT": "r1"},
-                    {"VINE_PARSER": "api", "VINE_PROBE": "p1"}):
+        for env in ({"VINE_PARSER": "gpt"}, {"VINE_PARSER": "api", "VINE_PROBE": "p1"},
+                    {"VINE_PARSER": "api", "VINE_REPEAT": "r1", "VINE_QUESTIONS": "/x/sealed.json"}):
             try:
                 _run_env(d, env)
             except AssertionError:
@@ -460,6 +461,37 @@ def test_api_plan_goes_through_the_real_parser_checks_and_record():
         assert rec["completion_tokens"] == 240 and json.loads(R.plans_file.read_text())[qid]["attempts"] == 2
 
 
+def test_api_repeat_plans_and_answers_every_question_with_empty_caches():
+    """bash hprc/run.sh ACCOUNT 1 repeat NAME api: every question again, in the
+    repeat folder, with its own (empty) reply cache and checker cache; the first
+    API run's folder is the same name one level up, untouched."""
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        first = _run_env(d, {"VINE_PARSER": "api"})
+        rep = _run_env(d, {"VINE_PARSER": "api", "VINE_REPEAT": "a1"})
+        qrep = _run_env(d, {"VINE_PARSER": None, "VINE_REPEAT": "q1"})
+        assert rep.runs == Path(d) / "parser_runs_faster" / "repeat_a1" and rep.run_dir.parent == rep.runs
+        assert rep.run_dir.name == first.run_dir.name                    # same code, store, instructions
+        assert rep.model_cache == rep.runs / "parser_api_cache" != first.model_cache
+        assert rep.kq_file == first.kq_file and rep.questions == first.questions   # all 31
+        assert len(rep.questions) == 31 and rep.set_name == "sample"
+        assert sorted(qrep.questions) == sorted(qrep.dev_ids)            # the Qwen repeat: DEV only, as before
+        # the stages it may run: parse and execute (the Qwen repeat: parse only)
+        ran = []
+        stages = [(V, n, (lambda n: (lambda R: ran.append((n, R.repeat, R.parser)) or 0))(n))
+                  for n in ("stage_parse", "stage_execute", "stage_retrieval", "stage_probe")]
+        from mrag.config import CFG
+        for env, stage, code in (({"VINE_PARSER": "api", "VINE_REPEAT": "a1"}, "parse", 0),
+                                 ({"VINE_PARSER": "api", "VINE_REPEAT": "a1"}, "execute", 0),
+                                 ({"VINE_PARSER": "api", "VINE_REPEAT": "a1"}, "retrieval", 2),
+                                 ({"VINE_PARSER": None, "VINE_REPEAT": "q1"}, "execute", 2)):
+            with _Patched([(CFG, "base_dir", Path(d))] + stages,
+                          {"VINE_QUESTIONS": None, "VINE_PROBE": None, **env}):
+                with _Patched([(sys, "argv", ["vine_hprc.py", stage])]):
+                    assert V.main() == code, (env, stage)
+        assert ran == [("stage_parse", "a1", "api"), ("stage_execute", "a1", "api")], ran
+
+
 def test_run_sh_api_submits_a_one_gpu_parse_and_marks_every_stage():
     import shutil
     import subprocess
@@ -496,8 +528,283 @@ def test_run_sh_api_submits_a_one_gpu_parse_and_marks_every_stage():
         assert code == 0 and "--gres=gpu:a100:8" in calls[0] and all("VINE_PARSER=," in c for c in calls), calls
         code, out, calls = run("123", "8", "parse", "gpt")
         assert code == 1 and calls == [], out
+        # the API repeat: parse on 1 GPU, then execute, both marked with the repeat name and api
+        code, out, calls = run("123", "8", "repeat", "a1", "api")       # 8 asked: still 1 GPU
+        assert code == 0 and len(calls) == 2, out
+        assert "STAGE=parse" in calls[0] and "STAGE=execute" in calls[1] and "--dependency" in calls[1]
+        assert "--gres=gpu:a100:1" in calls[0] and all("VINE_REPEAT=a1," in c and "VINE_PARSER=api," in c
+                                                       for c in calls), calls
+        code, out, calls = run("123", "1", "repeat", "a1", "gpt")
+        assert code == 1 and calls == [], out
+        # the Qwen repeat is unchanged: the parse stage only, no API mark
+        code, out, calls = run("123", "6", "repeat", "q1")
+        assert code == 0 and len(calls) == 1 and "VINE_PARSER=," in calls[0], calls
+        # an API repeat needs the key; the Qwen repeat does not
+        (scratch / "vine" / "anthropic_key").unlink()
+        code, out, calls = run("123", "1", "repeat", "a2", "api")
+        assert code == 1 and calls == [] and "key is missing" in out, out
+        code, out, calls = run("123", "6", "repeat", "q2")
+        assert code == 0 and len(calls) == 1
     slurm = (REPO / "hprc" / "vine_job.slurm").read_text()
-    assert '[ "$STAGE" = parse ] && [ "${VINE_PARSER:-}" = api ]' in slurm      # the proxy and the key
+    assert '[ "$STAGE" = parse ] && [ -n "${VINE_PARSER:-}" ]' in slurm      # the proxy and the keys
+
+
+# --------------------------------------------------------------------------- #
+# Plans written by Qwen3.8-Max over Model Studio (VINE_PARSER=alibaba), 18 Oct
+# --------------------------------------------------------------------------- #
+def test_alibaba_run_has_its_own_folder_and_region_and_the_same_kq():
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        qwen = _run_env(d, {"VINE_PARSER": None, "VINE_ALIBABA_REGION": None})
+        sonnet = _run_env(d, {"VINE_PARSER": "api", "VINE_ALIBABA_REGION": None})
+        ali = _run_env(d, {"VINE_PARSER": "alibaba", "VINE_ALIBABA_REGION": None})
+        assert ali.parser == "alibaba" and ali.api and sonnet.api and not qwen.api
+        assert ali.run_dir.name == qwen.unpinned_run_name + "_" + V.PARSER_ALIBABA_TAG
+        assert V.PARSER_ALIBABA_TAG == "aqwen38max-t131072"             # the model and its thinking budget
+        assert len({ali.run_dir, sonnet.run_dir, qwen.run_dir}) == 3 and ali.run_dir.is_dir()
+        assert ali.model_cache == ali.runs / "parser_api_cache"         # keys hold the model
+        assert ali.kq_file == qwen.kq_file and ali.questions == qwen.questions
+        assert ali.alibaba_region == "singapore" and sonnet.alibaba_region == qwen.alibaba_region == ""
+        assert _run_env(d, {"VINE_PARSER": "alibaba", "VINE_ALIBABA_REGION": " US "}).alibaba_region == "us"
+        for env in ({"VINE_PARSER": "alibaba", "VINE_PROBE": "p1"},
+                    {"VINE_PARSER": "alibaba", "VINE_REPEAT": "r1", "VINE_QUESTIONS": "/x/sealed.json"},
+                    {"VINE_PARSER": "alibaba", "VINE_ALIBABA_REGION": "europe"}):
+            try:
+                _run_env(d, env)
+            except (AssertionError, ValueError):
+                continue
+            raise AssertionError(f"accepted {env}")
+
+
+def _alibaba_stage(d, fake_make, env):
+    """Run the parse stage with VINE_PARSER=alibaba and a fake client maker."""
+    import json
+    from mrag.config import CFG
+    from mrag import kg_vine
+    from mrag.vine import alibaba_client as al, anthropic_client as ac, table_data, vllm_client as vc
+    import mrag.vine.parser as parser_mod
+    V = _vine_hprc()
+
+    def fake_parser(ask, **k):
+        def parse(question, chunks, section, figures):
+            ask("PLAN FOR " + question)
+            return None, {"made": True}
+        return parse
+
+    def fake_record(qid, q, v, spec, rep, net, secs, case=None):
+        return {"case_id": qid, "question": q, "outcome": "valid first time", "attempts": 1, "stats": {},
+                "seconds": secs, "calls": [], "spec": None, "raw_replies": [], "problems": []}
+
+    def never(*a, **k):
+        raise AssertionError("the alibaba run used a parser server or the Claude parser")
+
+    base = Path(d)
+    qwen = _run_env(d, {"VINE_PARSER": None})
+    if not qwen.kq_file.exists():
+        kq = {q: {"question": t, "chunks": [], "figures": []} for q, t in qwen.questions.items()}
+        qwen.kq_file.write_text(json.dumps(kq))
+    R = _run_env(d, {"VINE_PARSER": "alibaba", "VINE_ALIBABA_REGION": env.get("VINE_ALIBABA_REGION")})
+    patches = [
+        (CFG, "base_dir", base),
+        (kg_vine, "VineKG", lambda *a, **k: type("KG", (), {"is_known_citation": staticmethod(lambda r: True)})()),
+        (table_data, "load", lambda p: []),
+        (al, "make_ask_alibaba", fake_make), (ac, "make_ask_anthropic", never),
+        (vc, "launch", never), (vc, "make_ask_vllm", never),
+        (parser_mod, "make_semantic_parser", fake_parser),
+        (V.pc, "make_record", fake_record),
+        (V.pc, "print_summary", lambda *a: None), (V.pc, "summarize", lambda *a: {}),
+        (V.pc, "print_plan", lambda *a: None),
+    ]
+    with _Patched(patches, {"VINE_PARSER": "alibaba", "CUDA_VISIBLE_DEVICES": None, "VINE_REPEAT": None,
+                            "VINE_QUESTIONS": None, **env}):
+        return V.stage_parse(R), R, qwen
+
+
+def test_alibaba_parse_stage_probes_first_then_writes_plans_with_its_clients():
+    import json
+    V = _vine_hprc()
+    made, prompts = [], []
+
+    def fake_make(model, **k):
+        made.append({"model": model, **k})
+
+        def ask(prompt, images=None):
+            prompts.append((len(made), prompt))
+            ask.last = {"cache_key": "k", "cached": False, "finish_reason": "stop", "model": model,
+                        "model_returned": "qwen3.8-max", "prompt_tokens": 1000,
+                        "usage": {"prompt_tokens": 1000, "completion_tokens": 100}}
+            ask.calls.append(ask.last)
+            return '{"ok": true}'
+        ask.last, ask.calls = None, []
+        return ask
+
+    with tempfile.TemporaryDirectory() as d:
+        code, R, qwen = _alibaba_stage(d, fake_make, {"DASHSCOPE_API_KEY": "k", "VINE_ALIBABA_REGION": "us"})
+        assert code == 0
+        plans = json.loads(R.plans_file.read_text())
+        assert sorted(plans) == sorted(R.questions) and not qwen.plans_file.exists()
+        probe, workers = made[0], made[1:]
+        # the probe: first, with the plans' own settings, no cache, in the key's region
+        assert prompts[0] == (1, 'Reply with this JSON object and nothing else: {"ok": true}')
+        assert probe.get("enable_thinking", True) is True and probe["thinking_budget"] == 131072
+        assert "reasoning_effort" not in probe and probe["max_completion_tokens"] == 163840 and probe["seed"] == 42
+        assert probe.get("cache_dir") is None and probe["base_url"].startswith("https://dashscope-us.")
+        assert len(workers) == V.PARSER_ALIBABA_WORKERS and all(
+            m["model"] == V.PARSER_ALIBABA_MODEL == "qwen3.8-max" and "reasoning_effort" not in m
+            and m["thinking_budget"] == V.PARSER_ALIBABA_THINKING == 131072
+            and m["max_completion_tokens"] == V.PARSER_ALIBABA_MAX_TOKENS == 163840 and m["seed"] == V.SEED
+            and m["cache_dir"] == str(R.model_cache) and m["base_url"] == probe["base_url"]
+            and "sampling" not in m and m.get("enable_thinking", True) is True
+            for m in workers), workers
+        assert sorted(p for _i, p in prompts if p.startswith("PLAN FOR ")) == \
+            sorted("PLAN FOR " + t for t in R.questions.values())
+        manifest = json.loads((R.run_dir / "parse_manifest.json").read_text())
+        assert manifest["parser"] == "alibaba" and manifest["model"] == "qwen3.8-max"
+        assert manifest["region"] == "us" and manifest["thinking_budget"] == 131072
+        assert manifest["checker_model"] == V.CHECKER_MODEL != manifest["model"]
+        assert manifest["instructions_sha256"] == R.instructions_sha and manifest["seed"] == 42
+        # a second job finds every plan made and asks nothing, not even the probe
+        made.clear(); prompts.clear()
+        code, R, qwen = _alibaba_stage(d, fake_make, {"DASHSCOPE_API_KEY": "k"})
+        assert code == 0 and made == [] and prompts == []
+
+
+def test_alibaba_parse_stage_stops_on_no_key_a_failed_probe_or_a_wrong_reply():
+    made = []
+
+    def maker(reply=None, error=None):
+        def fake_make(model, **k):
+            made.append(k)
+
+            def ask(prompt, images=None):
+                if error:
+                    raise RuntimeError(error)
+                ask.last = {"finish_reason": "stop", "model_returned": "qwen3.8-max", "usage": {}}
+                ask.calls.append(ask.last)
+                return reply
+            ask.last, ask.calls = None, []
+            return ask
+        return fake_make
+
+    with tempfile.TemporaryDirectory() as d:
+        code, R, _q = _alibaba_stage(d, maker('{"ok": true}'), {"DASHSCOPE_API_KEY": None})
+        assert code == 1 and made == [] and not R.plans_file.exists()      # no key: nothing asked
+        code, R, _q = _alibaba_stage(d, maker(error="the API answered 401: InvalidApiKey"),
+                                     {"DASHSCOPE_API_KEY": "k"})
+        assert code == 1 and len(made) == 1 and not R.plans_file.exists()  # the probe only
+        made.clear()
+        code, R, _q = _alibaba_stage(d, maker("I cannot help with that."), {"DASHSCOPE_API_KEY": "k"})
+        assert code == 1 and len(made) == 1 and not R.plans_file.exists()
+
+
+def test_an_account_stop_mid_run_stops_the_job_and_a_refusal_does_not():
+    """The real parser and _make_plans, with the client's own error messages:
+    no balance halfway (Arrearage) leaves the plans marked broken, so the job
+    stops (the execute job never starts) and the next job makes them; a request
+    the API refuses as such is a result, not asked again."""
+    V = _vine_hprc()
+    from mrag.vine import alibaba_client as al
+    with tempfile.TemporaryDirectory() as d:
+        R = _run_env(d, {"VINE_PARSER": "alibaba"})
+        qids = R.dev_ids[:2]
+        R.questions = {q: R.questions[q] for q in qids}
+        R.answer_set = {}
+        kq = {q: {"question": R.questions[q], "figures": [], "chunks": []} for q in qids}
+        kg = type("KG", (), {"is_known_citation": staticmethod(lambda kind, ident: True)})()
+        quiet = [(V.pc, "print_summary", lambda *a: None), (V.pc, "print_plan", lambda *a: None)]
+        for err, code, again in ((al._account_error("HTTP 400: Arrearage"), 1, True),
+                                 (al._refused("the API answered 400: DataInspectionFailed"), 0, False)):
+            def ask(prompt, images=None, err=err):
+                raise err
+            ask.last = None
+            records = {}
+            with _Patched(quiet):
+                assert V._make_plans(R, kq, records, list(qids), [(0, ask)], kg, {}, "api") == code
+            assert all(records[q]["outcome"] == "failed" for q in qids)
+            assert [V.vr.plan_needs_retry(records[q], R.questions[q]) for q in qids] == [again, again]
+
+
+def test_alibaba_repeat_plans_and_answers_every_question_with_empty_caches():
+    V = _vine_hprc()
+    from mrag.config import CFG
+    with tempfile.TemporaryDirectory() as d:
+        first = _run_env(d, {"VINE_PARSER": "alibaba"})
+        rep = _run_env(d, {"VINE_PARSER": "alibaba", "VINE_REPEAT": "m1"})
+        assert rep.runs == Path(d) / "parser_runs_faster" / "repeat_m1" and rep.run_dir.name == first.run_dir.name
+        assert rep.model_cache == rep.runs / "parser_api_cache" != first.model_cache
+        assert rep.kq_file == first.kq_file and len(rep.questions) == 31 and rep.set_name == "sample"
+        ran = []
+        stages = [(V, n, (lambda n: (lambda R: ran.append((n, R.repeat, R.parser)) or 0))(n))
+                  for n in ("stage_parse", "stage_execute", "stage_retrieval", "stage_probe")]
+        for stage, code in (("parse", 0), ("execute", 0), ("retrieval", 2)):
+            with _Patched([(CFG, "base_dir", Path(d))] + stages,
+                          {"VINE_QUESTIONS": None, "VINE_PROBE": None, "VINE_PARSER": "alibaba",
+                           "VINE_REPEAT": "m1"}):
+                with _Patched([(sys, "argv", ["vine_hprc.py", stage])]):
+                    assert V.main() == code, stage
+        assert ran == [("stage_parse", "m1", "alibaba"), ("stage_execute", "m1", "alibaba")], ran
+
+
+def test_run_sh_alibaba_checks_the_key_and_region_and_submits_a_one_gpu_parse():
+    import shutil
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        scratch, stubs = d / "scratch", d / "stubs"
+        (scratch / "vine").mkdir(parents=True)
+        (scratch / "vine" / ".done_models").write_text("")
+        (scratch / "vine" / "anthropic_key").write_text("k")
+        stubs.mkdir()
+        (stubs / "sbatch").write_text('#!/bin/bash\necho "$@" >> "$SIM_LOG"\necho $((RANDOM + 1000))\n')
+        (stubs / "sbatch").chmod(0o755)
+        log = d / "sbatch.log"
+
+        def run(*args, extra=None):
+            if log.exists():
+                log.unlink()
+            env = {"PATH": f"{stubs}:/usr/bin:/bin", "HOME": str(d / "home"), "SCRATCH": str(scratch),
+                   "USER": "u", "SIM_LOG": str(log), **(extra or {})}
+            p = subprocess.run([shutil.which("bash"), str(REPO / "hprc" / "run.sh"), *args], env=env,
+                               capture_output=True, text=True, timeout=60)
+            return p.returncode, p.stdout + p.stderr, (log.read_text().splitlines() if log.exists() else [])
+
+        # no Model Studio key: refused for a run that plans, not for one that only executes
+        code, out, calls = run("123", "8", "parse", "alibaba")
+        assert code == 1 and calls == [] and "Model Studio (Alibaba) key is missing" in out, out
+        code, out, calls = run("123", "1", "execute", "alibaba")
+        assert code == 0 and len(calls) == 1 and "VINE_PARSER=alibaba," in calls[0], out
+        (scratch / "vine" / "alibaba_key").write_text("sk")
+        code, out, calls = run("123", "8", "parse", "alibaba")             # 8 asked: still 1 GPU
+        assert code == 0 and len(calls) == 2, out
+        assert "STAGE=parse" in calls[0] and "STAGE=execute" in calls[1] and "--dependency" in calls[1]
+        assert "--gres=gpu:a100:1" in calls[0] and "--time=04:00:00" in calls[0], calls[0]
+        assert all("VINE_PARSER=alibaba," in c and "VINE_ALIBABA_REGION=," in c for c in calls), calls
+        assert "Model Studio region: singapore" in out and "API model (alibaba)" in out
+        # the region: a file saved once, or the variable in front of the command (it wins)
+        (scratch / "vine" / "alibaba_region").write_text("US\n")
+        code, out, calls = run("123", "1", "parse", "alibaba")
+        assert code == 0 and all("VINE_ALIBABA_REGION=us," in c for c in calls), calls
+        code, out, calls = run("123", "1", "parse", "alibaba", extra={"VINE_ALIBABA_REGION": "beijing"})
+        assert code == 0 and all("VINE_ALIBABA_REGION=beijing," in c for c in calls), calls
+        code, out, calls = run("123", "1", "parse", "alibaba", extra={"VINE_ALIBABA_REGION": "europe"})
+        assert code == 1 and calls == [], out
+        # a Qwen run never carries a region left in the shell
+        code, out, calls = run("123", "8", "parse", extra={"VINE_ALIBABA_REGION": "us"})
+        assert code == 0 and all("VINE_PARSER=," in c and "VINE_ALIBABA_REGION=," in c for c in calls), calls
+        # the Sonnet comparison run keeps its 2-hour parse
+        code, out, calls = run("123", "1", "parse", "api")
+        assert code == 0 and "--time=02:00:00" in calls[0], calls
+        # the repeat: parse (1 GPU, 4 hours) then execute, both marked
+        code, out, calls = run("123", "8", "repeat", "m1", "alibaba")
+        assert code == 0 and len(calls) == 2, out
+        assert "--gres=gpu:a100:1" in calls[0] and "--time=04:00:00" in calls[0]
+        assert all("VINE_REPEAT=m1," in c and "VINE_PARSER=alibaba," in c for c in calls), calls
+        (scratch / "vine" / "alibaba_key").unlink()
+        code, out, calls = run("123", "1", "repeat", "m2", "alibaba")
+        assert code == 1 and calls == [] and "key is missing" in out, out
+    slurm = (REPO / "hprc" / "vine_job.slurm").read_text()
+    assert '[ "${VINE_PARSER:-}" = alibaba ] && [ -z "${DASHSCOPE_API_KEY:-}" ]' in slurm
+    assert 'DASHSCOPE_API_KEY="$(cat "$VINE_HOME/alibaba_key")"' in slurm
 
 
 # --------------------------------------------------------------------------- #

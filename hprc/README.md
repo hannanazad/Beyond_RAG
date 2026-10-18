@@ -90,10 +90,22 @@ bash hprc/run.sh ACCOUNT 8
 - **The gate has two sides** (15 October). The retrieval check is compared with the 7 October method, as before, and with the last retrieval accepted on FASTER (`retrieval_dev_results_faster/retrieval_check_r005fcc2_s0c3805.json`, 142 of 154). The run stops if any DEV case that the accepted retrieval found is lost, even if others are gained.
 - **The answers are written by the checker model** from the certificates, after the decision is fixed (S3.4, Eq 6): which checks were found not true, the parts that hold, and any Guidance not followed. It cannot change the decision. The composed text it is given is kept in each record (`answer.provenance.template_text`), and stands if the model call fails.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
-- **Plans written by the API model** (17 October): `bash hprc/run.sh ACCOUNT 1 parse api`.
-  - The checkers' model (Claude Sonnet 5.5) writes the plans over the API, 8 at a time. It uses the same prompt, the same checks on the plan and the same repair loop. The parse job takes 1 GPU and starts no servers.
-  - The run folder is `e2e_r…_s…_p…_asonnet55-high`, never mixed with the Qwen folders. Replies are kept by prompt in `parser_runs_faster/parser_api_cache/`, so the same prompts read back the same plans.
-  - Give `api` again for a later stage of that run: `bash hprc/run.sh ACCOUNT 1 execute api`.
+- **Plans written by Qwen3.8-Max over the API** (18 October): `bash hprc/run.sh ACCOUNT 1 parse alibaba`.
+  - Qwen3.8-Max on Alibaba Cloud Model Studio writes the plans, 8 at a time: thinking on with a budget of 131,072 tokens (the model's own default; Model Studio counts it as effort `xhigh`, the Qwen servers' effort), up to 163,840 tokens in all (the budget plus room for the plan: at its budget the model stops thinking and answers), seed 42, no temperature sent (the model's own defaults), streamed. Same prompt, same checks on the plan, same repair loop. The parse job takes 1 GPU and starts no servers.
+  - It is a different company's model from the checkers' (Claude Sonnet 5.5), so a plan is never judged by the model that wrote it (S2.2; S4.6 has "a single LLM for all verification operations" as an ablation).
+  - **The key, once** (it asks for the key; it is not shown):
+    `read -rs -p "Model Studio key: " K; echo; printf "%s" "$K" > $SCRATCH/vine/alibaba_key; chmod 600 $SCRATCH/vine/alibaba_key; unset K`
+  - **Its region, once** — a Model Studio key works only in the region it was made in. One of `singapore` (the default), `us`, `beijing`, `hongkong`:
+    `echo us > $SCRATCH/vine/alibaba_region` (or give `VINE_ALIBABA_REGION=us` in front of the command). `run.sh` prints the region it uses.
+  - **First call, before any plan:** the parse job asks one short question with the plans' own settings. A wrong key, a key from another region, a model name the account does not have or a setting the model refuses stops the job there, with the reason, at almost no cost.
+  - The run folder is `e2e_r…_s…_p…_aqwen38max-t131072` (the model and its thinking budget). Replies are kept by prompt in `parser_runs_faster/parser_api_cache/` (each key holds the model), so the same prompts read back the same plans. Each saved reply holds the prompt, the reasoning, the plan, the finish reason, the token usage and the response id.
+  - The log gives the cost of the new parser calls at the list price ($2 / $6 per million tokens in / out; thinking counts as out). The Model Studio console has the real bill.
+  - **If a call fails:** a busy server is asked again. If the account stops the calls (no balance, no access), the plans left are marked as broken and the parse job stops, so the execute job does not start: fix the account and submit `bash hprc/run.sh ACCOUNT 1 parse alibaba` again; it makes only those plans. A request the API refuses as such (a bad parameter, a refused content check) is not asked again.
+  - Give `alibaba` again for a later stage of that run: `bash hprc/run.sh ACCOUNT 1 execute alibaba`.
+  - **Repeat test:** `bash hprc/run.sh ACCOUNT 1 repeat NAME alibaba`. Every question is planned again (empty reply cache) and answered (empty checker cache), in `parser_runs_faster/repeat_NAME/`. The first run is never touched. Use a new NAME for each repeat.
+- **Plans written by the checkers' own model** (17 October, a comparison run only): `bash hprc/run.sh ACCOUNT 1 parse api`.
+  - Claude Sonnet 5.5 writes the plans over the API, 8 at a time, with the same prompt, checks and repair loop. Its run folder is `e2e_r…_s…_p…_asonnet55-high`. The same model then checks them, so this is not the setup; the log says so.
+  - Give `api` again for a later stage of that run (`bash hprc/run.sh ACCOUNT 1 execute api`), and for its repeat test (`bash hprc/run.sh ACCOUNT 1 repeat NAME api`).
 
 ## 5. The repeat test: does the same question give the same plan?
 
