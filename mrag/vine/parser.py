@@ -173,8 +173,11 @@ Step 3. Structure.
     merge (the rule first).
   - Give an applicability check only for a condition of scope that the
     provision states (a kind of road, device or place; a speed; a time) and
-    that the facts might not meet, and guard on it only the checks that
-    depend on it. Do not put every check of the plan behind one check that a
+    that the facts say something about, and guard on it only the checks
+    that depend on it. When the facts do not say whether such a condition
+    holds, no check can settle it: write the condition into the claim
+    instead ("where the crossing is at an intersection, the manual allows
+    ..."). Do not put every check of the plan behind one check that a
     Section applies: if that one check fails, nothing else is checked.
 For example, if a provision applies only to a particular class, requires two
 independent conditions to be satisfied, and contains a separate exception:
@@ -263,6 +266,9 @@ claim
   - When a claim restates a fact, use the fact's own words. Do not widen or
     narrow it with qualifiers the fact does not have: the checker can then
     no longer match it with the fact.
+  - A claim never states something about the case that the facts do not
+    say. A condition the facts are silent on stays a condition ("where ...",
+    "if ...").
   - When the question asks which of several items meet a condition, write
     one claim per item, each saying that item meets it. Never one claim
     that all of them do, or that none of them do.
@@ -648,10 +654,13 @@ def read_spec(raw: str, query: str, allowed_chunks: Sequence[str] = (),
     """Turn the reply into a NetworkSpec, or say why it cannot be.
 
     A `verifier` the model named is discarded: S3.1 assigns a verifier by
-    rule. A `source_chunk` is kept exactly as written; `grounding_problems`
-    decides whether it points at a provision that was shown, so the repair
-    request can quote the id the model used. (`allowed_chunks` is accepted
-    for older callers and no longer used here.)
+    rule. A `source_chunk` is kept as written, except for one pair of square
+    brackets around it: the prompt shows ids as "[id]", and a reply that
+    copies the brackets names the same provision (17 Oct 2026: two plans
+    lost a whole attempt to that). `grounding_problems` then decides whether
+    it points at a provision that was shown, so the repair request can quote
+    the id the model used. (`allowed_chunks` is accepted for older callers
+    and no longer used here.)
     """
     data, error = _find_object(raw or "")
     if data is None:
@@ -684,6 +693,11 @@ def read_spec(raw: str, query: str, allowed_chunks: Sequence[str] = (),
     for ob in obligations:
         if ob.pop("verifier", None) is not None:
             notes.append("a proposed verifier was discarded; the rule assigns it")
+        src = ob.get("source_chunk")
+        bare = re.fullmatch(r"\s*\[\s*([^\[\]\s][^\[\]]*?)\s*\]\s*", src) if isinstance(src, str) else None
+        if bare:
+            ob["source_chunk"] = bare.group(1)
+            notes.append(f"source_chunk {src!r} was read as {bare.group(1)!r}")
     data["query"] = query
     data["source"] = "semantic_parser"
     try:

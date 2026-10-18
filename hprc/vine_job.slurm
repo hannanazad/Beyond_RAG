@@ -17,8 +17,8 @@ export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
 # the parser's servers are on this machine: never send those requests to a proxy
 export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1
 
-if [ "$STAGE" = execute ]; then
-    module load WebProxy                     # the checkers call the Anthropic API
+if [ "$STAGE" = execute ] || { [ "$STAGE" = parse ] && [ "${VINE_PARSER:-}" = api ]; }; then
+    module load WebProxy                     # the checkers (and an API parser) call the Anthropic API
     export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1
     if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -s "$VINE_HOME/anthropic_key" ]; then
         ANTHROPIC_API_KEY="$(cat "$VINE_HOME/anthropic_key")"

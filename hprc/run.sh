@@ -2,13 +2,17 @@
 # hprc/run.sh -- submit the VINE run on FASTER: three Slurm jobs, each starting
 # only when the one before it finished well.
 #
-#   bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE]
+#   bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE] [api]
 #   bash hprc/run.sh ACCOUNT GPUS repeat NAME
 #   bash hprc/run.sh ACCOUNT 4 probe NAME
 #
 #   ACCOUNT      your project account number (the `myproject` command shows it)
 #   GPUS         A100s for the parse stage (default 8; at most 10)
 #   FIRST_STAGE  retrieval (default), parse or execute: start from there
+#   api          the plans are written by the API model (the checkers' model),
+#                not by the Qwen servers: the parse stage takes 1 GPU and no
+#                servers, and every stage of this call uses the API run folder.
+#                Give "api" again when submitting a later stage of that run.
 #   repeat NAME  the repeat test: the parse stage only, the 11 DEV questions,
 #                into parser_runs_faster/repeat_NAME/ with its own empty model
 #                cache (so every reply is a new model call). Then compare:
@@ -29,6 +33,15 @@ NGPU="${2:-8}"
 FIRST="${3:-retrieval}"
 REPEAT=""
 PROBE=""
+PARSER=""
+case "$FIRST" in
+    retrieval|parse|execute)
+        case "${4:-}" in
+            "") ;;
+            api) PARSER=api ;;
+            *) echo "the 4th word may only be api (plans written by the API model): bash hprc/run.sh ACCOUNT 1 parse api"; exit 1 ;;
+        esac ;;
+esac
 if [ "$FIRST" = probe ]; then
     PROBE="${4:-}"
     [[ "$PROBE" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "usage: bash hprc/run.sh ACCOUNT 4 probe NAME   (NAME: letters, digits, - and _ only)"; exit 1; }
@@ -54,9 +67,9 @@ CPUS=$(( NGPU * 4 )); MEM=$(( NGPU * 24 + 16 )); [ "$MEM" -le 240 ] || MEM=240
 
 cd "$REPO"
 LOG="$VINE_HOME/logs"; mkdir -p "$LOG"
-# VINE_REPEAT is always set (empty for a normal run), so a value left in this
-# shell can never turn a normal run into a repeat run
-EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
+# VINE_REPEAT and VINE_PARSER are always set (empty for a normal run), so a value
+# left in this shell can never turn a normal run into a repeat run or an API run
+EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE,VINE_PARSER=$PARSER"
 dep=()
 submit() {   # stage gpus cpus mem time
     local id
@@ -96,14 +109,19 @@ if [ -n "$REPEAT" ]; then
     echo "when done  : $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py $REPEAT"
     exit 0
 fi
-echo "submitting (account $ACCT, $NGPU GPUs for the parser), from the $FIRST stage:"
+if [ "$PARSER" = api ]; then
+    echo "submitting (account $ACCT, plans written by the API model, no parser servers), from the $FIRST stage:"
+else
+    echo "submitting (account $ACCT, $NGPU GPUs for the parser), from the $FIRST stage:"
+fi
 started=0
 for st in retrieval parse execute; do
     [ "$st" = "$FIRST" ] && started=1
     [ "$started" = 1 ] || continue
     case "$st" in
         retrieval) submit retrieval 1 8 64 03:00:00 >/dev/null ;;
-        parse)     submit parse "$NGPU" "$CPUS" "$MEM" 04:00:00 >/dev/null ;;
+        parse)     if [ "$PARSER" = api ]; then submit parse 1 8 64 02:00:00 >/dev/null
+                   else submit parse "$NGPU" "$CPUS" "$MEM" 04:00:00 >/dev/null; fi ;;
         execute)   submit execute 1 8 64 03:00:00 >/dev/null ;;
     esac
 done

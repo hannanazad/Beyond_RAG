@@ -308,6 +308,199 @@ def test_run_sh_repeat_submits_the_parse_stage_only():
 
 
 # --------------------------------------------------------------------------- #
+# Plans written by the API model (VINE_PARSER=api, run.sh ... parse api), 17 Oct
+# --------------------------------------------------------------------------- #
+def _run_env(base, env):
+    from mrag.config import CFG
+    V = _vine_hprc()
+    with _Patched([(CFG, "base_dir", Path(base))], {"VINE_REPEAT": None, "VINE_QUESTIONS": None,
+                                                     "VINE_PROBE": None, **env}):
+        return V.Run()
+
+
+def test_api_run_has_its_own_folder_and_reply_cache_and_the_same_kq():
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        qwen = _run_env(d, {"VINE_PARSER": None})
+        api = _run_env(d, {"VINE_PARSER": "api"})
+        assert qwen.parser == "qwen" and api.parser == "api"
+        assert _run_env(d, {"VINE_PARSER": " "}).parser == "qwen"          # empty: the Qwen servers
+        assert api.run_dir.name == qwen.unpinned_run_name + "_" + V.PARSER_API_TAG
+        assert api.run_dir != qwen.run_dir and api.run_dir.is_dir()
+        assert api.model_cache == api.runs / "parser_api_cache" != qwen.model_cache
+        assert api.kq_file == qwen.kq_file and api.questions == qwen.questions
+        for env in ({"VINE_PARSER": "gpt"}, {"VINE_PARSER": "api", "VINE_REPEAT": "r1"},
+                    {"VINE_PARSER": "api", "VINE_PROBE": "p1"}):
+            try:
+                _run_env(d, env)
+            except AssertionError:
+                continue
+            raise AssertionError(f"accepted {env}")
+
+
+def test_api_parse_stage_writes_plans_with_api_clients_and_no_servers():
+    import json
+    from mrag.config import CFG
+    from mrag import kg_vine
+    from mrag.vine import anthropic_client as ac, table_data, vllm_client as vc
+    import mrag.vine.parser as parser_mod
+    V = _vine_hprc()
+    made, prompts = [], []
+
+    def fake_make_ask_anthropic(model, **k):
+        made.append({"model": model, **k})
+
+        def ask(prompt, images=None):
+            prompts.append(prompt)
+            ask.last = {"cache_key": "k", "cached": False, "finish_reason": "end_turn", "model": model,
+                        "usage": {"input_tokens": 1000, "output_tokens": 100, "prompt_tokens": 1000}}
+            ask.calls.append(ask.last)
+            return '{"ok": true}'
+        ask.last, ask.calls = None, []
+        return ask
+
+    def fake_parser(ask, **k):
+        def parse(question, chunks, section, figures):
+            ask("PLAN FOR " + question)
+            return None, {"made": True}
+        return parse
+
+    def fake_record(qid, q, v, spec, rep, net, secs, case=None):
+        return {"case_id": qid, "question": q, "outcome": "valid first time", "attempts": 1, "stats": {},
+                "seconds": secs, "calls": [], "spec": None, "raw_replies": [], "problems": []}
+
+    def no_servers(*a, **k):
+        raise AssertionError("an API run started a parser server")
+
+    with tempfile.TemporaryDirectory() as d:
+        base = Path(d)
+        qwen = _run_env(d, {"VINE_PARSER": None})
+        kq = {q: {"question": t, "chunks": [], "figures": []} for q, t in qwen.questions.items()}
+        qwen.kq_file.write_text(json.dumps(kq))
+        api = _run_env(d, {"VINE_PARSER": "api"})
+        patches = [
+            (CFG, "base_dir", base),
+            (kg_vine, "VineKG", lambda *a, **k: type("KG", (), {"is_known_citation": staticmethod(lambda r: True)})()),
+            (table_data, "load", lambda p: []),
+            (ac, "make_ask_anthropic", fake_make_ask_anthropic),
+            (vc, "launch", no_servers), (vc, "make_ask_vllm", no_servers),
+            (parser_mod, "make_semantic_parser", fake_parser),
+            (V.pc, "make_record", fake_record),
+            (V.pc, "print_summary", lambda *a: None), (V.pc, "summarize", lambda *a: {}),
+            (V.pc, "print_plan", lambda *a: None),
+        ]
+        with _Patched(patches, {"VINE_PARSER": "api", "ANTHROPIC_API_KEY": "k", "CUDA_VISIBLE_DEVICES": None,
+                                "VINE_REPEAT": None, "VINE_QUESTIONS": None}):
+            assert V.stage_parse(api) == 0
+            plans = json.loads(api.plans_file.read_text())
+            assert sorted(plans) == sorted(api.questions)                  # all 31, no GPU needed
+            assert not qwen.plans_file.exists()                            # the Qwen folder untouched
+            assert len(made) == V.PARSER_API_WORKERS and all(
+                m["model"] == V.PARSER_API_MODEL and m["effort"] == V.PARSER_API_EFFORT
+                and m["max_tokens"] == V.PARSER_API_MAX_TOKENS and m["cache_dir"] == str(api.model_cache)
+                for m in made), made
+            assert sorted(x for x in prompts if x.startswith("PLAN FOR ")) == \
+                sorted("PLAN FOR " + t for t in api.questions.values())
+            manifest = json.loads((api.run_dir / "parse_manifest.json").read_text())
+            assert manifest["parser"] == "api" and manifest["model"] == V.PARSER_API_MODEL
+            assert manifest["instructions_sha256"] == api.instructions_sha
+            # a second job finds every plan made and asks nothing
+            made.clear(); prompts.clear()
+            assert V.stage_parse(api) == 0 and made == [] and prompts == []
+        # no key: refused before any call
+        api.plans_file.unlink()
+        with _Patched(patches, {"VINE_PARSER": "api", "ANTHROPIC_API_KEY": None}):
+            try:
+                V.stage_parse(api)
+            except AssertionError as e:
+                assert "Anthropic key" in str(e)
+            else:
+                raise AssertionError("an API parse ran without a key")
+
+
+def test_api_plan_goes_through_the_real_parser_checks_and_record():
+    """The real parser and plan record, with only the API faked: a reply that
+    breaks a rule is sent back, the repaired one is kept, and the record keeps
+    the API's token counts."""
+    import json
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        R = _run_env(d, {"VINE_PARSER": "api"})
+        qid = R.dev_ids[0]
+        R.questions = {qid: R.questions[qid]}
+        R.answer_set = {}
+        kq = {qid: {"question": R.questions[qid], "figures": [], "chunks": [
+            {"chunk_id": "Z1", "section_id": "9Z.01", "content_type": "Standard", "ordinal": 1,
+             "text": "A made-up panel shall be blue."}]}}
+        plan = {"terminal": "o1", "facts": [],
+                "obligations": [{"id": "o1", "type": "classification",
+                                 "claim": "The made-up panel meets the rule.", "authority": "STANDARD", "requires": [],
+                                 "evidence_hint": [], "source_chunk": "[Z1]"}],
+                "merges": []}
+        replies = [json.dumps(plan),                                          # no "asked": sent back
+                   json.dumps({**plan, "asked": [{"id": "a1", "ask": "the question's ask",
+                                                  "answered_by": ["o1"]}]})]
+        seen = []
+
+        def ask(prompt, images=None):
+            seen.append(prompt)
+            ask.last = {"cache_key": "k", "cached": False, "finish_reason": "end_turn",
+                        "usage": {"input_tokens": 900, "output_tokens": 120,
+                                  "prompt_tokens": 900, "completion_tokens": 120}}
+            return replies[min(len(seen) - 1, 1)]
+        kg = type("KG", (), {"is_known_citation": staticmethod(lambda kind, ident: True)})()
+        records = {}
+        with _Patched([(V.pc, "print_summary", lambda *a: None), (V.pc, "print_plan", lambda *a: None)]):
+            code = V._make_plans(R, kq, records, [qid], [(0, ask)], kg, {}, "api")
+        rec = records[qid]
+        assert code == 0 and rec["outcome"] == "valid after repair" and rec["attempts"] == 2, rec["problems"]
+        assert '"asked" is missing' in rec["problems"][0][0] and "YOUR PREVIOUS PLAN WAS REJECTED" in seen[1]
+        assert rec["spec"]["obligations"][0]["source_chunk"] == "Z1"          # "[Z1]" read as Z1
+        assert rec["spec"]["asked"][0]["answered_by"] == ["o1"]
+        assert rec["completion_tokens"] == 240 and json.loads(R.plans_file.read_text())[qid]["attempts"] == 2
+
+
+def test_run_sh_api_submits_a_one_gpu_parse_and_marks_every_stage():
+    import shutil
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        scratch, stubs = d / "scratch", d / "stubs"
+        (scratch / "vine").mkdir(parents=True)
+        (scratch / "vine" / ".done_models").write_text("")
+        (scratch / "vine" / "anthropic_key").write_text("k")
+        stubs.mkdir()
+        (stubs / "sbatch").write_text('#!/bin/bash\necho "$@" >> "$SIM_LOG"\necho $((RANDOM + 1000))\n')
+        (stubs / "sbatch").chmod(0o755)
+        log = d / "sbatch.log"
+
+        def run(*args, extra=None):
+            if log.exists():
+                log.unlink()
+            env = {"PATH": f"{stubs}:/usr/bin:/bin", "HOME": str(d / "home"), "SCRATCH": str(scratch),
+                   "USER": "u", "SIM_LOG": str(log), **(extra or {})}
+            p = subprocess.run([shutil.which("bash"), str(REPO / "hprc" / "run.sh"), *args], env=env,
+                               capture_output=True, text=True, timeout=60)
+            return p.returncode, p.stdout + p.stderr, (log.read_text().splitlines() if log.exists() else [])
+
+        code, out, calls = run("123", "8", "parse", "api")
+        assert code == 0, out
+        assert len(calls) == 2 and "STAGE=parse" in calls[0] and "STAGE=execute" in calls[1], calls
+        assert "--gres=gpu:a100:1" in calls[0] and "--time=02:00:00" in calls[0], calls[0]
+        assert all("VINE_PARSER=api," in c for c in calls), calls
+        assert "plans written by the API model" in out
+        code, out, calls = run("123", "1", "execute", "api")
+        assert code == 0 and len(calls) == 1 and "VINE_PARSER=api," in calls[0]
+        # a normal run: a value left in the shell is overridden with nothing
+        code, out, calls = run("123", "8", "parse", extra={"VINE_PARSER": "api"})
+        assert code == 0 and "--gres=gpu:a100:8" in calls[0] and all("VINE_PARSER=," in c for c in calls), calls
+        code, out, calls = run("123", "8", "parse", "gpt")
+        assert code == 1 and calls == [], out
+    slurm = (REPO / "hprc" / "vine_job.slurm").read_text()
+    assert '[ "$STAGE" = parse ] && [ "${VINE_PARSER:-}" = api ]' in slurm      # the proxy and the key
+
+
+# --------------------------------------------------------------------------- #
 # hprc/compare_plans.py, on made-up runs
 # --------------------------------------------------------------------------- #
 def _compare_mod():
@@ -641,7 +834,7 @@ def test_run_sh_probe_submits_one_job_on_four_gpus():
         # a normal run never carries a probe name
         (scratch / "vine" / "anthropic_key").write_text("k")
         code, out, calls = run("123", "8", "execute", extra={"VINE_PROBE": "left_over"})
-        assert code == 0 and len(calls) == 1 and calls[0].rstrip().split("VINE_PROBE=")[1].startswith(",STAGE")
+        assert code == 0 and len(calls) == 1 and calls[0].rstrip().split("VINE_PROBE=")[1].startswith(",")
 
 
 

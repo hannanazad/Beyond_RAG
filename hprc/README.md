@@ -90,6 +90,10 @@ bash hprc/run.sh ACCOUNT 8
 - **The gate has two sides** (15 October). The retrieval check is compared with the 7 October method, as before, and with the last retrieval accepted on FASTER (`retrieval_dev_results_faster/retrieval_check_r005fcc2_s0c3805.json`, 142 of 154). The run stops if any DEV case that the accepted retrieval found is lost, even if others are gained.
 - **The answers are written by the checker model** from the certificates, after the decision is fixed (S3.4, Eq 6): which checks were found not true, the parts that hold, and any Guidance not followed. It cannot change the decision. The composed text it is given is kept in each record (`answer.provenance.template_text`), and stands if the model call fails.
 - The sealed questions, later: `VINE_QUESTIONS=/path/to/sealed.json bash hprc/run.sh ACCOUNT 8` (a JSON file `{id: text}`).
+- **Plans written by the API model** (17 October): `bash hprc/run.sh ACCOUNT 1 parse api`.
+  - The checkers' model (Claude Sonnet 5.5) writes the plans over the API, 8 at a time. It uses the same prompt, the same checks on the plan and the same repair loop. The parse job takes 1 GPU and starts no servers.
+  - The run folder is `e2e_r…_s…_p…_asonnet55-high`, never mixed with the Qwen folders. Replies are kept by prompt in `parser_runs_faster/parser_api_cache/`, so the same prompts read back the same plans.
+  - Give `api` again for a later stage of that run: `bash hprc/run.sh ACCOUNT 1 execute api`.
 
 ## 5. The repeat test: does the same question give the same plan?
 

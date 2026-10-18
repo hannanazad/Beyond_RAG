@@ -71,6 +71,15 @@ SEED, EFFORT = 42, "xhigh"
 GPU_UTIL = 0.90
 # the checkers, as in the notebook
 CHECKER_MODEL, CHECKER_EFFORT, CHECKER_MAX_TOKENS = "claude-sonnet-5-5", "high", 32000
+# The plan-writer when the run is given "api" (bash hprc/run.sh ACCOUNT 1 parse api):
+# the checkers' model writes the plans, over the API, several at a time. Same
+# prompt, same checks on the plan, same repair loop; no GPU servers. S3: "the
+# same VINE representation [can] operate with different foundation models".
+# Replies are kept by prompt (parser_api_cache), so a run made again from the
+# same prompts reads the same plans.
+PARSER_API_MODEL, PARSER_API_EFFORT, PARSER_API_MAX_TOKENS = "claude-sonnet-5-5", "high", 32000
+PARSER_API_WORKERS = 8
+PARSER_API_TAG = "asonnet55-high"            # in the run folder's name, in place of the pin
 MAX_IMAGES = 4
 FIG_KEYS = ("figure_id", "caption", "n_sheets", "image_paths", "image_path", "page_pdf", "source")
 SETTING_NAMES = (
@@ -132,6 +141,14 @@ class Run:
         self.retr_commit = vr.retrieval_commit(str(REPO))
         self.store_tag = vr.store_tag(CFG.base_dir)
         self.instructions_sha = hashlib.sha256((PARSER_TASK + PARSER_CONTRACT).encode()).hexdigest()
+        # who writes the plans: the Qwen servers on this job's GPUs (default), or
+        # the API model (VINE_PARSER=api); run.sh always sets it, empty for Qwen
+        self.parser = (os.environ.get("VINE_PARSER", "").strip().lower() or "qwen")
+        assert self.parser in ("qwen", "api"), \
+            f"VINE_PARSER={self.parser!r}: use api, or leave it empty for the Qwen servers"
+        if self.parser == "api":
+            assert not self.repeat and not self.probe, \
+                "the repeat test and the probe test the Qwen servers -- leave VINE_PARSER empty"
         base = Path(CFG.base_dir) / "parser_runs_faster"
         # Kq is always the shared one, so a repeat run reads exactly what the first run read
         self.kq_file = base / f"kq_r{self.retr_commit}_s{self.store_tag}.json"
@@ -141,12 +158,17 @@ class Run:
         # the folder of the runs before the tuning pin (11-12 Oct), where the probe's prompts are
         self.unpinned_run_name = f"e2e_r{self.retr_commit}_s{self.store_tag}_p{self.instructions_sha[:8]}"
         self.run_dir = self.runs / f"{self.unpinned_run_name}_k{PIN_SHA}"
+        if self.parser == "api":
+            # its own folder and reply cache: API plans never mix with Qwen plans
+            self.model_cache = self.runs / "parser_api_cache"
+            self.run_dir = self.runs / f"{self.unpinned_run_name}_{PARSER_API_TAG}"
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.plans_file = self.run_dir / "plans.json"
         self.settings = {k: getattr(CFG, k) for k in SETTING_NAMES}
         self.job = os.environ.get("SLURM_JOB_ID", "nojob")
         say(f"code commit {self.commit} | retrieval code {self.retr_commit} | store {self.store_tag} "
-            f"| parser instructions {self.instructions_sha[:12]}")
+            f"| parser instructions {self.instructions_sha[:12]} | plans by "
+            f"{PARSER_API_MODEL + ' (API)' if self.parser == 'api' else MODEL_ID}")
         say(f"{len(self.questions)} questions: {len(self.dev)} DEV + {len(self.answer_set)} {self.set_name}")
         if self.repeat:
             say(f"REPEAT RUN '{self.repeat}': the DEV plans again, from {self.kq_file}, "
@@ -413,14 +435,6 @@ def _stage_parse(R: Run) -> int:
         say("PARSE STAGE FINISHED (nothing to do)")
         return 0
 
-    # the GPUs Slurm gave this job; this process itself never uses them
-    gpus = [g for g in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",") if g.strip()]
-    assert gpus, "no GPUs in this job"
-    os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    names = gpu_names()
-    say(f"GPUs: {len(gpus)} -> {names}")
-    n = min(len(gpus), len(to_parse))
-
     # the parser's checks read the graph and the tables (CPU only, no search models)
     kg = VineKG(CFG.vine_graph, figures_path=CFG.figures_jsonl, sign_codes_path=CFG.sign_codes_json,
                 items_path=CFG.vine_items, tables_path=CFG.tables_jsonl,
@@ -428,6 +442,17 @@ def _stage_parse(R: Run) -> int:
     tables = {}
     for t in table_data.load(Path(CFG.tables_jsonl)):
         tables.setdefault(t.table_id, []).append(t)
+
+    if R.parser == "api":
+        return _parse_with_api(R, kq, records, to_parse, kg, tables)
+
+    # the GPUs Slurm gave this job; this process itself never uses them
+    gpus = [g for g in os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",") if g.strip()]
+    assert gpus, "no GPUs in this job"
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    names = gpu_names()
+    say(f"GPUs: {len(gpus)} -> {names}")
+    n = min(len(gpus), len(to_parse))
 
     vllm_env = Path(os.environ["VLLM_ENV"])
     tmp = Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}")
@@ -500,12 +525,24 @@ def _stage_parse(R: Run) -> int:
         "commit": R.commit, "model": MODEL_ID, "revision": REVISION, "vllm": VLLM_VERSION,
         "server_command": live[0]["cmd"], "servers": len(asks), "gpu": names, "seed": SEED,
         "sampling": vc.QWEN_THINKING, "reasoning_effort": EFFORT, "max_tokens": max_tokens,
-        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix6 (17 Oct: asked items, cases, named exceptions)",
+        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix7 (17 Oct: asked items, cases, named exceptions; conditions the facts are silent on)",
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job,
         "one_request_at_a_time": True, "engine": engine, "model_path_used": str(model_path),
         "pin_tuning": {"file": "hprc/pin_tuning/sitecustomize.py", "sha256_8": PIN_SHA,
                        "rule": "each self-tuning kernel keeps its first working option, not the fastest"}})
+
+    return _make_plans(R, kq, records, to_parse, asks, kg, tables, "gpu",
+                       after=lambda: [vc.stop_server(x) for x in live])
+
+
+def _make_plans(R: Run, kq: dict, records: dict, to_parse: list, asks: list, kg, tables: dict,
+                label: str = "gpu", after=lambda: None) -> int:
+    """Make the plans for `to_parse`, one worker per (slot, ask) in `asks`,
+    saving each plan as soon as it is made; then the summary. `after()` runs
+    once every worker is done (the GPU branch stops its servers there)."""
+    from mrag.vine.parser import exceptions_from_graph, make_semantic_parser
+    from mrag.vine.compile import instantiate
 
     order = [q for q in R.dev_ids if q in to_parse] + [q for q in to_parse if q not in R.dev_ids]
     work: "queue.Queue[str]" = queue.Queue()
@@ -539,10 +576,10 @@ def _stage_parse(R: Run) -> int:
                 vr.save_json(R.plans_file, records)
                 done[0] += 1
                 s = rec["stats"]
-                say(f"  {done[0]:2d}/{len(order)} [gpu{i}] {qid:26s} {rec['outcome']:19s} attempts {rec['attempts']} "
+                say(f"  {done[0]:2d}/{len(order)} [{label}{i}] {qid:26s} {rec['outcome']:19s} attempts {rec['attempts']} "
                     f"checks {s.get('obligations', 0):2d} merges {s.get('merges', 0)} | {rec['seconds']:5.0f}s "
                     f"| finish {[c.get('finish_reason') for c in rec['calls']]} "
-                    f"| prompt tokens {[c.get('prompt_tokens') for c in rec['calls']]}")
+                    f"| prompt tokens {[c.get('prompt_tokens') or (c.get('usage') or {}).get('prompt_tokens') for c in rec['calls']]}")
 
     t_all = time.time()
     workers = [threading.Thread(target=worker, args=(i, a)) for i, a in asks]
@@ -550,8 +587,7 @@ def _stage_parse(R: Run) -> int:
         t.start()
     for t in workers:
         t.join()
-    for s in live:
-        vc.stop_server(s)
+    after()
     say(f"all plans in {(time.time() - t_all) / 60:.0f} minutes")
 
     dev_plans = [records[q] for q in R.dev_ids if q in records]
@@ -574,6 +610,37 @@ def _stage_parse(R: Run) -> int:
     if R.repeat:
         say(f"compare with the first run: $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py {R.repeat}")
     return 0
+
+
+def _parse_with_api(R: Run, kq: dict, records: dict, to_parse: list, kg, tables: dict) -> int:
+    """The plans written by the API model (VINE_PARSER=api): the same prompt,
+    checks and repair loop as the Qwen servers, PARSER_API_WORKERS plans at a
+    time, no GPU. Each worker has its own client (its own call record), all on
+    one reply cache."""
+    from mrag.vine import anthropic_client as ac
+    assert os.environ.get("ANTHROPIC_API_KEY"), "no Anthropic key (see hprc/README.md)"
+    n = max(1, min(PARSER_API_WORKERS, len(to_parse)))
+    asks = [(i, ac.make_ask_anthropic(PARSER_API_MODEL, effort=PARSER_API_EFFORT,
+                                      max_tokens=PARSER_API_MAX_TOKENS, cache_dir=str(R.model_cache),
+                                      say=say))
+            for i in range(n)]
+    reply = asks[0][1]('Reply with this JSON object and nothing else: {"ok": true}', [])
+    say(f"API probe: {reply[:60]!r} | {asks[0][1].last['finish_reason']} | {asks[0][1].last['model']}")
+    if '"ok"' not in reply:
+        say("STOPPED: the API answered, but not with the JSON asked for. Send this log.")
+        return 1
+    vr.save_json(R.run_dir / "parse_manifest.json", {
+        "commit": R.commit, "parser": "api", "model": PARSER_API_MODEL, "effort": PARSER_API_EFFORT,
+        "max_tokens": PARSER_API_MAX_TOKENS, "workers": n, "max_attempts": 3, "fallback": False,
+        "temperature": "not settable (model default)", "reply_cache": str(R.model_cache),
+        "instructions": "fix7 (17 Oct: asked items, cases, named exceptions; conditions the facts are silent on)",
+        "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
+        "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job})
+    say(f"{n} API workers | {PARSER_API_MODEL}, effort {PARSER_API_EFFORT}, max_tokens {PARSER_API_MAX_TOKENS}")
+    code = _make_plans(R, kq, records, to_parse, asks, kg, tables, "api")
+    say(f"cost of new parser calls in this job: "
+        f"${sum(ac.cost_usd(a.calls, PARSER_API_MODEL) for _i, a in asks):.3f}")
+    return code
 
 
 # --------------------------------------------------------------------------- #

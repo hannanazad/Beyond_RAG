@@ -396,4 +396,23 @@ c = execute(net, {"llm": v}).terminal
 check(c.status is Status.TRUE and c.provenance["scope"].startswith("9Z.01 covers blue panels"),
       "the certificate keeps what the checker said the provision covers")
 
+# --------------------------------------------------------------------------- #
+print("10. An id copied with its square brackets; a condition the facts are silent on")
+BR = json.loads(FIXED)
+BR["obligations"][0]["source_chunk"] = "[Z1]"
+BR["obligations"][1]["source_chunk"] = " [ Z3 ] "
+spec, rep = make_semantic_parser(model(json.dumps(BR)), fall_back_to_baseline=False,
+                                 exceptions_of=names_of)(Q6, KQ)
+check(spec is not None and rep.attempts == 1 and [o.source_chunk for o in spec.obligations] == ["Z1", "Z3"],
+      "'[Z1]' names the provision Z1: valid first time, no repair spent on it")
+check(any("'[Z1]' was read as 'Z1'" in n for n in rep.notes), "and the reading is noted")
+BR["obligations"][0]["source_chunk"] = "[Z9]"
+spec, rep = make_semantic_parser(model(json.dumps(BR)), max_attempts=1, fall_back_to_baseline=False,
+                                 exceptions_of=names_of)(Q6, KQ)
+check(spec is None and any("'Z9' is not one of the provisions shown" in p for g in rep.problems for p in g),
+      "a bracketed id that was not shown is still refused")
+for line in ("that the facts say something about", "write the condition into the claim",
+             "A claim never states something about the case that the facts do not\n    say."):
+    check(line in PARSER_CONTRACT, f"the contract says: {line[:50]!r}")
+
 print(f"\nALL PLAN-COVERAGE TESTS PASSED ({checks} checks)")
