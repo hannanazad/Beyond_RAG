@@ -2,7 +2,7 @@
 # hprc/run.sh -- submit the VINE run on FASTER: three Slurm jobs, each starting
 # only when the one before it finished well.
 #
-#   bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE] [alibaba|api]
+#   bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE] [alibaba|api] [dev]
 #   bash hprc/run.sh ACCOUNT GPUS repeat NAME [alibaba|api]
 #   bash hprc/run.sh ACCOUNT 4 probe NAME
 #
@@ -18,6 +18,9 @@
 #                (singapore if neither; see hprc/README.md).
 #   api          the same, with the checkers' own model (Claude Sonnet 5.5) writing
 #                the plans: a comparison run only, not the setup.
+#   dev          the 11 DEV questions only: planned and answered, in the same run
+#                folder as the full run, so the full run later (the same command
+#                without the word dev) reuses them and makes only the rest.
 #   repeat NAME [alibaba|api]  the repeat test. With alibaba or api: every question
 #                planned again by that API model and answered, with empty reply
 #                caches (parse + execute).
@@ -42,13 +45,19 @@ FIRST="${3:-retrieval}"
 REPEAT=""
 PROBE=""
 PARSER=""
+DEV=""
 case "$FIRST" in
     retrieval|parse|execute)
-        case "${4:-}" in
-            "") ;;
-            alibaba|api) PARSER="$4" ;;
-            *) echo "the 4th word may only be alibaba (plans by Qwen3.8-Max over the API) or api: bash hprc/run.sh ACCOUNT 1 parse alibaba"; exit 1 ;;
-        esac ;;
+        for w in "${4:-}" "${5:-}"; do
+            case "$w" in
+                "") ;;
+                alibaba|api) [ -z "$PARSER" ] || { echo "give alibaba or api once"; exit 1; }; PARSER="$w" ;;
+                dev) [ -z "$DEV" ] || { echo "give dev once"; exit 1; }; DEV=1 ;;
+                *) echo "the 4th and 5th words may only be alibaba or api (who writes the plans) and dev (the 11 DEV questions only): bash hprc/run.sh ACCOUNT 8 parse dev"; exit 1 ;;
+            esac
+        done
+        [ -z "${6:-}" ] || { echo "too many words: bash hprc/run.sh ACCOUNT [GPUS] [FIRST_STAGE] [alibaba|api] [dev]"; exit 1; }
+        if [ -n "$DEV" ] && [ -n "${VINE_QUESTIONS:-}" ]; then echo "dev runs the DEV questions only -- unset VINE_QUESTIONS first"; exit 1; fi ;;
 esac
 if [ "$FIRST" = probe ]; then
     PROBE="${4:-}"
@@ -98,7 +107,7 @@ cd "$REPO"
 LOG="$VINE_HOME/logs"; mkdir -p "$LOG"
 # VINE_REPEAT and VINE_PARSER are always set (empty for a normal run), so a value
 # left in this shell can never turn a normal run into a repeat run or an API run
-EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE,VINE_PARSER=$PARSER,VINE_ALIBABA_REGION=$REGION"
+EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE,VINE_PARSER=$PARSER,VINE_ALIBABA_REGION=$REGION,VINE_DEV_ONLY=$DEV"
 dep=()
 submit() {   # stage gpus cpus mem time
     local id
@@ -157,6 +166,7 @@ if [ -n "$PARSER" ]; then
 else
     echo "submitting (account $ACCT, $NGPU GPUs for the parser), from the $FIRST stage:"
 fi
+[ -z "$DEV" ] || echo "the 11 DEV questions only"
 started=0
 for st in retrieval parse execute; do
     [ "$st" = "$FIRST" ] && started=1
@@ -164,7 +174,7 @@ for st in retrieval parse execute; do
     case "$st" in
         retrieval) submit retrieval 1 8 64 03:00:00 >/dev/null ;;
         parse)     if [ -n "$PARSER" ]; then submit parse 1 8 64 "$PARSE_TIME" >/dev/null
-                   else submit parse "$NGPU" "$CPUS" "$MEM" 04:00:00 >/dev/null; fi ;;
+                   else submit parse "$NGPU" "$CPUS" "$MEM" 06:00:00 >/dev/null; fi ;;
         execute)   submit execute 1 8 64 03:00:00 >/dev/null ;;
     esac
 done

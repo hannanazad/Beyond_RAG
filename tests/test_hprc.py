@@ -175,7 +175,7 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
     from mrag.config import CFG
     from mrag import kg_vine
     from mrag.vine import table_data, vllm_client as vc
-    import mrag.vine.parser as parser_mod
+    import mrag.vine.structured_parser as parser_mod
     V = _vine_hprc()
     caches, prompts, engines, launched = [], [], [], []
 
@@ -234,7 +234,7 @@ def test_repeat_parse_stage_reads_the_shared_kq_and_writes_only_its_own_folder()
             (vc, "make_ask_vllm", fake_make_ask_vllm),
             (vc, "stop_server", lambda s: None),
             (V.vr, "BudgetedAsk", FakeBudgetedAsk),
-            (parser_mod, "make_semantic_parser", fake_parser),
+            (parser_mod, "make_structured_parser", fake_parser),
             (V.pc, "make_record", fake_record),
             (V.pc, "print_summary", lambda *a: None), (V.pc, "summarize", lambda *a: {}),
             (V.pc, "print_plan", lambda *a: None),
@@ -344,7 +344,7 @@ def test_api_parse_stage_writes_plans_with_api_clients_and_no_servers():
     from mrag.config import CFG
     from mrag import kg_vine
     from mrag.vine import anthropic_client as ac, table_data, vllm_client as vc
-    import mrag.vine.parser as parser_mod
+    import mrag.vine.structured_parser as parser_mod
     V = _vine_hprc()
     made, prompts = [], []
 
@@ -385,7 +385,7 @@ def test_api_parse_stage_writes_plans_with_api_clients_and_no_servers():
             (table_data, "load", lambda p: []),
             (ac, "make_ask_anthropic", fake_make_ask_anthropic),
             (vc, "launch", no_servers), (vc, "make_ask_vllm", no_servers),
-            (parser_mod, "make_semantic_parser", fake_parser),
+            (parser_mod, "make_structured_parser", fake_parser),
             (V.pc, "make_record", fake_record),
             (V.pc, "print_summary", lambda *a: None), (V.pc, "summarize", lambda *a: {}),
             (V.pc, "print_plan", lambda *a: None),
@@ -420,9 +420,10 @@ def test_api_parse_stage_writes_plans_with_api_clients_and_no_servers():
 
 
 def test_api_plan_goes_through_the_real_parser_checks_and_record():
-    """The real parser and plan record, with only the API faked: a reply that
-    breaks a rule is sent back, the repaired one is kept, and the record keeps
-    the API's token counts."""
+    """The real plan-maker (mrag/vine/structured_parser.py) and plan record,
+    with only the API faked: a section reply that breaks a rule is sent back,
+    the repaired one is kept, and the record keeps the API's token counts and
+    every paragraph's decision."""
     import json
     V = _vine_hprc()
     with tempfile.TemporaryDirectory() as d:
@@ -433,14 +434,15 @@ def test_api_plan_goes_through_the_real_parser_checks_and_record():
         kq = {qid: {"question": R.questions[qid], "figures": [], "chunks": [
             {"chunk_id": "Z1", "section_id": "9Z.01", "content_type": "Standard", "ordinal": 1,
              "text": "A made-up panel shall be blue."}]}}
-        plan = {"terminal": "o1", "facts": [],
-                "obligations": [{"id": "o1", "type": "classification",
-                                 "claim": "The made-up panel meets the rule.", "authority": "STANDARD", "requires": [],
-                                 "evidence_hint": [], "source_chunk": "[Z1]"}],
-                "merges": []}
-        replies = [json.dumps(plan),                                          # no "asked": sent back
-                   json.dumps({**plan, "asked": [{"id": "a1", "ask": "the question's ask",
-                                                  "answered_by": ["o1"]}]})]
+        facts = {"facts": [], "asked": [{"id": "a1", "ask": "the question's ask", "about": "manual",
+                                         "claim": "The manual says what colour the made-up panel is."}]}
+        check = {"claim": "The manual requires the made-up panel to be blue.", "about": "manual",
+                 "type": "classification", "evidence_hint": []}
+        replies = [json.dumps(facts),
+                   json.dumps({"paragraphs": [{"id": "[Z1]", "why": "its colour", "bears": True,
+                                               "checks": [check]}]}),           # answers no ask: sent back
+                   json.dumps({"paragraphs": [{"id": "[Z1]", "why": "its colour", "bears": True,
+                                               "checks": [{**check, "answers": ["a1"]}]}]})]
         seen = []
 
         def ask(prompt, images=None):
@@ -448,17 +450,25 @@ def test_api_plan_goes_through_the_real_parser_checks_and_record():
             ask.last = {"cache_key": "k", "cached": False, "finish_reason": "end_turn",
                         "usage": {"input_tokens": 900, "output_tokens": 120,
                                   "prompt_tokens": 900, "completion_tokens": 120}}
-            return replies[min(len(seen) - 1, 1)]
+            return replies[min(len(seen) - 1, 2)]
         kg = type("KG", (), {"is_known_citation": staticmethod(lambda kind, ident: True)})()
         records = {}
         with _Patched([(V.pc, "print_summary", lambda *a: None), (V.pc, "print_plan", lambda *a: None)]):
             code = V._make_plans(R, kq, records, [qid], [(0, ask)], kg, {}, "api")
         rec = records[qid]
         assert code == 0 and rec["outcome"] == "valid after repair" and rec["attempts"] == 2, rec["problems"]
-        assert '"asked" is missing' in rec["problems"][0][0] and "YOUR PREVIOUS PLAN WAS REJECTED" in seen[1]
-        assert rec["spec"]["obligations"][0]["source_chunk"] == "Z1"          # "[Z1]" read as Z1
-        assert rec["spec"]["asked"][0]["answered_by"] == ["o1"]
-        assert rec["completion_tokens"] == 240 and json.loads(R.plans_file.read_text())[qid]["attempts"] == 2
+        assert "answers no ask" in rec["problems"][0][0] and "YOUR PREVIOUS REPLY WAS REJECTED" in seen[2]
+        assert len(seen) == 3 and "This step reads the QUESTION only" in seen[0]
+        ob = rec["spec"]["obligations"][0]
+        assert ob["source_chunk"] == "Z1" and ob["authority"] == "STANDARD" and ob["about"] == "manual"
+        # an ask about the manual: one check of its own claim, made after the statements
+        top = rec["spec"]["obligations"][1]
+        assert rec["spec"]["source"] == "structured" and rec["spec"]["terminal"] == top["id"]
+        assert top["requires"] == [ob["id"]] and top["claim"] == facts["asked"][0]["claim"]
+        assert rec["spec"]["asked"][0]["answered_by"] == [top["id"]]
+        assert rec["paragraphs"][0]["id"] == "Z1" and rec["paragraphs"][0]["bears"] is True
+        assert rec["asked"][0]["about"] == "manual" and rec["steps"] == {"facts": 1, "section": 2}
+        assert rec["completion_tokens"] == 360 and json.loads(R.plans_file.read_text())[qid]["attempts"] == 2
 
 
 def test_api_repeat_plans_and_answers_every_question_with_empty_caches():
@@ -582,7 +592,7 @@ def _alibaba_stage(d, fake_make, env):
     from mrag.config import CFG
     from mrag import kg_vine
     from mrag.vine import alibaba_client as al, anthropic_client as ac, table_data, vllm_client as vc
-    import mrag.vine.parser as parser_mod
+    import mrag.vine.structured_parser as parser_mod
     V = _vine_hprc()
 
     def fake_parser(ask, **k):
@@ -610,7 +620,7 @@ def _alibaba_stage(d, fake_make, env):
         (table_data, "load", lambda p: []),
         (al, "make_ask_alibaba", fake_make), (ac, "make_ask_anthropic", never),
         (vc, "launch", never), (vc, "make_ask_vllm", never),
-        (parser_mod, "make_semantic_parser", fake_parser),
+        (parser_mod, "make_structured_parser", fake_parser),
         (V.pc, "make_record", fake_record),
         (V.pc, "print_summary", lambda *a: None), (V.pc, "summarize", lambda *a: {}),
         (V.pc, "print_plan", lambda *a: None),
@@ -1169,7 +1179,8 @@ def test_probe_stage_passes_the_parse_stages_settings():
             assert V.stage_probe(R) == 0
         first = _run(d)
     assert got["name"] == "p1" and got["gpus"] == ["4", "5", "6", "7"]
-    assert got["runs"] == first.runs and got["folder"] == first.unpinned_run_name  # the 11 Oct prompts
+    # the 11 Oct prompts: the one-call parser's own folder, not the plan-maker's of 18 Oct
+    assert got["runs"] == first.runs and got["folder"] == first.probe_source_name != first.unpinned_run_name
     assert got["launch"] is vc.launch and got["stop"] is vc.stop_server and got["make_ask"] is vc.make_ask_vllm
     assert got["server_kwargs"] is V.PARSER_SERVER and got["server_env"] is V.parser_server_env
     assert got["ask_kwargs"] == {"model_id": V.MODEL_ID, "revision": V.REVISION, "engine": V.ENGINE,
@@ -1461,6 +1472,129 @@ def test_one_parse_job_per_run_folder():
             except ZeroDivisionError:
                 pass
         assert not lock.exists()                             # also when the stage stops with an error
+
+
+# --------------------------------------------------------------------------- #
+# The plan-maker of 18 Oct (mrag/vine/structured_parser.py) and the DEV-only run
+# --------------------------------------------------------------------------- #
+def test_plans_by_the_new_plan_maker_get_a_new_folder():
+    """The run folder is named by the new plan-maker's instructions and code:
+    its plans never mix with the one-call parser's (17-18 Oct), and a change to
+    its code alone also gives a new folder."""
+    import hashlib
+    import shutil
+    import subprocess
+    from mrag.vine import structured_parser as sp
+    from mrag.vine.parser import PARSER_TASK, PARSER_CONTRACT
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        R = _run_env(d, {"VINE_PARSER": None, "VINE_DEV_ONLY": None})
+        assert R.instructions_sha == sp.code_sha() != hashlib.sha256(sp.INSTRUCTIONS.encode()).hexdigest()
+        # a change to the code, not to the instructions, changes the name
+        copy = Path(d) / "copy"
+        shutil.copytree(REPO / "mrag", copy / "mrag", ignore=shutil.ignore_patterns("__pycache__"))
+        seen = {sp.code_sha()}
+        for name in ("structured_parser.py", "parser.py", "compile.py", "lookup.py"):
+            f = copy / "mrag" / "vine" / name
+            f.write_text(f.read_text() + "\n# a change\n")
+            out = subprocess.run([sys.executable, "-c", "from mrag.vine import structured_parser as s; print(s.code_sha())"],
+                                 cwd=copy, capture_output=True, text=True, timeout=120)
+            assert out.returncode == 0 and out.stdout.strip() and out.stdout.strip() not in seen, (name, out)
+            seen.add(out.stdout.strip())
+        old = hashlib.sha256((PARSER_TASK + PARSER_CONTRACT).encode()).hexdigest()
+        assert f"_p{old[:8]}" not in R.run_dir.name and f"_p{R.instructions_sha[:8]}_k" in R.run_dir.name
+        assert R.probe_source_name.endswith(f"_p{old[:8]}")
+        assert sp.ASSEMBLY in sp.INSTRUCTIONS and sp.SECTION_CONTRACT in sp.INSTRUCTIONS \
+            and sp.FACTS_TASK in sp.INSTRUCTIONS and sp.VERSION in V.PLAN_LABEL
+
+
+def test_the_run_gives_the_plan_maker_the_graphs_links_and_the_manual_checks():
+    import mrag.vine.structured_parser as sp
+    V = _vine_hprc()
+    got = []
+    hooks = {"exceptions_of": object(), "options_of": object(), "record_of": object()}
+
+    def fake_maker(ask, **k):
+        got.append(k)
+
+        def parse(question, chunks, section, figures):
+            return None, None
+        return parse
+    with tempfile.TemporaryDirectory() as d:
+        R = _run_env(d, {"VINE_PARSER": "api", "VINE_DEV_ONLY": "1"})
+        kq = {q: {"question": R.questions[q], "figures": [], "chunks": []} for q in R.dev_ids[:1]}
+        kg = type("KG", (), {"is_known_citation": staticmethod(lambda kind, ident: True)})()
+        tables = {"Table 9Z-1": []}
+        with _Patched([(sp, "make_structured_parser", fake_maker), (sp, "graph_hooks", lambda g: hooks),
+                       (V.pc, "print_summary", lambda *a: None), (V.pc, "print_plan", lambda *a: None)]):
+            V._make_plans(R, kq, {}, list(kq), [(0, lambda p, i=None: "")], kg, tables, "api")
+    ok_ = got and got[0]["check_ref"] == kg.is_known_citation and got[0]["tables"] is tables
+    assert ok_ and all(got[0][k] is v for k, v in hooks.items()), got
+
+
+def test_dev_only_run_makes_the_dev_questions_in_the_full_runs_folder():
+    V = _vine_hprc()
+    with tempfile.TemporaryDirectory() as d:
+        full = _run_env(d, {"VINE_PARSER": None, "VINE_DEV_ONLY": None})
+        dev = _run_env(d, {"VINE_PARSER": None, "VINE_DEV_ONLY": "1"})
+        assert dev.dev_only and not full.dev_only
+        assert sorted(dev.questions) == sorted(dev.dev_ids) and len(dev.questions) == 11
+        assert dev.answer_set == {} and len(full.questions) == 31
+        assert dev.run_dir == full.run_dir and dev.kq_file == full.kq_file      # the full run reuses them
+        assert _run_env(d, {"VINE_DEV_ONLY": "0"}).dev_only is False
+        for env in ({"VINE_DEV_ONLY": "1", "VINE_QUESTIONS": "/x/sealed.json"},
+                    {"VINE_DEV_ONLY": "1", "VINE_REPEAT": "r1"}, {"VINE_DEV_ONLY": "1", "VINE_PROBE": "p1"}):
+            try:
+                _run_env(d, env)
+            except AssertionError:
+                continue
+            raise AssertionError(f"accepted {env}")
+
+
+def test_run_sh_dev_marks_every_stage_and_takes_alibaba_or_api_too():
+    import shutil
+    import subprocess
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        scratch, stubs = d / "scratch", d / "stubs"
+        (scratch / "vine").mkdir(parents=True)
+        (scratch / "vine" / ".done_models").write_text("")
+        (scratch / "vine" / "anthropic_key").write_text("k")
+        (scratch / "vine" / "alibaba_key").write_text("k")
+        stubs.mkdir()
+        (stubs / "sbatch").write_text('#!/bin/bash\necho "$@" >> "$SIM_LOG"\necho $((RANDOM + 1000))\n')
+        (stubs / "sbatch").chmod(0o755)
+        log = d / "sbatch.log"
+
+        def run(*args, extra=None):
+            if log.exists():
+                log.unlink()
+            env = {"PATH": f"{stubs}:/usr/bin:/bin", "HOME": str(d / "home"), "SCRATCH": str(scratch),
+                   "USER": "u", "SIM_LOG": str(log), **(extra or {})}
+            p = subprocess.run([shutil.which("bash"), str(REPO / "hprc" / "run.sh"), *args], env=env,
+                               capture_output=True, text=True, timeout=60)
+            return p.returncode, p.stdout + p.stderr, (log.read_text().splitlines() if log.exists() else [])
+
+        code, out, calls = run("123", "8", "parse", "dev")
+        assert code == 0, out
+        assert len(calls) == 2 and "STAGE=parse" in calls[0] and "STAGE=execute" in calls[1], calls
+        assert all("VINE_DEV_ONLY=1," in c and "VINE_PARSER=," in c for c in calls), calls
+        assert "--gres=gpu:a100:8" in calls[0] and "--time=06:00:00" in calls[0], calls[0]
+        assert "the 11 DEV questions only" in out
+        # without the word: a value left in the shell is overridden with nothing
+        code, out, calls = run("123", "8", "parse", extra={"VINE_DEV_ONLY": "1"})
+        assert code == 0 and all("VINE_DEV_ONLY=," in c for c in calls), calls
+        # with an API plan-writer, in either order
+        for args in (("123", "1", "parse", "alibaba", "dev"), ("123", "1", "parse", "dev", "alibaba")):
+            code, out, calls = run(*args)
+            assert code == 0 and len(calls) == 2, out
+            assert all("VINE_DEV_ONLY=1," in c and "VINE_PARSER=alibaba," in c for c in calls), calls
+        for args in (("123", "8", "parse", "dev", "dev"), ("123", "8", "parse", "api", "alibaba"),
+                     ("123", "8", "parse", "dev", "x"), ("123", "8", "parse", "dev", "api", "y")):
+            code, out, calls = run(*args)
+            assert code == 1 and calls == [], (args, out)
+        code, out, calls = run("123", "8", "parse", "dev", extra={"VINE_QUESTIONS": "/x/sealed.json"})
+        assert code == 1 and calls == [], out
 
 
 if __name__ == "__main__":

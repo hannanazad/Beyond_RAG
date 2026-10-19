@@ -1073,6 +1073,15 @@ def _names_label(text: str, head: str, labels: Sequence[str]) -> bool:
     return False
 
 
+def claim_names_case(claim: str, head: str, labels: Sequence[str]) -> bool:
+    """Whether a claim says which of several labelled cases ("Design A",
+    "Sign 2") it is about, or that it holds for each of them (rule A, 4c)."""
+    named = {x for v in case_labels(claim).values() for x in v}
+    return bool(named & set(labels) or _names_label(claim, head, labels)
+                or _FOR_EACH.search(claim)
+                or re.search(rf"\ball\b(?:\s+\w+){{0,3}}?\s+(?i:{re.escape(head)})", claim))
+
+
 def several_cases(spec: NetworkSpec) -> Dict[str, List[str]]:
     """The kinds the FACTS tell apart by two or more labels. The facts, not
     the question: they are what every checker is shown."""
@@ -1165,10 +1174,7 @@ def coverage_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]] = (),
         for o in spec.obligations:
             if o.type == ObligationType.DEFINITIONAL.value:
                 continue
-            named = {x for v in case_labels(o.claim).values() for x in v}
-            if (named & set(labels) or _names_label(o.claim, head, labels)
-                    or _FOR_EACH.search(o.claim)
-                    or re.search(rf"\ball\b(?:\s+\w+){{0,3}}?\s+(?i:{re.escape(head)})", o.claim)):
+            if claim_names_case(o.claim, head, labels):
                 continue
             out.append(f"{o.id}: the facts describe several of one kind "
                        f"({', '.join(f'{kind} {x}' for x in labels)}), and the claim names "

@@ -96,6 +96,8 @@ class Operation:
     # first: the plan already says where this obligation's evidence is.
     source_chunk: str = ""
     mandatory: bool = True
+    # "case", "manual" or "" (compile.Obligation.about): what the claim is about
+    about: str = ""
 
 
 @dataclass

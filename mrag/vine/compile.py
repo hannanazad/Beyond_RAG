@@ -162,6 +162,12 @@ class Obligation:
     verifier: Optional[str] = None         # left None -> assigned by rule
     mandatory: bool = True
     source_chunk: str = ""                 # provenance back into Kq
+    # What the claim is about (18 Oct 2026): "case" -- the case, as its facts
+    # describe it, meets what the claim says; "manual" -- what the manual
+    # requires, recommends or allows for a case like this. Empty: not said
+    # (plans written before), and the checker reads the claim as before. The
+    # checker is told which, so it never has to guess (model_verifiers).
+    about: str = ""
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "Obligation":
@@ -180,7 +186,8 @@ class Obligation:
                            for h in (d.get("evidence_hint") or [])],
             verifier=(str(d["verifier"]) if d.get("verifier") else None),
             mandatory=bool(d.get("mandatory", True)),
-            source_chunk=str(d.get("source_chunk", "")))
+            source_chunk=str(d.get("source_chunk", "")),
+            about=str(d.get("about") or "").strip().lower())
 
 
 @dataclass
@@ -275,6 +282,9 @@ class AskedItem:
                          answered_by=[str(i).strip() for i in ids if str(i).strip()])
 
 
+# What an obligation's claim may be about ("" = not said).
+_ABOUT = ("", "case", "manual")
+
 # A fact id is shown to the checker and may be cited, so it must look like
 # nothing else: not a provision id, and not a sentence of its own.
 _FACT_ID = re.compile(r"^f\d{1,3}$")
@@ -334,6 +344,8 @@ class NetworkSpec:
         for o in self.obligations:
             if o.type not in {t.value for t in ObligationType}:
                 out.append(f"{o.id}: unknown obligation type {o.type!r}")
+            if o.about not in _ABOUT:
+                out.append(f"{o.id}: about {o.about!r} is not \"case\" or \"manual\"")
             if o.authority not in {a.value for a in Authority}:
                 out.append(f"{o.id}: unknown authority {o.authority!r}")
             if o.authority == Authority.SUPPORT.value:
@@ -384,10 +396,14 @@ class NetworkSpec:
             if g.kind == "not":
                 return {"not": guard(g.parts[0])}
             return {g.kind: [guard(p) for p in g.parts]}
+        def ob(o):
+            d = {**{k: v for k, v in asdict(o).items() if k != "guard"}, "guard": guard(o.guard)}
+            if not d.get("about"):
+                d.pop("about", None)       # a plan that does not say reads, and hashes, as before
+            return d
         out = {
             "query": self.query, "terminal": self.terminal, "source": self.source,
-            "obligations": [{**{k: v for k, v in asdict(o).items() if k != "guard"},
-                             "guard": guard(o.guard)} for o in self.obligations],
+            "obligations": [ob(o) for o in self.obligations],
             "merges": [{**{k: v for k, v in asdict(m).items() if k != "guard"},
                         "guard": guard(m.guard)} for m in self.merges],
         }
@@ -678,7 +694,7 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             guard_spec=_guard_data(o.guard) if o.guard else None,
             evidence_hint=list(o.evidence_hint),
             source_chunk=o.source_chunk,
-            mandatory=o.mandatory))
+            mandatory=o.mandatory, about=o.about))
 
     for m in spec.merges:
         produces = _state_of(m.id)

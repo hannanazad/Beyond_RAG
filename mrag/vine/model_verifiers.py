@@ -264,6 +264,33 @@ applies, or that it does not), and FALSE when it says the opposite. Whether
 the case obeys the provision is not asked here."""
 
 
+# What the claim is about, when the plan says (compile.Obligation.about,
+# 18 Oct 2026). A claim about the case can carry a provision's own words ("the
+# sheeting is at least ... for the first ...") and be read as a statement of
+# the rule, which is TRUE whatever the case is; a claim about the manual can be
+# read as a statement about the case. The plan knows which it wrote, so it says
+# so, and the checker does not have to guess.
+_ABOUT = {
+    "case": """WHAT THIS CLAIM IS ABOUT: THE CASE
+The claim says that the case, as GIVEN IN THE QUESTION and ALREADY ESTABLISHED
+describe it, is or does what the claim says. Compare it with those facts and
+with what the manual requires: TRUE when they show that the case meets it;
+FALSE when a fact shows that it does not, even where the claim uses the words
+of a provision; UNKNOWN when a fact it needs is not given.""",
+    "manual": """WHAT THIS CLAIM IS ABOUT: WHAT THE MANUAL SAYS FOR THIS CASE
+The claim states what the manual requires, recommends or allows for a case
+like this one. TRUE when a provision says so for a case like this; FALSE when
+the manual says otherwise for this case (a different value, a prohibition, or
+an exception, condition or Option that covers it). Whether the case as built
+or proposed meets it is not what is asked.""",
+}
+
+
+def about_block(op: Operation) -> str:
+    """The block for what the claim is about, or '' when the plan does not say."""
+    return _ABOUT.get(str(getattr(op, "about", "") or "").lower(), "")
+
+
 def is_scope_claim(op: Operation) -> bool:
     """An applicability obligation. Only that: a compliance claim may also
     say "applicable" ("meets the applicable height rule"), and for it the
@@ -345,12 +372,17 @@ def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
            else c.status.value)
         for c in established
         if c.status is not Status.UNKNOWN) or "(nothing yet)"
+    about = about_block(op)
     parts = [
         "You are checking ONE claim against the manual (the MUTCD), as an engineer "
         "who signs for it would.",
         "",
         f"CLAIM\n{op.claim}",
         "",
+    ]
+    if about:
+        parts += [about, ""]
+    parts += [
         "GIVEN IN THE QUESTION (facts of the case, copied from the question; "
         "they say nothing about what the manual requires)\n" + given_block,
         "",

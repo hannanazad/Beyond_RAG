@@ -58,7 +58,8 @@ import parser_check as pc  # noqa: E402
 import execution_check as ec  # noqa: E402
 import retrieval_check as rc  # noqa: E402
 import vine_run as vr  # noqa: E402
-from mrag.vine.parser import PARSER_TASK, PARSER_CONTRACT, build_parser_prompt  # noqa: E402
+from mrag.vine.parser import PARSER_TASK, PARSER_CONTRACT  # noqa: E402
+from mrag.vine import structured_parser as plan_maker  # noqa: E402
 
 # the parser, as on Colab (docs/PARSER_TEST_2026-10-07.md)
 MODEL_ID = "Qwen/Qwen3.8-27B-FP8"
@@ -112,6 +113,12 @@ PARSER_ALIBABA_REGION = "singapore"
 # The API plan-writers: VINE_PARSER -> (model, tag in the run folder's name)
 API_PARSERS = {"api": (PARSER_API_MODEL, PARSER_API_TAG),
                "alibaba": (PARSER_ALIBABA_MODEL, PARSER_ALIBABA_TAG)}
+# The plan-maker (18 Oct 2026): mrag/vine/structured_parser.py -- one call for the
+# facts and the things asked, then one call per group of retrieved sections that
+# decides every Standard, Guidance and Option paragraph shown; code builds the
+# structure. Its instructions (and its structure rules) name the run folder.
+PLAN_LABEL = "structured1 (18 Oct: paragraph by paragraph; code builds the structure)"
+PLAN_ATTEMPTS = "facts: 3 attempts; each section call: 2 (one repair)"
 MAX_IMAGES = 4
 FIG_KEYS = ("figure_id", "caption", "n_sheets", "image_paths", "image_path", "page_pdf", "source")
 SETTING_NAMES = (
@@ -153,6 +160,11 @@ class Run:
         qfile = os.environ.get("VINE_QUESTIONS", "").strip()
         self.repeat = os.environ.get("VINE_REPEAT", "").strip()
         self.probe = os.environ.get("VINE_PROBE", "").strip()
+        # the 11 DEV questions only (bash hprc/run.sh ACCOUNT GPUS parse dev): planned and
+        # answered in the same run folder as a full run, so a full run later reuses them
+        self.dev_only = os.environ.get("VINE_DEV_ONLY", "").strip() == "1"
+        assert not (self.dev_only and (qfile or self.repeat or self.probe)), \
+            "VINE_DEV_ONLY is for a normal run: leave VINE_QUESTIONS, VINE_REPEAT and VINE_PROBE empty"
         # who writes the plans: the Qwen servers on this job's GPUs (default), or an
         # API model (VINE_PARSER=alibaba: Qwen3.8-Max; VINE_PARSER=api: the checkers'
         # own model, for comparison only); run.sh always sets it, empty for Qwen
@@ -185,6 +197,8 @@ class Run:
                 self.answer_set, self.set_name = {}, "no other"
         elif qfile:
             self.answer_set, self.set_name = json.loads(Path(qfile).read_text()), "sealed"
+        elif self.dev_only:
+            self.answer_set, self.set_name = {}, "none"
         else:
             self.answer_set, self.set_name = sample_questions(), "sample"
         self.questions = {**{c["case_id"]: c["text"] for c in self.dev}, **self.answer_set}
@@ -193,7 +207,11 @@ class Run:
         assert not set(self.dev_ids) & set(self.answer_set), "a question id is used twice"
         self.retr_commit = vr.retrieval_commit(str(REPO))
         self.store_tag = vr.store_tag(CFG.base_dir)
-        self.instructions_sha = hashlib.sha256((PARSER_TASK + PARSER_CONTRACT).encode()).hexdigest()
+        # the plan-maker's instructions AND its code name the run folder (plan_maker.code_sha)
+        self.instructions_sha = plan_maker.code_sha()
+        # the probe (11-12 Oct) replays prompts of the one-call parser, from its own run folder
+        old_sha = hashlib.sha256((PARSER_TASK + PARSER_CONTRACT).encode()).hexdigest()
+        self.probe_source_name = f"e2e_r{self.retr_commit}_s{self.store_tag}_p{old_sha[:8]}"
         base = Path(CFG.base_dir) / "parser_runs_faster"
         # Kq is always the shared one, so a repeat run reads exactly what the first run read
         self.kq_file = base / f"kq_r{self.retr_commit}_s{self.store_tag}.json"
@@ -219,7 +237,9 @@ class Run:
         if self.parser == "api":
             say("note: the plans are written by the checkers' own model -- a comparison run, "
                 "not the setup (S2.2, S4.6); the setup's API plan-writer is 'alibaba'")
-        say(f"{len(self.questions)} questions: {len(self.dev)} DEV + {len(self.answer_set)} {self.set_name}")
+        say(f"{len(self.questions)} questions: {len(self.dev)} DEV + {len(self.answer_set)} {self.set_name}"
+            + (" (DEV ONLY: bash hprc/run.sh without the word dev makes the rest)" if self.dev_only else ""))
+        say(f"plans: {PLAN_LABEL}")
         if self.repeat and self.api:
             say(f"REPEAT RUN '{self.repeat}' (API): every plan made again from {self.kq_file} with an "
                 f"empty reply cache {self.model_cache}, then answered with an empty checker cache")
@@ -430,10 +450,14 @@ def stage_retrieval(R: Run) -> int:
     for qid in R.dev_ids:
         t = pc.target_check(None, R.case[qid], kq[qid]["chunks"])
         say(f"  DEV {qid:26s} the provision the case was written from reaches the parser: {t['target_chunk_in_kq']}")
-    sizes = {qid: len(build_parser_prompt(kq[qid]["question"], kq[qid]["chunks"], "", None, kq[qid]["figures"]))
+    # the plan-maker's longest section call (before the graph's additions; facts and asks not yet known)
+    ask0 = [{"id": "a1", "about": "case", "ask": "(the question's ask)", "claim": "(its claim)"}]
+    sizes = {qid: max((len(plan_maker.build_section_prompt(kq[qid]["question"], [], ask0, c, {}, {},
+                                                           kq[qid]["figures"]))
+                       for c in plan_maker.plan_calls(kq[qid]["chunks"])), default=0)
              for qid in R.questions}
     longest = max(sizes, key=sizes.get)
-    say(f"longest parser prompt: {sizes[longest]:,} characters (about {sizes[longest] // 4:,} tokens)")
+    say(f"longest plan-maker prompt: {sizes[longest]:,} characters (about {sizes[longest] // 4:,} tokens)")
     say("\nRETRIEVAL STAGE FINISHED")
     return 0
 
@@ -475,8 +499,6 @@ def stage_parse(R: Run) -> int:
 def _stage_parse(R: Run) -> int:
     from mrag.kg_vine import VineKG
     from mrag.vine import table_data, vllm_client as vc
-    from mrag.vine.parser import exceptions_from_graph, make_semantic_parser
-    from mrag.vine.compile import instantiate
 
     kq = vr.load_json(R.kq_file, {})
     no_kq = [q for q in R.questions if q not in kq or kq[q].get("question") != R.questions[q]]
@@ -580,7 +602,7 @@ def _stage_parse(R: Run) -> int:
         "commit": R.commit, "model": MODEL_ID, "revision": REVISION, "vllm": VLLM_VERSION,
         "server_command": live[0]["cmd"], "servers": len(asks), "gpu": names, "seed": SEED,
         "sampling": vc.QWEN_THINKING, "reasoning_effort": EFFORT, "max_tokens": max_tokens,
-        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix7 (17 Oct: asked items, cases, named exceptions; conditions the facts are silent on)",
+        "max_model_len": max_len, "max_attempts": PLAN_ATTEMPTS, "fallback": False, "instructions": PLAN_LABEL,
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job,
         "one_request_at_a_time": True, "engine": engine, "model_path_used": str(model_path),
@@ -596,7 +618,8 @@ def _make_plans(R: Run, kq: dict, records: dict, to_parse: list, asks: list, kg,
     """Make the plans for `to_parse`, one worker per (slot, ask) in `asks`,
     saving each plan as soon as it is made; then the summary. `after()` runs
     once every worker is done (the GPU branch stops its servers there)."""
-    from mrag.vine.parser import exceptions_from_graph, make_semantic_parser
+    from collections import Counter
+    from mrag.vine.structured_parser import graph_hooks, make_structured_parser
     from mrag.vine.compile import instantiate
 
     order = [q for q in R.dev_ids if q in to_parse] + [q for q in to_parse if q not in R.dev_ids]
@@ -607,10 +630,9 @@ def _make_plans(R: Run, kq: dict, records: dict, to_parse: list, asks: list, kg,
     done = [0]
 
     def worker(i: int, ask) -> None:
-        # each worker reads the named exceptions through its own view of the graph
-        parse = make_semantic_parser(ask, max_attempts=3, fall_back_to_baseline=False,
-                                     check_ref=kg.is_known_citation, tables=tables,
-                                     exceptions_of=exceptions_from_graph(kg))
+        # each worker reads the manual's links through its own view of the graph
+        parse = make_structured_parser(ask, check_ref=kg.is_known_citation, tables=tables,
+                                       **graph_hooks(kg))
         while True:
             try:
                 qid = work.get_nowait()
@@ -631,10 +653,14 @@ def _make_plans(R: Run, kq: dict, records: dict, to_parse: list, asks: list, kg,
                 vr.save_json(R.plans_file, records)
                 done[0] += 1
                 s = rec["stats"]
+                tokens = [c.get('prompt_tokens') or (c.get('usage') or {}).get('prompt_tokens') or 0
+                          for c in rec['calls']]
+                bears = sum(1 for p in rec.get('paragraphs') or [] if p.get('bears'))
                 say(f"  {done[0]:2d}/{len(order)} [{label}{i}] {qid:26s} {rec['outcome']:19s} attempts {rec['attempts']} "
-                    f"checks {s.get('obligations', 0):2d} merges {s.get('merges', 0)} | {rec['seconds']:5.0f}s "
-                    f"| finish {[c.get('finish_reason') for c in rec['calls']]} "
-                    f"| prompt tokens {[c.get('prompt_tokens') or (c.get('usage') or {}).get('prompt_tokens') for c in rec['calls']]}")
+                    f"checks {s.get('obligations', 0):2d} merges {s.get('merges', 0)} "
+                    f"| paragraphs {bears} of {len(rec.get('paragraphs') or [])} bear | {rec['seconds']:5.0f}s "
+                    f"| {len(rec['calls'])} calls, finish {dict(Counter(c.get('finish_reason') for c in rec['calls']))} "
+                    f"| longest prompt {max(tokens, default=0)} tokens")
 
     t_all = time.time()
     workers = [threading.Thread(target=worker, args=(i, a)) for i, a in asks]
@@ -686,9 +712,9 @@ def _parse_with_api(R: Run, kq: dict, records: dict, to_parse: list, kg, tables:
         return 1
     vr.save_json(R.run_dir / "parse_manifest.json", {
         "commit": R.commit, "parser": "api", "model": PARSER_API_MODEL, "effort": PARSER_API_EFFORT,
-        "max_tokens": PARSER_API_MAX_TOKENS, "workers": n, "max_attempts": 3, "fallback": False,
+        "max_tokens": PARSER_API_MAX_TOKENS, "workers": n, "max_attempts": PLAN_ATTEMPTS, "fallback": False,
         "temperature": "not settable (model default)", "reply_cache": str(R.model_cache),
-        "instructions": "fix7 (17 Oct: asked items, cases, named exceptions; conditions the facts are silent on)",
+        "instructions": PLAN_LABEL,
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job})
     say(f"{n} API workers | {PARSER_API_MODEL}, effort {PARSER_API_EFFORT}, max_tokens {PARSER_API_MAX_TOKENS}")
@@ -746,9 +772,9 @@ def _parse_with_alibaba(R: Run, kq: dict, records: dict, to_parse: list, kg, tab
         "thinking_budget": PARSER_ALIBABA_THINKING, "reasoning_effort": "xhigh (Model Studio maps the budget to it)",
         "max_completion_tokens": PARSER_ALIBABA_MAX_TOKENS,
         "seed": SEED, "sampling": "not sent (the model's own defaults)", "stream": True,
-        "workers": n, "max_attempts": 3, "fallback": False, "reply_cache": str(R.model_cache),
+        "workers": n, "max_attempts": PLAN_ATTEMPTS, "fallback": False, "reply_cache": str(R.model_cache),
         "checker_model": CHECKER_MODEL,
-        "instructions": "fix7 (17 Oct: asked items, cases, named exceptions; conditions the facts are silent on)",
+        "instructions": PLAN_LABEL,
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job})
     say(f"{n} API workers | {PARSER_ALIBABA_MODEL}, thinking budget {PARSER_ALIBABA_THINKING}, "
@@ -920,9 +946,9 @@ def stage_probe(R: Run) -> int:
     os.environ["CUDA_VISIBLE_DEVICES"] = ""            # this process itself never uses them
     say(f"GPUs: {len(gpus)} -> {gpu_names()}")
     say(f"probe '{R.probe}': the prompts of {', '.join(rp.PROBE_CASES)} from the first run in "
-        f"{R.runs / R.unpinned_run_name}")
+        f"{R.runs / R.probe_source_name}")
     report = rp.run_probe(
-        R.probe, R.runs, R.unpinned_run_name, gpus, launch=vc.launch, stop=vc.stop_server,
+        R.probe, R.runs, R.probe_source_name, gpus, launch=vc.launch, stop=vc.stop_server,
         make_ask=vc.make_ask_vllm, server_env=parser_server_env, server_kwargs=PARSER_SERVER,
         vllm_bin=str(Path(os.environ["VLLM_ENV"]) / "bin" / "vllm"),
         model_path=str(local_model_copy(parser_model_path(), Path(os.environ.get("TMPDIR") or f"/tmp/vine_{R.job}"))),

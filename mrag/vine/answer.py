@@ -259,8 +259,13 @@ def _facts(net: Network, trace: ExecutionTrace) -> Dict[str, Any]:
     # one already listed as a reason the decision fails.
     excused = _excused(net, trace)
     listed = {c.obligation_id for c in found_false}
+    # A claim ABOUT THE MANUAL ("the manual recommends X here") found not true is
+    # not a recommendation the case failed to follow (compile.Obligation.about,
+    # 18 Oct 2026); a plan that does not say what its claims are about reads as before.
+    about_manual = {op.id for op in net.operations if getattr(op, "about", "") == "manual"}
     non_conf = [c.claim for c in upstream
                 if c.non_conformance() and c.obligation_id in check_ids
+                and c.obligation_id not in about_manual
                 and state_of.get(c.obligation_id) not in excused
                 and c.obligation_id not in listed]
     # Checks found not to apply, and the established results that decided

@@ -246,6 +246,12 @@ def make_record(case_id: str, question: str, kq: Dict[str, Any], spec, report,
         "open_problems": list(getattr(report, "open_problems", []) or []) if report else [],
         "used_attempt": int(getattr(report, "used_attempt", 0) or 0) if report else 0,
     }
+    # the structured parser (mrag/vine/structured_parser.py, 18 Oct 2026): what it
+    # decided on the way -- the things asked, every paragraph's decision and why,
+    # the paragraphs the graph added, the calls by step
+    for key in ("asked", "paragraphs", "added", "steps"):
+        if report is not None and hasattr(report, key):
+            rec[key] = getattr(report, key)
     if case is not None:
         rec["target"] = target_check(spec, case, chunks)
     return rec
