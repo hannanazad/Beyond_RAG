@@ -529,6 +529,27 @@ def test_an_ask_about_the_case_with_only_guidance_is_merged_at_guidance():
     ok(run(spec, {ids_for(spec, "W_G3")[0]: T, ids_for(spec, "W_G5")[0]: F}) is F)   # "is it as recommended?": no
 
 
+def test_a_definition_under_a_standard_does_not_hide_a_failed_guidance():
+    # a Standard that only defines a term, beside the Guidance on the very thing
+    # asked: the ask is decided at Guidance, so the failed Guidance is a "no"
+    kq = KQ + [ch("W_S7", "9Z.01", "Standard", 7, "A zorb marker is a raised disc.")]
+    defn = {"why": "x", "bears": True, "checks": [check("The zorb markers are raised discs.", typ="definitional")]}
+    adv = {"why": "x", "bears": True, "checks": [check("The zorb markers are orange.")]}
+    spec, _r = sp.make_structured_parser(model({"W_S7": defn, "W_G3": adv}))(Q, kq)
+    term = next(m for m in spec.merges if m.id == spec.terminal)
+    d, g = ids_for(spec, "W_S7")[0], ids_for(spec, "W_G3")[0]
+    ok(term.kind == "conjunction" and term.authority == "GUIDANCE", term)
+    ok(run(spec, {d: T, g: F}) is F and run(spec, {d: F, g: T}) is F and run(spec, {d: T, g: T}) is T)
+    # a Standard that states a practice keeps the rule: the Guidance not followed does not refute
+    spec, _r = sp.make_structured_parser(model({"W_S1": RULE, "W_G3": adv}))(Q, KQ)
+    term = next(m for m in spec.merges if m.id == spec.terminal)
+    ok(term.authority == "STANDARD" and run(spec, {ids_for(spec, "W_S1")[0]: T, ids_for(spec, "W_G3")[0]: F}) is T)
+    # only definitions: the rule over all of them, as before
+    defn2 = {"why": "x", "bears": True, "checks": [check("The zorb markers are discs.", typ="definitional")]}
+    spec, _r = sp.make_structured_parser(model({"W_S7": defn, "W_S1": defn2}))(Q, kq)
+    ok(next(m for m in spec.merges if m.id == spec.terminal).authority == "STANDARD")
+
+
 def test_an_exception_with_two_checks_raises_no_coverage_problem():
     exc = {**EXC, "condition": "", "checks": EXC["checks"] + [
         check("The blip lane is narrower than 9 yards, as the paragraph requires.", typ="exception")]}

@@ -364,7 +364,8 @@ about the case: a paragraph's checks -> conjunction (join all) or alternative
 the model's relaxes) -> exception merge [rule, exceptions] at the rule's
 heading, the exception paragraph used only there, an exception check with no
 rule that bears not used, the ask's conjunction at STANDARD unless its inputs
-are only GUIDANCE or only OPTION; for an ask about the manual: every check that
+are only GUIDANCE or only OPTION, definitional checks not counted; for an ask
+about the manual: every check that
 answers it is a statement, and the ask is one check of its own claim requiring
 them all, pointed to their paragraphs; terminal -> conjunction of the asks at
 the weakest heading; an ask nothing bears on -> one check of the ask's own
@@ -1143,7 +1144,8 @@ def assemble(query: str, facts: Sequence[GivenFact], asked: Sequence[Dict[str, s
     Merge headings: the paragraph's for a part and an exception merge; for an
     ask about the case, the parser's rule (`_merge_heading`: a Guidance not
     followed, or an Option not taken, beside a Standard does not make the case
-    fail); for the terminal, the weakest heading among the asks (`_weakest`),
+    fail), read over the checks that state a practice, not over definitions
+    (`requirement_heading`); for the terminal, the weakest heading among the asks (`_weakest`),
     so that one ask's answer never changes because another ask is in the
     question.
 
@@ -1285,6 +1287,7 @@ def assemble(query: str, facts: Sequence[GivenFact], asked: Sequence[Dict[str, s
     merges: List[MergeSpec] = []
     heading: Dict[str, str] = {}
     claim_of: Dict[str, str] = {}
+    defines: Dict[str, bool] = {}             # only says what a term means (type definitional)
     check_id: Dict[Tuple[str, int], str] = {}
     n_cond = 0
 
@@ -1315,6 +1318,7 @@ def assemble(query: str, facts: Sequence[GivenFact], asked: Sequence[Dict[str, s
                 "requires": req, "guard": guard, "evidence_hint": ch["evidence_hint"],
                 "source_chunk": pid, "about": ch["about"]}))
             heading[oid], claim_of[oid] = auth, ch["claim"]
+            defines[oid] = ch["type"] == ObligationType.DEFINITIONAL.value
             check_id[(pid, j)] = oid
 
     def new_merge(kind: str, inputs: List[str], claim: str, authority: str) -> str:
@@ -1322,7 +1326,20 @@ def assemble(query: str, facts: Sequence[GivenFact], asked: Sequence[Dict[str, s
         merges.append(MergeSpec(id=mid, claim=claim, kind=kind, inputs=list(inputs),
                                 authority=authority))
         heading[mid], claim_of[mid] = authority, claim
+        defines[mid] = all(defines.get(i, False) for i in inputs)
         return mid
+
+    def requirement_heading(inputs: List[str]) -> str:
+        """The heading of an ask about the case: the parser's rule, read over the
+        inputs that state a practice. A check that only says what a term means
+        (type definitional) does not raise it: 1C.01 defines a Standard as "a
+        statement of required, mandatory, or specifically prohibitive practice",
+        and a definition is not a practice. Without this, a definition printed
+        under a Standard heading ("a double line is two lines separated by a
+        discernible space") made a failed Guidance on the very thing asked a
+        mere non-conformance (DEV run, 18 Oct 2026)."""
+        practice = [i for i in inputs if not defines.get(i, False)]
+        return _merge_heading(heading[i] for i in (practice or inputs))
 
     parts: Dict[Tuple[str, str], str] = {}
 
@@ -1409,7 +1426,7 @@ def assemble(query: str, facts: Sequence[GivenFact], asked: Sequence[Dict[str, s
         elif len(inputs) == 1:
             node = inputs[0]
         else:
-            node = new_merge("conjunction", inputs, a["claim"], _merge_heading(heading[i] for i in inputs))
+            node = new_merge("conjunction", inputs, a["claim"], requirement_heading(inputs))
         nodes.append(node)
         ask_claims.append(a["claim"])
         asked_items.append(AskedItem(id=aid, ask=a["ask"], answered_by=[node]))
