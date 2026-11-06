@@ -45,6 +45,8 @@ bash compare40/run_compare40.sh ACCOUNT smoke    # 2 questions, both models: che
 bash compare40/run_compare40.sh ACCOUNT full     # all 40, both models (after the smoke job has ended)
 ```
 
+A third word picks the GPU: `a100` (the default), `a40`, `a30` or `a10`. The models need about 12 GB and bfloat16, so not `t4`. To see which GPUs are free: `sinfo -p gpu -h -o "%G %t %D" | sort`.
+
 **Before the first run, these must be in place:**
 - the data copy in `$SCRATCH/Beyond_RAG/gems_rag/`;
 - ColQwen2 in `$SCRATCH/hf_cache`.
