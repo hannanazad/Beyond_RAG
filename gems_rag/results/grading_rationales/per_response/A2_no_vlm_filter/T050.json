@@ -1,0 +1,64 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T050",
+  "question": "What hexadecimal or Pantone color code does the MUTCD prescribe for the red background of a STOP sign?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": false,
+  "answerability_subtype": "unsupported_precision",
+  "model_answer": "Direct Answer: The evidence provided does not contain any hexadecimal or Pantone color code for the red background of a STOP sign, and the MUTCD text supplied does not prescribe such codes. The MUTCD's Color Code section assigns only the general *meaning* of colors (red means \"stop or prohibition\"); precise color specifications are not present in the evidence, which instead refers detailed sign design matters to the \"Standard Highway Signs\" publication. Standards (mandatory): - \"The general meaning of the 13 colors shall be as follows: … K. Red—stop or prohibition …\" — this establishes what red signifies, not a numeric color specification. - \"The sign dimensions prescribed in the sign size tables in the various Parts and Chapters in this Manual and in the 'Standard Highway Signs' publication (see Section 1A.05) shall be used unless engineering judgment determines that other sizes are appropriate…\" — the MUTCD defers detailed design specifications to the companion \"Standard Highway Signs\" publication, but the evidence contains no color-code values. Visual evidence: [Image 1] (Table 2A-2) shows which colors are used as legend and background on sign types (e.g., red on regulatory/prohibitive signs) but lists no hex or Pantone values; [Image 7] and [Image 8] show STOP sign figures (e.g., Figure 2B-1) depicting the red background visually without any color code notation. Citations: - Section 1D.05 Standard §2 (p.33) - Section 2A.07 Standard §2 (p.45) - Table 2A-2 (p.43) - Page 89 - Page 94 Note: Based on the evidence available, I cannot identify a hexadecimal or Pantone code — the MUTCD evidence here defines color meanings and usage, not colorimetric specifications. If you need exact color values, those would typically be found in FHWA's color specification supplements (e.g., referenced through the \"Standard Highway Signs\" publication), which are not included in this evidence.",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1A.05",
+    "Section 1D.05",
+    "Section 2A.07",
+    "Table 2A-2",
+    "Figure 2B-1",
+    "p.33",
+    "p.45",
+    "p.43",
+    "Page 89",
+    "Page 94"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.25,
+    "ndcg6": 0.430676558073393,
+    "precision6": 0.1666666666666666,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1A.05, Section 1D.05, Section 2A.07, Table 2A-2, Figure 2B-1, p.33. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 4, which produced MRR=0.250. The six-chunk ordering produced nDCG@6=0.431 and Context Precision@6=0.167. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

@@ -1,0 +1,62 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "TB025",
+  "question": "Which MUTCD table gives a fixed replacement interval, in years, for every type of traffic sign?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "false_presupposition",
+  "model_answer": "Direct Answer: The evidence provided does not contain any MUTCD table that prescribes a fixed replacement interval, in years, for every type of traffic sign — and no such table appears to exist in the material supplied. The closest item in the evidence, Table 1B-1, lists target compliance dates for specific new MUTCD provisions (e.g., specific sign installation requirements and a pavement-marking retroreflectivity method), which is fundamentally different from a sign replacement schedule. None of the Standard provisions supplied addresses sign service life or replacement intervals. Visual evidence: - [Image 2] Table 1B-1, \"Target Compliance Dates Established by the FHWA,\" lists compliance deadlines (e.g., January 18, 2029; September 6, 2026; January 18, 2034) for particular MUTCD provisions such as Weight Limit signs and Low Clearance signs — it is not a sign replacement-interval table. - [Image 3] Figure 1B-2 illustrates the process for incorporating new traffic control devices into the MUTCD and does not address sign replacement. - [Image 4] Figure 2L-1 concerns changeable message sign pixel pitch and legend display capability, not sign replacement intervals. - [Image 1] Figure 2G-18 shows regulatory signs for managed lanes and is unrelated to replacement schedules. - [Images 5–8] The full page views (Pages 23, 26, 104, 173) show tables of contents, sign figures, and retroreflectivity-related content, none of which establishes fixed replacement intervals by sign type. Citations: - Table 1B-1 (p.5) - Figure 1B-2 (p.10) - Figure 2L-1 (p.515) - Figure 2G-18 (p.435) In short: the evidence is insufficient to identify any such table, because the MUTCD material provided contains no table assigning fixed replacement intervals in years to all traffic sign types.",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.077
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Table 1B-1",
+    "Figure 1B-2",
+    "Figure 2L-1",
+    "Figure 2G-18",
+    "p.5",
+    "p.10",
+    "p.515",
+    "p.435"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Table 1B-1, Figure 1B-2, Figure 2L-1, Figure 2G-18, p.5, p.10. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

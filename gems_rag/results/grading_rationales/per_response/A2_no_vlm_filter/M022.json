@@ -1,0 +1,68 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "M022",
+  "question": "Using Section 7B.05 and Figure 7B-2, describe the required sign sequence for entering and leaving a reduced school speed-limit zone.",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: On approach to a reduced school speed limit zone, drivers must first encounter a School (S1-1) sign installed in advance of the speed limit signing, then the School Speed Limit assembly or School Speed Limit When Flashing (S5-1) sign placed at (or as near as practicable to) the point where the reduced zone begins. Where the speed reduction exceeds 10 mph, a Reduced School Speed Limit Ahead (S4-5/S4-5a) sign is recommended in advance, and if used it must be followed by the School Speed Limit signing. Leaving the zone, the downstream end must be marked with an END SCHOOL SPEED LIMIT (S5-3) sign. Standards (mandatory): - \"A School Speed Limit assembly (see Figure 7B-1) or a School Speed Limit When Flashing (S5-1) sign (see Figure 7B-1) shall be used to indicate the speed limit where a reduced school speed limit zone has been established based upon an engineering study or where a reduced school speed limit is specified for such areas by statute. The School Speed Limit assembly or School Speed Limit When Flashing sign shall be placed at or as near as practicable to the point where the reduced school speed limit zone begins (see Figures 7B-2 and 7B-4).\" - \"If a reduced school speed limit zone has been established, a School (S1-1) sign shall be installed in advance (see Table 2C-3 for advance placement guidelines) of the first School Speed Limit sign assembly or S5-1 sign that is encountered in each direction as traffic approaches the reduced school speed limit zone (see Figures 7B-2 and 7B-4).\" - \"If used, the Reduced School Speed Limit Ahead sign shall be followed by a School Speed Limit sign or a School Speed Limit assembly.\" - \"Except as provided in Paragraph 4 of this Section, the downstream end of an authorized and posted reduced school speed limit zone shall be identified with an END SCHOOL SPEED LIMIT (S5-3) sign (see Figures 7B-1, 7B-2, and 7B-4).\" - Where higher fines apply only to speeding: \"a FINES HIGHER (R2-6P), FINES DOUBLE (R2-6aP), or $XX FINE (R2-6bP) plaque shall be posted with the School Speed Limit (S5-1) sign and shall not be posted beneath the School Zone (S1-1) sign (see Section 7B.05).\" Guidance (recommended): - \"A Reduced School Speed Limit Ahead (S4-5 or S4-5a) sign (see Figure 7B-1) should be used to inform road users of a reduced speed zone where the speed limit is being reduced by more than 10 mph, or where engineering judgment indicates that advance notice would be appropriate.\" Visual evidence: [Image 3] Figure 7B-2 shows the full sequence in each direction — an advance School (S1-1) sign with optional SCHOOL (S4-3P) plaque, a Reduced School Speed Limit Ahead (S4-5) sign, the School Speed Limit assembly (S4-3P SCHOOL plaque, R2-1 SPEED LIMIT 20, and S4-1P time-of-day plaque) at the beginning of the zone, and an END SCHOOL SPEED LIMIT (S5-3) sign (or END SCHOOL ZONE S5-2) with an optional SPEED LIMIT 45 (R2-1) sign at the downstream end. [Image 2] Figure 7B-1 depicts the individual signs and assemblies used in the sequence, including the School Speed Limit Assembly, S5-1 When Flashing sign, S4-5/S4-5a advance signs, and the S5-2/S5-3 end signs. [Image 1] Table 2C-3 provides the advance placement distances used to locate the advance School (S1-1) sign relative to the speed limit assembly. [Image 4] Table 7B-1 lists the sizes of the S1-1, S4-5/S4-5a, S5-1, S5-2, S5-3, and associated plaques in the sequence. [Image 5] Page 1019 contains the Section 7B.05 Standard text establishing this sequence. [Image 7] Page 1016 shows Figure 7B-2 in full-page context. [Image 8] Page 1020 shows a companion example (higher fines only for speeding) with the same entering/leaving sequence plus the R2-6 series plaque on the School Speed Limit assembly. [Image 6] Page 1024 contains the Section 7B.06 provisions on fines plaques associated with the School Speed Limit sign. Citations: - Section 7B.05 Standard §1 (p.978) - Section 7B.05 Standard §2 (p.978) - Section 7B.05 Standard §14 (p.980) - Section 7B.05 Standard §3 (p.978) - Section 7B.06 Standard §3 (p.980) - Section 7B.05 Guidance §13 (p.980) - Table 2C-3 (p.152) - Figure 7B-1 (p.973) - Figure 7B-2 (p.975) - Table 7B-1 (p.971) - Page 1019 - Page 1016 - Page 1020 - Page 1024",
+  "gold_answer": "Approaching traffic first encounters an advance School (S1-1) sign, then the School Speed Limit assembly or S5-1 at the beginning of the reduced zone. The downstream end is normally marked by S5-3 END SCHOOL SPEED LIMIT; S5-2 END SCHOOL ZONE may be used when both zones end together, with a downstream R2-1 optionally mounted.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.75, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "The downstream end is normally marked by S5-3 END SCHOOL SPEED LIMIT",
+      "token_coverage": 0.9
+    },
+    {
+      "text": "Approaching traffic first encounters an advance School (S1-1) sign, then the School Speed Limit assembly or S5-1 at the beginning of the reduced zone.",
+      "token_coverage": 0.889
+    },
+    {
+      "text": "S5-2 END SCHOOL ZONE may be used when both zones end together, with a downstream R2-1 optionally mounted.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 7B.05",
+    "Section 7B.06",
+    "Table 2C-3",
+    "Table 7B-1",
+    "Figure 7B-1",
+    "Figure 7B-2",
+    "Page 1019",
+    "Page 1016",
+    "Page 1020",
+    "Page 1024"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.974742952856788,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.3333333333333333,
+    "retrieved_visual_count": 3.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 7B.05, Section 7B.06, Table 2C-3, Table 7B-1, Figure 7B-1, Figure 7B-2. Gold elements clearly reflected in the response: The downstream end is normally marked by S5-3 END SCHOOL SPEED LIMIT | Approaching traffic first encounters an advance School (S1-1) sign, then the School Speed Limit assembly or S5-1 at the beginning of the reduced zone. | S5-2 END SCHOOL ZONE may be used when both zones end together, with a downstream R2-1 optionally mounted. Adjudication note: Correct advance sign, zone start, and normal S5-3 termination; omits the S5-2 same-endpoint alternative in the direct answer. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.975 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.33."
+}

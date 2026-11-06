@@ -1,0 +1,62 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T015",
+  "question": "May traffic control devices or their supports carry advertising messages?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. Traffic control devices and their supports are prohibited from bearing any advertising message or any message not related to traffic control. This prohibition applies equally to changeable message signs (CMS), their supports, and associated equipment. As explanatory support, States are also encouraged to restrict outdoor advertising from resembling traffic control devices. Standards (mandatory): - \"Traffic control devices or their supports shall not bear any advertising message or any other message that is not related to traffic control.\" - \"CMS shall display only traffic operational, regulatory, warning, and guidance information except as otherwise provided in this Chapter. Advertising or other messages not related to traffic control shall not be displayed on a CMS or on its supports or other equipment.\" - \"Traffic control devices, public announcements or notices, and other signs or messages within the highway right-of-way shall be placed only as authorized by a public authority or the official having jurisdiction, or, in the case of site roadways or private toll roads open to public travel, by the private owner or private official having jurisdiction, for the purpose of regulating, warning, or guiding traffic.\" Citations: - Section 1D.07 Standard §1 (p.34) - Section 2L.02 Standard §1 (p.511) - Section 1D.02 Standard §3 (p.31) - Section 1D.02 Support §6 (p.32)",
+  "gold_answer": "No. They may not bear advertising or any message unrelated to traffic control. Acknowledgment signs, Specific Service signs, and Tourist-Oriented Directional signs are not treated as advertising under this provision.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.7000000000000001,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 92.5,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.70, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "They may not bear advertising or any message unrelated to traffic control.",
+      "token_coverage": 0.857
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "Acknowledgment signs, Specific Service signs, and Tourist-Oriented Directional signs are not treated as advertising under this provision.",
+      "token_coverage": 0.364
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1D.07",
+    "Section 2L.02",
+    "Section 1D.02",
+    "p.34",
+    "p.511",
+    "p.31",
+    "p.32"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 92.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The response omits or underdevelops these locked elements: Acknowledgment signs, Specific Service signs, and Tourist-Oriented Directional signs are not treated as advertising under this provision. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1D.07, Section 2L.02, Section 1D.02, p.34, p.511, p.31. Gold elements clearly reflected in the response: They may not bear advertising or any message unrelated to traffic control. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

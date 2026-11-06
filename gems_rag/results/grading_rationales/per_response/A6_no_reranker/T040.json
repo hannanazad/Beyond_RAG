@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T040",
+  "question": "What is the required indication sequence of a pedestrian hybrid beacon after a pedestrian actuation?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: After a pedestrian actuation, the pedestrian hybrid beacon must display, in order: a flashing CIRCULAR yellow, then a steady CIRCULAR yellow, then both steady CIRCULAR RED indications during the pedestrian walk interval, then alternating flashing CIRCULAR RED indications during the pedestrian change interval, and finally revert to dark when the change interval ends. The associated pedestrian signal heads must display corresponding WALK and DONT WALK indications keyed to each beacon interval. Standards (mandatory): - \"Following an actuation by a pedestrian, a pedestrian hybrid beacon face shall display a flashing CIRCULAR yellow signal indication, followed by a steady CIRCULAR yellow signal indication, followed by both steady CIRCULAR RED signal indications during the pedestrian walk interval, followed by alternating flashing CIRCULAR RED signal indications during the pedestrian change interval (see Figure 4J-3). Upon ... termination of the pedestrian change interval, the pedestrian hybrid beacon faces shall revert to a dark (not illuminated) condition.\" - \"Except as provided in Paragraph 4 of this Section, the pedestrian signal heads shall continue to display a steady UPRAISED HAND (symbolizing DONT WALK) signal indication when the pedestrian hybrid beacon faces are either dark or displaying flashing or steady CIRCULAR yellow signal indications. The pedestrian signal heads shall display a WALKING PERSON (symbolizing WALK) signal indication when the pedestrian hybrid beacon faces are displaying steady CIRCULAR RED signal indications. The pedestrian signal heads shall display a flashing UPRAISED HAND (symbolizing DONT WALK) signal indication when the pedestrian hybrid beacon faces are displaying alternating flashing CIRCULAR RED signal indications. Upon termination of the pedestrian change interval, the pedestrian signal heads shall revert to a steady UPRAISED HAND (symbolizing DONT WALK) signal indication.\" - \"A pedestrian hybrid beacon face shall consist of three signal sections, with a CIRCULAR YELLOW signal indication centered below two horizontally-aligned CIRCULAR RED signal indications (see Figure 4J-3).\" (This face design underlies the required sequence.) - The beacon must be actuated to begin the sequence: \"The pedestrian hybrid beacon shall be pedestrian actuated.\" Visual evidence: - [Image 1] Figure 4J-3 depicts the six-step sequence: (1) dark until activated, (2) flashing yellow upon activation, (3) steady yellow, (4) steady red during the pedestrian walk interval, (5) alternating flashing red during the pedestrian change interval, and (6) dark again until activated, and notes that an optional steady red clearance interval may be added after Interval 3 and an optional short buffer interval (alternating flashing red while the pedestrian signal heads display a steady UPRAISED HAND) may be added after Interval 5. - [Image 2] Page 729 shows Figure 4J-3 in context with the Section 4J.03 Standard beginning the required sequence following pedestrian actuation. - [Image 3] Page 730 shows the continuation of the Standard requiring the beacon faces to revert to dark upon termination of the pedestrian change interval and specifying the corresponding pedestrian signal head indications. - [Image 4] Page 728 shows Section 4J.02 design requirements, including the three-section beacon face configuration referenced by the sequence in Figure 4J-3. - [Image 5] Page 20 (table of contents) confirms that Chapter 4J covers Pedestrian Hybrid Beacons, with Section 4J.03 addressing their operation. Citations: - Section 4J.03 Standard §2 (p.730) - Section 4J.03 Standard §3 (p.730) - Section 4J.02 Standard §2 (p.728) - Section 4J.02 Standard §3 (p.728) - Figure 4J-3 (p.729)",
+  "gold_answer": "Flashing circular yellow, then steady circular yellow, then both steady circular red during the walk interval, then alternating flashing circular red during the pedestrian change interval, followed by return to dark.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Flashing circular yellow, then steady circular yellow, then both steady circular red during the walk interval, then alternating flashing circular red during the pedestrian change interval, followed by return to dark.",
+      "token_coverage": 0.958
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4J.03",
+    "Section 4J.02",
+    "Figure 4J-3",
+    "Page 729",
+    "Page 730",
+    "Page 728",
+    "Page 20",
+    "p.730",
+    "p.728",
+    "p.729"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8710785440003369,
+    "precision6": 0.5,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4J.03, Section 4J.02, Figure 4J-3, Page 729, Page 730, Page 728. Gold elements clearly reflected in the response: Flashing circular yellow, then steady circular yellow, then both steady circular red during the walk interval, then alternating flashing circular red during the pedestrian change… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.871 and Context Precision@6=0.500. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

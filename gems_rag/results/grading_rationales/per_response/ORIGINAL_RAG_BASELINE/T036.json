@@ -1,0 +1,58 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "T036",
+  "question": "When a driver faces a steady circular green indication, what movements are generally permitted and to whom must the driver yield?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: A driver facing a steady CIRCULAR GREEN indication is permitted to proceed straight through, turn right or left, or make a U-turn, unless the movement is modified by signs, markings, roadway design, separate turn signal indications, or other traffic control devices. The driver must yield to pedestrians lawfully within an associated crosswalk and to other vehicles lawfully within the intersection; additionally, left-turning and U-turning drivers must yield to opposing traffic close enough to constitute an immediate hazard. Standards (mandatory): - \"Vehicular traffic facing a CIRCULAR GREEN signal indication is permitted to proceed straight through or turn right or left or make a U-turn movement except as such movement is modified by lane-use signs, turn prohibition signs, lane markings, roadway design, separate turn signal indications, or other traffic control devices.\" - \"Such vehicular traffic, including vehicles turning right or left or making a U-turn movement, shall yield the right-of-way to: (a) Pedestrians lawfully within an associated crosswalk, and (b) Other vehicles lawfully within the intersection.\" - \"In addition, vehicular traffic turning left or making a U-turn movement to the left shall yield the right-of-way to other vehicles approaching from the opposite direction so closely as to constitute an immediate hazard during the time when such turning vehicle is moving across or within the intersection.\" Options (permitted): - A steady straight-through GREEN ARROW signal indication may be used instead of a CIRCULAR GREEN indication to discourage wrong-way turns under specified conditions (e.g., approaches intersecting a one-way street or interchange exit ramp, unique geometric design prohibiting turns, or approaches with pre-signals and separately controlled adjacent lanes), even if opposed by a simultaneous permissive left-turn movement. Citations: - Section 4A.03 Standard §1 (p.644) - Section 4F.01 Option §5 (p.682)",
+  "gold_answer": "The driver may generally proceed straight, turn right or left, or make a U-turn unless another control modifies the movement. The driver must yield to pedestrians lawfully in an associated crosswalk, vehicles lawfully in the intersection, and for left/U-turns, opposing vehicles close enough to be an immediate hazard.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The driver must yield to pedestrians lawfully in an associated crosswalk, vehicles lawfully in the intersection, and for left/U-turns, opposing vehicles close enough to be an immediate hazard.",
+      "token_coverage": 0.941
+    },
+    {
+      "text": "The driver may generally proceed straight, turn right or left, or make a U-turn unless another control modifies the movement.",
+      "token_coverage": 0.786
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4A.03",
+    "Section 4F.01",
+    "p.644",
+    "p.682"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4A.03, Section 4F.01, p.644, p.682. Gold elements clearly reflected in the response: The driver must yield to pedestrians lawfully in an associated crosswalk, vehicles lawfully in the intersection, and for left/U-turns, opposing vehicles close enough to be an imme… | The driver may generally proceed straight, turn right or left, or make a U-turn unless another control modifies the movement. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

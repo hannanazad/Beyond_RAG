@@ -1,0 +1,55 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "F005",
+  "question": "In the channelized-intersection example in Figure 2A-3, how far from the nose of the island is the YIELD sign shown?",
+  "primary_modality": "figure",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: In Drawing B (channelized intersection) of Figure 2A-3, the YIELD sign is shown at a lateral offset of 6 feet to 12 feet minimum from the nose (edge of pavement) of the channelizing island. Per the figure's note, this offset is a minimum of 6 feet measured from the edge of the shoulder, or 12 feet measured from the edge of the traveled way. (The STOP sign mounted on the island itself is shown with a separate 2-foot minimum clearance to the island edges.) Guidance (recommended): - \"Any signs or signals placed on a raised island in the center of an undivided highway should be installed with a clearance of at least 2 feet from the outer edge of the raised island to the nearest edge of the sign or signal, except as permitted in Section 2A.16.\" (This corresponds to the 2 ft MIN. dimensions shown for the island-mounted sign in Drawing B, distinct from the YIELD sign's 6–12 ft offset.) Visual evidence: [Image 1] Figure 2A-3, Drawing B (\"Channelized intersection\"), shows a dimension arrow labeled \"6 ft to 12 ft MIN.\" from the island nose to the YIELD sign, with the figure note stating the lateral offset is a minimum of 6 feet from the edge of the shoulder or 12 feet from the edge of the traveled way. Citations: - Figure 2A-3 (p.52) - Section 8A.06 Guidance §3 (p.989)",
+  "gold_answer": "At least 2 feet from the nose of the island.",
+  "correctness_score": 0.3,
+  "completeness_score": 0.35,
+  "faithfulness_score": 0.75,
+  "citation_score": 0.5,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 47.5,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.30, Comp=0.35, F=0.75, Cit=0.50, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "At least 2 feet from the nose of the island.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2A.16",
+    "Section 8A.06",
+    "Figure 2A-3",
+    "p.52",
+    "p.989"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 47.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response shows limited overlap with the required conclusion and does not supply the governing answer. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 2A.16, Section 8A.06, Figure 2A-3, p.52, p.989. Gold elements clearly reflected in the response: At least 2 feet from the nose of the island. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

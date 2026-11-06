@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "extraction_date": "2026-10-18",
+  "source_hub_revision": "8e981f2e3ae98a69516206cc19fca010a3f33d4e",
+  "scope": "The four methods present in successful saved MUTCD comparison runs.",
+  "shared_assets_repository": "https://github.com/GEMS-RAG/rag",
+  "corpus": {
+    "path": "indexes/corpus/chunks.jsonl",
+    "sha256": "1035540a107be1e6016a98f7543faadd53a187a2cca8bd528fcf7beb3d6f529d",
+    "chunks": 5705
+  },
+  "methods": [
+    {
+      "method_id": "bm25",
+      "display_name": "BM25",
+      "saved_answer_run_name": "bm25",
+      "repository": "https://github.com/GEMS-RAG/bm25",
+      "revision": "b99ea7f52691c3792d9ebce73f91e1f1258b294e",
+      "commit_url": "https://github.com/GEMS-RAG/bm25/commit/b99ea7f52691c3792d9ebce73f91e1f1258b294e",
+      "adapter": "pipelines/query_bm25.py",
+      "provenance": "PROVENANCE.json",
+      "upstream": null
+    },
+    {
+      "method_id": "graphrag",
+      "display_name": "GraphRAG",
+      "saved_answer_run_name": "graphrag_local",
+      "repository": "https://github.com/GEMS-RAG/graphrag",
+      "revision": "0618a831cf3671685f9a01da55563e277b1d7212",
+      "commit_url": "https://github.com/GEMS-RAG/graphrag/commit/0618a831cf3671685f9a01da55563e277b1d7212",
+      "adapter": "pipelines/query_graphrag.py",
+      "provenance": "PROVENANCE.json",
+      "upstream": {
+        "repository": "https://github.com/microsoft/graphrag",
+        "revision": "6d02c2355c3fed4c49007572fbe951d73258a37f",
+        "license": "MIT",
+        "path": "third_party/graphrag"
+      }
+    },
+    {
+      "method_id": "paperqa",
+      "display_name": "PaperQA2",
+      "saved_answer_run_name": "paperqa2_chunks",
+      "repository": "https://github.com/GEMS-RAG/paperqa",
+      "revision": "e36cc23d2bbf73c73d612d00566af8030c21961c",
+      "commit_url": "https://github.com/GEMS-RAG/paperqa/commit/e36cc23d2bbf73c73d612d00566af8030c21961c",
+      "adapter": "pipelines/query_paperqa.py",
+      "provenance": "PROVENANCE.json",
+      "upstream": {
+        "repository": "https://github.com/Future-House/paper-qa",
+        "revision": "d7675d7b7eddeb3535e8c260399c5bbeeb818c50",
+        "license": "Apache-2.0",
+        "path": "third_party/paperqa"
+      }
+    },
+    {
+      "method_id": "gems-rag",
+      "display_name": "GEMS-RAG",
+      "saved_answer_run_name": "gems_full",
+      "repository": "https://github.com/GEMS-RAG/gems-rag",
+      "revision": "4bd15337cd740bd753cc97990ffb085ed703a9cd",
+      "commit_url": "https://github.com/GEMS-RAG/gems-rag/commit/4bd15337cd740bd753cc97990ffb085ed703a9cd",
+      "adapter": "pipelines/query_gems_rag.py",
+      "provenance": "PROVENANCE.json",
+      "upstream": null
+    }
+  ]
+}

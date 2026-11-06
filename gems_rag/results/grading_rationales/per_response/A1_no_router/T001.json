@@ -1,0 +1,64 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T001",
+  "question": "What is the purpose of the MUTCD, and what four objectives are used to achieve that purpose?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The purpose of the MUTCD is to establish uniform national criteria for the use of traffic control devices that meet the needs and expectancy of road users on all streets, highways, pedestrian and bicycle facilities, and site roadways open to public travel. This purpose is achieved through four objectives: promoting safety, inclusion, and mobility; promoting efficiency through national uniformity in device meaning and appearance; promoting national consistency in device use, installation, and operation; and providing basic principles for traffic engineers' decisions. Note that this purpose statement is Support (explanatory) material, though the MUTCD itself carries mandatory force as the national standard. Standards (mandatory): - \"The Manual on Uniform Traffic Control Devices for Streets and Highways (MUTCD) is incorporated by reference in 23 Code of Federal Regulations (CFR), Part 655, Subpart F and shall be recognized as the national standard for all traffic control devices installed on any street, highway, bikeway, or site roadway open to public travel... in accordance with 23 U.S.C. 109(d) and 402(a).\" Support (informational): - \"The purpose of the MUTCD is to establish uniform national criteria for the use of traffic control devices that meet the needs and expectancy of road users on all streets, highways, pedestrian and bicycle facilities, and site roadways open to public travel.\" - \"This purpose is achieved through the following objectives: A. Promote safety, inclusion, and mobility for all users of the road network; B. Promote efficiency through creating national uniformity in the meaning and appearance of traffic control devices; C. Promote national consistency in the use, installation, and operation of traffic control devices; and D. Provide basic principles for traffic engineers to use in making decisions regarding the use, installation, operation, maintenance, and removal of traffic control devices.\" Visual evidence: [Image 5] shows the full page of Chapter 1A, Section 1A.01 (Purpose of the MUTCD), displaying the purpose statement and the lettered objectives A through D as Support material. Citations: - Section 1A.01 Support §1 (p.1) - Section 1A.01 Support §2 (p.1) - Section 1B.01 Standard §1 (p.4) - Page 42",
+  "gold_answer": "The MUTCD establishes uniform national criteria for traffic control devices on streets, highways, pedestrian and bicycle facilities, and site roadways open to public travel. Its objectives are to promote safety, inclusion, and mobility; promote efficiency through national uniformity in device meaning and appearance; promote consistency in use, installation, and operation; and provide basic decision-making principles for traffic engineers.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "GPT-5.6 differential audit of recovered A1 record",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.82,
+  "confidence_basis": "GPT-5.6 directly reviewed a repaired response against the locked gold elements.",
+  "covered_gold_elements": [
+    {
+      "text": "Its objectives are to promote safety, inclusion, and mobility",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "promote efficiency through national uniformity in device meaning and appearance",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "promote consistency in use, installation, and operation",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1A.01",
+    "Section 1B.01",
+    "p.1",
+    "p.4",
+    "Page 42",
+    "23 U.S.C. 109(d)"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8315546295836225,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1A.01, Section 1B.01, p.1, p.4, Page 42, 23 U.S.C. 109(d). Gold elements clearly reflected in the response: Its objectives are to promote safety, inclusion, and mobility | promote efficiency through national uniformity in device meaning and appearance | promote consistency in use, installation, and operation Adjudication note: Complete answer with the required purpose, scope, and four objectives. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.832 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

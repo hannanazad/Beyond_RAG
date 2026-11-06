@@ -1,0 +1,66 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "T006",
+  "question": "What is the documentation difference between engineering judgment and an engineering study in the MUTCD definitions?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Based on the evidence provided, the key documentation difference is that an engineering study must be documented, while engineering judgment carries no explicit documentation requirement. Deviations from a Standard provision are allowed only when the agency \"fully documents, through an engineering study, the engineering basis for the deviation,\" whereas deviations from Guidance may rest on either engineering judgment or an engineering study. Note that the actual definitions of \"engineering study\" and \"engineering judgment\" are located in Section 1C.02, which is not included in this evidence, so the precise definitional wording cannot be quoted here. Standards (mandatory): - \"Where the content of this Manual requires a decision for implementation, such decisions shall be made by an engineer, or an individual under the supervision of an engineer, who has the appropriate levels of experience and expertise to make the traffic control device decision. Those decisions shall be made using engineering judgment or engineering study, as required by the MUTCD provision.\" - For Standard statements: \"In limited, location-specific cases, the results of a documented engineering study (see Section 1D.03) might indicate a deviation from one or more requirements of a Standard provision to be appropriate.\" - For Guidance statements: deviations are \"allowed if engineering judgment or engineering study (see Section 1D.03) indicates the deviation to be appropriate\" — i.e., either mechanism suffices for Guidance, but only a documented study supports deviation from a Standard. Citations: - Section 1A.04 Standard §2 (p.2) - Section 1C.01 Standard §1 (p.13) - Section 1D.03 Support §1 (p.32) - Section 1D.03 Support §2 (p.32)",
+  "gold_answer": "Both involve evaluating pertinent information and applying engineering principles by a professional engineer or a person under such an engineer's supervision. Engineering judgment does not require documentation; an engineering study must be documented in writing.",
+  "correctness_score": 0.8,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.75,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 82.5,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.80, Comp=0.75, F=1.00, Cit=0.75, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Engineering judgment does not require documentation",
+      "token_coverage": 0.75
+    },
+    {
+      "text": "an engineering study must be documented in writing.",
+      "token_coverage": 0.75
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "Both involve evaluating pertinent information and applying engineering principles by a professional engineer or a person under such an engineer's supervision.",
+      "token_coverage": 0.308
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1C.02",
+    "Section 1D.03",
+    "Section 1A.04",
+    "Section 1C.01",
+    "p.2",
+    "p.13",
+    "p.32"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 82.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The response omits or underdevelops these locked elements: Both involve evaluating pertinent information and applying engineering principles by a professional engineer or a person under such an engineer's supervision. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 1C.02, Section 1D.03, Section 1A.04, Section 1C.01, p.2, p.13. Gold elements clearly reflected in the response: Engineering judgment does not require documentation | an engineering study must be documented in writing. Adjudication note: The documentation distinction is inferred correctly but is not stated as explicitly as the locked definitions. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

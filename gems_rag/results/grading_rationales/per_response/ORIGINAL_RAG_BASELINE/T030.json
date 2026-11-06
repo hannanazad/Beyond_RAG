@@ -1,0 +1,57 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "T030",
+  "question": "Which five pavement-marking colors are permitted by the general MUTCD color rule?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided does not contain the MUTCD's general pavement-marking color rule (which would appear in Part 3, General provisions for markings). The excerpts supplied address the sign color code (Section 1D.05), sign dimensions and retroreflectivity (Chapter 2A), and colored pavement applications (Chapter 3H) — none of which states the general list of permitted pavement-marking colors. I cannot identify the five colors from this evidence without inventing a citation, so I must state that the evidence is insufficient. What the evidence does show (for context, not an answer to the question): - Section 1D.05 establishes the general meaning of 13 colors for traffic control devices generally (e.g., yellow–warning, white–regulation, red–stop or prohibition, purple–ETC accounts), but this is the device color code, not the pavement-marking color rule. - Chapter 3H addresses colored pavement (a distinct concept from pavement markings): yellow-colored pavement is limited to medians and left-hand shoulders, and red-colored pavement is restricted to transit lanes/areas closed to general-purpose traffic. Visual evidence: [Image 2] (Figure 3H-4) shows examples of green-colored pavement applications for bicycle facilities, which concerns colored pavement rather than the general pavement-marking color rule; the remaining images ([Image 1], [Image 3]–[Image 8]) concern sign colors, retroreflectivity, compliance dates, and tables of contents, none of which state the pavement-marking color rule. Citations: - Section 1D.05 Standard §2 (p.33) - Section 3H.04 Standard §2 (p.623) - Section 3H.07 Standard §3 (p.626) - Figure 3H-4 (p.626)",
+  "gold_answer": "Yellow, white, red, blue, and purple.",
+  "correctness_score": 0.0,
+  "completeness_score": 0.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 25.0,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.00, Comp=0.00, F=1.00, Cit=0.00, Strict full credit=No",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Yellow, white, red, blue, and purple.",
+      "token_coverage": 0.8
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1D.05",
+    "Section 3H.04",
+    "Section 3H.07",
+    "Figure 3H-4",
+    "p.33",
+    "p.623",
+    "p.626"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 0.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 25.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response does not provide the required conclusion or gives a conclusion that conflicts with the locked answer. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: Yellow, white, red, blue, and purple. Adjudication note: Abstains instead of listing yellow, white, red, blue, and purple. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision did not match the locked modality requirement for this question. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity."
+}

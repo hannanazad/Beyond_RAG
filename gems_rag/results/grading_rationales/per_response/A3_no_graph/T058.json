@@ -1,0 +1,60 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T058",
+  "question": "What minimum iOS or Android version is required for a mobile parking-payment system referenced by MUTCD parking signs?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "out_of_scope",
+  "model_answer": "Direct Answer: The MUTCD does not specify any minimum iOS or Android version (or any other software/device requirement) for mobile parking-payment systems. The evidence provided contains no such provision, so this question cannot be answered from the MUTCD. The closest relevant provision is an Option permitting a Mobile Parking Payment (R7-21aP) plaque where payments can be made electronically, such as by telephone or mobile application — but it says nothing about operating-system versions. Options (permitted): - \"Where payments can be made electronically, such as by telephone or mobile application, the Mobile Parking Payment (R7-21aP) plaque (see Drawing B in Figure 2B-25) may be installed below or as part of the legend of a Metered Parking sign.\" Visual evidence: [Image 1] Figure 2B-25 shows the R7-21aP \"PARKING PAYMENTS\" plaque with a website and phone number example, but no mobile operating-system requirements. [Image 5] Page 167 contains the Option text for the R7-21aP plaque and likewise contains no software version requirements. Citations: - Section 2B.53 Option §13 (p.126) - Figure 2B-25 (p.124) - Page 167",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2B.53",
+    "Figure 2B-25",
+    "Page 167",
+    "p.126",
+    "p.124"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8772153153380493,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 3.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the response correctly states that the requested information or precision is not supported. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2B.53, Figure 2B-25, Page 167, p.126, p.124. Gold elements clearly reflected in the response: The MUTCD does not specify this information. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.877 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

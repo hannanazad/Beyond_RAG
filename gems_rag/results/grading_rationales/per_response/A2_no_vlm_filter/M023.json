@@ -1,0 +1,64 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "M023",
+  "question": "Using Section 8B.03 and Figure 8B-2, describe the vertical order of a passive-crossing assembly with multiple tracks and a YIELD or STOP sign, and state when the Number of Tracks plaque is required.",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: At a passive grade crossing with two or more tracks, the assembly is arranged top-to-bottom on a single support as: the Crossbuck (R15-1) sign at the top (mounted at approximately 9 feet), the inverted-T Number of Tracks (R15-2P) plaque immediately below the Crossbuck, and the YIELD (R1-2) or STOP (R1-1) sign below the plaque, with a retroreflective strip extending down the support to within 2 feet of the roadway. The Number of Tracks plaque is required whenever two or more tracks are present at the grade crossing. Standards (mandatory): - \"A Crossbuck Assembly shall consist of a Crossbuck (R15-1) sign, and a Number of Tracks (R15-2P) plaque if two or more tracks are present, that complies with the provisions of Section 8B.03, and either a YIELD (R1-2) or STOP (R1-1) sign installed on the same support, except as provided in Paragraph 10 of this Section. YIELD or STOP signs used at passive grade crossings shall be installed in compliance with the provisions of Section 2B.18, and Figures 8B-2 and 8B-3.\" - \"If there are two or more tracks at a grade crossing, the number of tracks shall be indicated on a supplemental Number of Tracks (R15-2P) plaque (see Figure 8B-1) of inverted T shape mounted below the Crossbuck sign in the manner shown in Figure 8B-2.\" - \"If a Crossbuck sign support at a passive grade crossing does not include a YIELD or STOP sign..., a vertical strip of retroreflective white material, not less than 2 inches in width, shall be used for the full length of the front of the support from the Crossbuck sign or Number of Tracks plaque to within 2 feet above the near edge of the roadway.\" - Per the notes in Figure 8B-2: \"Mounting height shall be at least 4 feet for installations of YIELD or STOP signs on existing Crossbuck sign supports\" and \"at least 5 feet for new installations in rural areas and at least 7 feet for new installations in areas where parking or pedestrian movements are likely.\" Guidance (recommended): - The use of STOP signs at passive grade crossings should be limited to unusual conditions where a Diagnostic Team determines a full stop is necessary, considering line of sight, number of tracks, train and vehicle speeds, and crash history. - If the YIELD or STOP sign is installed on a separate support, it should be placed in the same plane as the Crossbuck sign and closer to the traveled way, with a minimum 2-inch separation between the nearest points of the two signs. Options (permitted): - A strip of retroreflective white material not less than 2 inches in width may be used on the back of each blade of each Crossbuck sign at active grade crossings. Visual evidence: [Image 2] (Figure 8B-2) shows the vertical order — the Crossbuck at approximately 9 feet, the \"3 TRACKS\" inverted-T plaque directly below it, and the YIELD or STOP sign beneath, with the retroreflective strip extending down the support to within 2 feet of the roadway edge. [Image 1] (Figure 8B-1) shows the sign designs, including the R15-1 Crossbuck and the R15-2P Number of Tracks plaque with its inverted-T shape. [Image 6] shows a comparable Crossbuck Assembly example with a \"2 TRACKS\" plaque below the Crossbuck and a YIELD or STOP sign below that at a pathway/sidewalk grade crossing. Citations: - Section 8B.04 Standard §1 (p.995) - Section 8B.03 Standard §6 (p.993) - Section 8B.04 Standard §20 (p.1000) - Section 8B.04 Guidance §6 (p.997) - Section 8B.04 Guidance §13 (p.1000) - Section 8B.03 Option §9 (p.995) - Figure 8B-2 (p.993) - Figure 8B-1 (p.996) - Page 1080",
+  "gold_answer": "The Crossbuck is at the top, the inverted-T Number of Tracks plaque is directly below it, and the YIELD or STOP sign is below the plaque on the support. The Number of Tracks plaque is required when two or more tracks are present.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The Crossbuck is at the top, the inverted-T Number of Tracks plaque is directly below it, and the YIELD or STOP sign is below the plaque on the support.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "The Number of Tracks plaque is required when two or more tracks are present.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 8B.03",
+    "Section 2B.18",
+    "Section 8B.04",
+    "Figure 8B-1",
+    "Figure 8B-2",
+    "p.995",
+    "p.993",
+    "p.1000",
+    "p.997",
+    "p.996"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0000000000000002,
+    "precision6": 1.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.3333333333333333,
+    "retrieved_visual_count": 3.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 8B.03, Section 2B.18, Section 8B.04, Figure 8B-1, Figure 8B-2, p.995. Gold elements clearly reflected in the response: The Crossbuck is at the top, the inverted-T Number of Tracks plaque is directly below it, and the YIELD or STOP sign is below the plaque on the support. | The Number of Tracks plaque is required when two or more tracks are present. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=1.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.33."
+}

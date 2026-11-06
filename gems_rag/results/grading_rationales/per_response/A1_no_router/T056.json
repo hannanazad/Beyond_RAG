@@ -1,0 +1,64 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T056",
+  "question": "Which specific manufacturers are approved by the MUTCD to supply retroreflective sign sheeting?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "out_of_scope",
+  "model_answer": "Direct Answer: The MUTCD does not approve or name any specific manufacturers of retroreflective sign sheeting, and nothing in the evidence provided identifies approved suppliers. Instead, the Manual specifies performance-based requirements — sheeting is classified by material type under ASTM D4956 (e.g., beaded Types I, II, III and prismatic sheeting), and signs must meet the minimum maintained retroreflectivity levels in Table 2A-5 regardless of who manufactures the material. Standards (mandatory): - \"Regulatory signs shall be retroreflective or illuminated (see Section 2A.21).\" — a performance requirement, not a manufacturer approval. - \"Requirements for retroreflection of the red circle and diagonal shall be the same as those requirements for backgrounds, legends, symbols, arrows, and borders.\" — again stated in terms of retroreflective performance, not supplier identity. Options (permitted): - Highway agencies may exclude certain signs (Parking/Standing/Stopping R7 and R8 series; Walking/Hitchhiking/Crossing R9 series and R10-1 through R10-4b; Acknowledgment signs; and bikeway signs for exclusive bicyclist/pedestrian use) from the retroreflectivity maintenance guidelines — a matter of maintenance policy, unrelated to manufacturer selection. Visual evidence: [Image 1] Table 2A-5 defines minimum maintained retroreflectivity levels by sheeting type per ASTM D4956 and sign color, with no reference to any manufacturer. [Image 3] Table 1B-1 lists FHWA target compliance dates for retroreflectivity maintenance methods, again without naming suppliers. Citations: - Section 2B.01 Standard §3 (p.67) - Section 2M.07 Standard §2 (p.523) - Section 2A.22 Option §5 (p.63) - Section 2A.22 Option §4 (p.63) - Table 2A-5 (p.62) - Table 1B-1 (p.5)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2A.21",
+    "Section 2B.01",
+    "Section 2M.07",
+    "Section 2A.22",
+    "Table 2A-5",
+    "Table 1B-1",
+    "p.67",
+    "p.523",
+    "p.63",
+    "p.62"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.5,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2A.21, Section 2B.01, Section 2M.07, Section 2A.22, Table 2A-5, Table 1B-1. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.500. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

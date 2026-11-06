@@ -1,0 +1,8 @@
+condition_id,condition_name,responses,strict_full_credit,mean_descriptive_grade_percent,mean_evaluation_confidence_percent,grade_band_Full credit,grade_band_Strong partial credit,grade_band_Partial credit,grade_band_Limited credit,grade_band_Minimal credit
+ORIGINAL_RAG_BASELINE,Original Claude Fable 5 GEMS-RAG baseline,150,120,93.76,88.4,120,10,7,5,8
+A1_no_router,A1 No question router,150,114,94.61,85.75,114,19,6,4,7
+A2_no_vlm_filter,A2 No VLM figure filter,150,112,93.63,86.92,112,18,7,5,8
+A3_no_graph,A3 No graph-proximity term,150,114,93.76,87.08,114,16,7,4,9
+A4_no_rule_type,A4 No rule-type term,150,112,94.03,87.11,112,18,7,6,7
+A5_no_hierarchy,A5 No hierarchy prior,150,109,93.6,86.59,109,21,6,6,8
+A6_no_reranker,A6 No reranker,150,103,89.24,85.27,103,18,5,8,16

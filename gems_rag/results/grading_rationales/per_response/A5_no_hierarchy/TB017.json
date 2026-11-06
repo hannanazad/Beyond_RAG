@@ -1,0 +1,54 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "TB017",
+  "question": "Under Warrant 1 Condition B in Table 4C-1, what are the 100-percent hourly volumes when the major street has two or more lanes and the minor street has one lane?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Under Warrant 1, Condition B (Interruption of Continuous Traffic) in Table 4C-1, for a major street with 2 or more lanes and a minor street with 1 lane, the 100-percent volumes are 900 vehicles per hour on the major street (total of both approaches) and 75 vehicles per hour on the more critical minor-street approach (one direction only). These volumes must exist for each of any 8 hours of an average day, and the major- and minor-street volumes must be for the same 8 hours. Standards (mandatory): - \"These major-street and minor-street volumes shall be for the same 8 hours for each condition; however, the 8 hours that are selected for the Condition A analysis shall not be required to be the same 8 hours that are selected for the Condition B analysis.\" Guidance (recommended): - The need for a traffic control signal should be considered if the vehicles per hour given in both of the 100 percent columns of Condition B in Table 4C-1 exist on the major street and the more critical minor-street approach, respectively, for each of any 8 hours of an average day. Options (permitted): - If the posted or statutory speed limit or the 85th-percentile speed on the major street exceeds 40 mph, or if the intersection lies within the built-up area of an isolated community having a population of less than 10,000, the 70 percent columns in Table 4C-1 (630 vph major / 53 vph minor for this lane configuration) may be used in place of the 100 percent columns. Visual evidence: [Image 1] Table 4C-1, Condition B—Interruption of Continuous Traffic, shows for the \"2 or more\" major-street / \"1\" minor-street lane row: 900 vph in the major-street 100% column and 75 vph in the minor-street 100% column. [Image 3] The full-page view of Table 4C-1 (p.653) confirms the same Condition B values of 900 vph and 75 vph, footnoting the 100% columns as the \"Basic minimum hourly volume.\" Citations: - Table 4C-1 (p.653) - Section 4C.02 Standard §112 (p.653) - Section 4C.02 Standard §5 (p.653) - Section 4C.02 Guidance §4 (p.653) - Section 4C.02 Option §7 (p.654) - Section 4C.02 Support §2 (p.653)",
+  "gold_answer": "900 vehicles per hour on the major street, total of both approaches, and 75 vehicles per hour on the more critical minor-street approach in one direction.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "900 vehicles per hour on the major street, total of both approaches, and 75 vehicles per hour on the more critical minor-street approach in one direction.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4C.02",
+    "Table 4C-1",
+    "p.653",
+    "p.654"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9896062251871524,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4C.02, Table 4C-1, p.653, p.654. Gold elements clearly reflected in the response: 900 vehicles per hour on the major street, total of both approaches, and 75 vehicles per hour on the more critical minor-street approach in one direction. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.990 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

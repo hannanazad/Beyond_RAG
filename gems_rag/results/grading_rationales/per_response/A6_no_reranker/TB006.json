@@ -1,0 +1,64 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "TB006",
+  "question": "Using Table 2A-2, identify the characteristic background colors for temporary traffic control, incident management, and ETC-account-only signs.",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Per Table 2A-2 (Common Uses of Sign Colors), temporary traffic control signs use an orange background (with black legend), incident management signs use orange or fluorescent pink backgrounds (with black legend), and ETC-Account Only signs use a purple background (with black legend), with the use of purple restricted per the provisions of Chapter 2F. Standards (mandatory): - \"If additional temporary guide signs are used in TTC zones, they shall have a black legend and border on an orange background.\" - \"The background color of a canopy sign for an ETC Account-Only toll plaza lane shall be purple (see Figure 2F-16).\" - \"Purple underlay panels for ETC pictographs or purple backgrounds for plaques and header panels shall only be used in the manner described in Paragraphs 1 through 3 of this Section to convey the requirement of a registered ETC account on signs for lanes reserved exclusively for vehicles with such an account and on directional signs to an ETC Account-Only facility from a non-toll facility or from a toll facility that accepts multiple payment forms.\" - \"If an ETC pictograph is used on a separate plaque in a route sign assembly (see Section 2F.05) or on a header panel within a guide sign, the plaque or the header panel shall have a purple background with a white border and the ETC pictograph shall have a white border to provide contrast between the pictograph and the background of the plaque or header panel.\" - \"Except for ETC pictographs whose predominant background color is purple, if incorporated within the green background of a guide sign, the ETC pictograph shall be on a white rectangular or square panel set on a purple underlay panel with a white border.\" Visual evidence: - [Image 5] Table 2A-2 shows Temporary Traffic Control with a black legend and orange background, Incident Management with a black legend and both orange and fluorescent pink backgrounds, and ETC-Account Only with a black legend and purple background (footnote 5: \"The use of purple on signs is restricted per the provisions of Chapter 2F\"). - [Image 1] Figure 2F-16 illustrates the purple background of the ETC Account-Only lane canopy sign (\"Toll Pass ONLY\") in contrast to the green backgrounds of other toll plaza canopy signs. - [Image 3] Figure 6P-12 shows temporary traffic control signs (W20-1, W20-4, W3-3, G20-2) with black legends on orange backgrounds in a work zone application. - [Image 4] Figure 6P-14 likewise shows orange-background temporary traffic control warning signs (W20-1, W20-7, W14-3, G20-2) used at a haul road crossing. Citations: - Page 85 - Section 6I.01 Standard §3 (p.811) - Section 2F.16 Standard §2 (p.402) - Section 2F.03 Standard §2 (p.381) - Section 2F.03 Standard §3 (p.381) - Section 2F.03 Standard §4 (p.381) - Figure 2F-16 (p.402) - Figure 6P-12 (p.883) - Figure 6P-14 (p.887)",
+  "gold_answer": "Temporary traffic control: orange; incident management: fluorescent pink; ETC-account-only: purple.",
+  "correctness_score": 0.75,
+  "completeness_score": 1.0,
+  "faithfulness_score": 0.75,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 87.5,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.75, Comp=1.00, F=0.75, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Temporary traffic control: orange",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "incident management: fluorescent pink",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2F.05",
+    "Section 6I.01",
+    "Section 2F.16",
+    "Section 2F.03",
+    "Table 2A-2",
+    "Figure 2F-16",
+    "Figure 6P-12",
+    "Figure 6P-14",
+    "Page 85",
+    "p.811"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 87.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2F.05, Section 6I.01, Section 2F.16, Section 2F.03, Table 2A-2, Figure 2F-16. Gold elements clearly reflected in the response: Temporary traffic control: orange | incident management: fluorescent pink Adjudication note: Correct temporary-traffic-control and ETC colors but incorrectly includes orange as an incident-management background. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

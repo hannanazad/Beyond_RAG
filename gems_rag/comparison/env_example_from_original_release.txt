@@ -1,0 +1,20 @@
+# OpenAI API configuration for index construction and comparison retrieval.
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.openai.com/v1
+
+# Set these IDs to the OpenAI API configurations selected for the study.
+GRAPHRAG_LLM_MODEL=
+GRAPHRAG_EMBEDDING_MODEL=
+GRAPHRAG_QUERY_LLM_MODEL=
+GRAPHRAG_QUERY_EMBEDDING_MODEL=
+
+# PaperQA uses the same OpenAI API key.
+PAPERQA_EMBEDDING_MODEL=
+PAPERQA_LLM_MODEL=
+PAPERQA_SUMMARY_MODEL=
+
+# Provider credentials used by the answer configurations in the study.
+VLM_API_KEY=
+DASHSCOPE_API_KEY=
+ANTHROPIC_API_KEY=
+GEMINI_API_KEY=

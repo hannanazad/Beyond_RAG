@@ -1,0 +1,57 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "T024",
+  "question": "What are the two hourly volume thresholds in All-Way Stop Control Warrant D, and how can they be adjusted when the major-street 85th-percentile speed exceeds 40 mph?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided does not contain the actual volume threshold values from Items A and B of Paragraph 1 of Section 2B.16 (the All-Way Stop Control Warrant D vehicular volume criteria), so the two specific hourly thresholds cannot be stated from this evidence. What the evidence does establish is the speed-based adjustment: when the major-street 85th-percentile approach speed exceeds 40 mph, those minimum vehicular volume warrants may be reduced to 70 percent of their stated values. Options (permitted): - \"If the 85th-percentile approach speed of the major-street traffic exceeds 40 mph, the minimum vehicular volume warrants may be reduced to 70 percent of the values given in Items A and B in Paragraph 1 of this Section.\" Citations: - Section 2B.16 Option §2 (p.79) Note: The remaining evidence (Sections 4C.02, 4C.03, 4C.05, and 4C.08) concerns traffic signal warrants, not All-Way Stop Control Warrant D, and does not supply the missing threshold values.",
+  "gold_answer": "For the same 8 hours of a typical day, the combined entering volume must be at least 300 units per hour on the major-street approaches and at least 200 units per hour on the minor-street approaches. If the major-street 85th-percentile speed exceeds 40 mph, the minimums may be reduced to 70 percent of those values.",
+  "correctness_score": 0.25,
+  "completeness_score": 0.25,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.5,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 50.0,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.25, Comp=0.25, F=1.00, Cit=0.50, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "If the major-street 85th-percentile speed exceeds 40 mph, the minimums may be reduced to 70 percent of those values.",
+      "token_coverage": 0.929
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "For the same 8 hours of a typical day, the combined entering volume must be at least 300 units per hour on the major-street approaches and at least 200 units per hour on the minor-street approaches.",
+      "token_coverage": 0.087
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2B.16",
+    "p.79"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 50.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response shows limited overlap with the required conclusion and does not supply the governing answer. Completeness rationale: The response omits or underdevelops these locked elements: For the same 8 hours of a typical day, the combined entering volume must be at least 300 units per hour on the major-street approaches and at least 200 units per hour on the minor-street ap… Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 2B.16, p.79. Gold elements clearly reflected in the response: If the major-street 85th-percentile speed exceeds 40 mph, the minimums may be reduced to 70 percent of those values. Adjudication note: Provides the 70-percent high-speed adjustment but omits the 300/200 thresholds and same-eight-hours basis. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

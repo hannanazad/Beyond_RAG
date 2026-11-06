@@ -1,0 +1,60 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T010",
+  "question": "May a non-compliant experimental traffic control device be used on a street open to public travel before FHWA approval to experiment is received?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. A non-compliant traffic control device or application may not be deployed on any street, highway, bikeway, or site roadway open to public travel until the jurisdiction has first received official FHWA approval to experiment. This flows from the general federal requirement that all devices on roads open to public travel be in substantial conformance with FHWA standards; installation of the experimental device occurs only after FHWA review and approval in the experimentation process. Standards (mandatory): - \"A traffic control device or application that does not comply with the provisions of this Manual shall not be used on any street, highway, bikeway, or site roadway open to public travel (see definition in Section 1C.02) without first receiving official approval to experiment from the FHWA’s Office of Transportation Operations.\" - \"The U.S. Secretary of Transportation, under authority granted by the Highway Safety Act of 1966, decreed that traffic control devices on all streets and highways open to public travel in accordance with 23 U.S.C. 109(d) and 402(a) in each State shall be in substantial conformance with the Standards issued or endorsed by the FHWA.\" - \"Before any highway, site roadway open to public travel (see definition in Section 1C.02), detour, or temporary route is opened to public travel, all traffic control devices necessary for safe operation shall be in place.\" Support (informational context): - 23 CFR 655.603 also requires traffic control devices on all streets, highways, bikeways, and site roadways open to public travel in each State to be in substantial conformance with standards issued or endorsed by the Federal Highway Administrator. - After an experiment ends, the FHWA Office of Transportation Operations might allow an effective experimental device without safety concerns to remain in use, typically if it is actively being considered for interim approval under Section 1B.07 — this is a post-experiment allowance, not a pre-approval one. - Interim approval allows optional use of a device under agreed conditions until official rulemaking occurs; it is a separate mechanism from experimentation and likewise involves FHWA authorization before use. Visual evidence: [Image 1] Figure 1B-1 shows the required sequence — the requesting jurisdiction submits a request to FHWA, FHWA reviews it, and only after the \"Approved? Yes\" decision does the jurisdiction install the experimental traffic control device (a \"No\" decision loops back through responding to FHWA questions and further review). [Image 3] shows the same Figure 1B-1 flowchart on the manual page, confirming installation occurs only after approval. [Image 2] shows Section 1B.05 with the Standard prohibiting use of non-compliant devices without prior FHWA approval to experiment. [Image 5] shows the mandatory contents of a request for permission to experiment, reinforcing that a formal approved request precedes deployment. [Image 4] shows Figure 1B-2, the separate process (including interim approval) for incorporating new devices into the MUTCD after successful experimentation. Citations: - Section 1B.05 Standard §2 (p.6) - Section 1B.03 Standard §1 (p.5) - Section 1D.09 Standard §1 (p.38) - Section 1B.03 Support §2 (p.5) - Section 1B.05 Support §15 (p.9) - Section 1B.07 Support §3 (p.11) - Figure 1B-1 (p.7)",
+  "gold_answer": "No. A non-compliant device or application may not be used on a covered public-travel facility without first receiving official experimentation approval from the FHWA Office of Transportation Operations.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "GPT-5.6 differential audit of recovered A1 record",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.82,
+  "confidence_basis": "GPT-5.6 directly reviewed a repaired response against the locked gold elements.",
+  "covered_gold_elements": [
+    {
+      "text": "A non-compliant device or application may not be used on a covered public-travel facility without first receiving official experimentation approval from the FHWA Office of Transportation Operations.",
+      "token_coverage": 0.824
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1C.02",
+    "Section 1B.07",
+    "Section 1B.05",
+    "Section 1B.03",
+    "Section 1D.09",
+    "Figure 1B-1",
+    "Figure 1B-2",
+    "p.6",
+    "p.5",
+    "p.38"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1C.02, Section 1B.07, Section 1B.05, Section 1B.03, Section 1D.09, Figure 1B-1. Gold elements clearly reflected in the response: A non-compliant device or application may not be used on a covered public-travel facility without first receiving official experimentation approval from the FHWA Office of Transpo… Adjudication note: Correctly requires prior FHWA experimentation approval. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

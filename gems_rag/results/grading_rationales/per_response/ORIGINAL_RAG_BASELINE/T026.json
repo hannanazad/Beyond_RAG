@@ -1,0 +1,60 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "T026",
+  "question": "What three types of signs are required at an interchange exit-ramp terminal where wrong-way entry could inadvertently occur?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Based on the illustrated example in Figure 2B-15, the three sign types shown at an exit-ramp termination to deter wrong-way entry are DO NOT ENTER (R5-1) signs, WRONG WAY (R5-1a) signs, and ONE WAY (R6-1) signs (supplemented by STOP or YIELD control for the ramp itself). However, the text evidence provided does not include the actual Standard provision (Section 2B.48) that mandates these signs, so the \"shall\" requirement cannot be quoted verbatim; the answer here rests on the figure and related supporting/cross-referencing material. Standards (mandatory): - No Standard provision in the supplied text evidence directly states the required signs at an exit-ramp terminal. (The Standards supplied — Section 2J.07 §2 on Specific Service ramp signs and Section 2E.21 §2 on interchange guide signs — address guide signing, not wrong-way deterrence.) Guidance (recommended): - \"To minimize wrong-way movements onto freeway or expressway exit ramps, Street Name signs should not be used at the intersection of a freeway or expressway exit ramp with the crossroad to display the name of the freeway or expressway to traffic on the crossroad.\" (related wrong-way prevention guidance) Options (permitted): - A Directional assembly with a diagonal downward-pointing arrow (M6-2aP) plaque may be used at the far left-hand corner of an intersection with a freeway or expressway entrance ramp, facing left-turning traffic, to indicate the point of entry and \"distinguish the entrance ramp from an adjoining exit ramp terminal at the same intersection\" — a permitted measure that helps drivers avoid inadvertently entering the exit ramp. Visual evidence: [Image 1] Figure 2B-15 depicts the exit-ramp termination with DO NOT ENTER signs, WRONG WAY signs, and ONE WAY signs (plus STOP or YIELD control and wrong-way pavement arrows) positioned to face potential wrong-way entrants. [Image 2] shows the same Figure 2B-15 in its full-page context on page 112, titled \"Example of Application of Regulatory Signing and Pavement Markings at an Exit Ramp Termination to Deter Wrong-Way Entry,\" cross-referenced to Section 2B.48. [Image 3] shows Section 2B.46 and Figure 2B-13, identifying the sign designations DO NOT ENTER (R5-1), WRONG WAY (R5-1a), and ONE WAY (R6-1/R6-2), and stating the R5-1 sign shall be used at \"the intersection of an interchange exit ramp with a crossroad as specified in Section 2B.48.\" [Image 4] is the table of figures listing Figure 2B-15's title on page 112. [Image 5] shows Figure 2D-18, whose note 3 directs readers to \"Section 2B.48 and Figure 2B-15 for an example of regulatory signing and pavement markings at an exit ramp termination to deter wrong-way entry.\" Citations: - Figure 2B-15 (p.112) - Page 150 - Page 153 - Page 29 - Page 297 - Section 2D.45 Guidance §3 (p.247) - Section 2D.50 Option §3 (p.254)",
+  "gold_answer": "At least one ONE WAY sign for each crossroad travel direction, at least one DO NOT ENTER sign near the downstream end of the exit ramp, and at least one WRONG WAY sign on the exit ramp facing wrong-way road users are required.",
+  "correctness_score": 0.75,
+  "completeness_score": 0.5,
+  "faithfulness_score": 0.9,
+  "citation_score": 0.75,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 72.5,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.75, Comp=0.50, F=0.90, Cit=0.75, Strict full credit=No",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "at least one WRONG WAY sign on the exit ramp facing wrong-way road users are required.",
+      "token_coverage": 0.75
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2B.48",
+    "Section 2J.07",
+    "Section 2E.21",
+    "Section 2B.46",
+    "Section 2D.45",
+    "Section 2D.50",
+    "Figure 2B-15",
+    "Figure 2B-13",
+    "Figure 2D-18",
+    "page 112"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 0.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 72.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 2B.48, Section 2J.07, Section 2E.21, Section 2B.46, Section 2D.45, Section 2D.50. Gold elements clearly reflected in the response: at least one WRONG WAY sign on the exit ramp facing wrong-way road users are required. Adjudication note: Names the three sign types but omits minimum quantities and exact required locations. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision did not match the locked modality requirement for this question. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity."
+}

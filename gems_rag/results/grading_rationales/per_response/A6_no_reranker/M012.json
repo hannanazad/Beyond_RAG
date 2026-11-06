@@ -1,0 +1,59 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "M012",
+  "question": "For Warrant 1 Condition A with at least two major-street lanes and one minor-street lane, what volumes must exist and over what time basis, and does meeting them compel signal installation?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: For Warrant 1, Condition A (Minimum Vehicular Volume) with 2 or more major-street lanes and 1 minor-street lane, Table 4C-1 requires 600 vehicles per hour on the major street (total of both approaches) and 150 vehicles per hour on the more critical minor-street approach (one direction only) at the basic 100% level, existing for each of any 8 hours of an average day. The major-street and minor-street volumes must occur during the same 8 hours. Meeting these volumes does not compel signal installation — the warrant only means the need for a signal \"should be considered\" (Guidance) based on an engineering study; warrants are thresholds for study, not mandates to install. Standards (mandatory): - \"These major-street and minor-street volumes shall be for the same 8 hours for each condition; however, the 8 hours that are selected for the Condition A analysis shall not be required to be the same 8 hours that are selected for the Condition B analysis.\" - \"These major-street and minor-street volumes shall be for the same 8 hours for each condition; however, the 8 hours satisfied in Condition A shall not be required to be the same 8 hours satisfied in Condition B.\" - Table 4C-1 footnotes define the columns: \"a Basic minimum hourly volume; b Used for combination of Conditions A and B after adequate trial of other remedial measures; c May be used when the major-street speed exceeds 40 mph or in an isolated community with a population of less than 10,000; d May be used for combination of Conditions A and B after adequate trial of other remedial measures when the major-street speed exceeds 40 mph or in an isolated community with a population of less than 10,000.\" Guidance (recommended): - Per the Guidance shown on the Section 4C.02 page, the need for a traffic control signal should be considered if an engineering study finds that the 100 percent column volumes of Condition A (or Condition B) in Table 4C-1 exist on the major street and the more critical minor-street approach for each of any 8 hours of an average day — i.e., satisfying the warrant triggers consideration, not a requirement to install. Options (permitted): - The 70% columns (420 vph major / 105 vph minor for this lane combination) may be used in place of the 100% columns when the major-street speed exceeds 40 mph or in an isolated community with a population of less than 10,000. Visual evidence: - [Image 1] Table 4C-1, Condition A, row \"2 or more / 1\": major-street volumes of 600 (100%), 480 (80%), 420 (70%), 336 (56%) vph and minor-street volumes of 150 (100%), 120 (80%), 105 (70%), 84 (56%) vph. - [Image 5] The full Section 4C.02 page shows the Guidance (\"The need for a traffic control signal should be considered if an engineering study finds that one of the following conditions exist for each of any 8 hours of an average day\") and the introductory text noting that warrants are not the only factor and installation decisions rest on an engineering study. Citations: - Section 4C.02 Standard §5 (p.653) - Section 4C.02 Standard §10 (p.654) - Section 4C.02 Standard §56 (p.654) - Section 4C.02 Standard §42 (p.653) - Table 4C-1 (p.653) - Page 694",
+  "gold_answer": "For each of the same 8 selected hours, 600 vph must exist on the major street (both approaches total) and 150 vph on the critical minor approach (one direction) at the 100-percent thresholds. Meeting the warrant does not compel installation; an engineering study must determine whether a signal is justified.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Meeting the warrant does not compel installation",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "For each of the same 8 selected hours, 600 vph must exist on the major street (both approaches total) and 150 vph on the critical minor approach (one direction) at the 100-percent thresholds.",
+      "token_coverage": 0.917
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4C.02",
+    "Table 4C-1",
+    "p.653",
+    "p.654",
+    "Page 694"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9896062251871524,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4C.02, Table 4C-1, p.653, p.654, Page 694. Gold elements clearly reflected in the response: Meeting the warrant does not compel installation | For each of the same 8 selected hours, 600 vph must exist on the major street (both approaches total) and 150 vph on the critical minor approach (one direction) at the 100-percent… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.990 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

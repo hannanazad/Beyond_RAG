@@ -1,0 +1,4 @@
+rationale_provenance,response_count
+"structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",895
+explicit adjudication note,48
+original-RAG adjudication note reused because the question and four official scores match,107

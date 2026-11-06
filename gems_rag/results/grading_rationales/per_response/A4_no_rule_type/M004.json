@@ -1,0 +1,58 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "M004",
+  "question": "A portable CMS designer proposes 'DLY' to mean DELAY. Using Section 1D.08 and Table 1D-3, is this acceptable and why?",
+  "primary_modality": "mixed",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No, this is not acceptable. \"DLY\" appears in Table 1D-3 as an unacceptable abbreviation because it is commonly misinterpreted as \"Daily\" rather than \"Delay,\" and Section 1D.08 mandates that abbreviations in that table shall not be used on traffic control devices. Since abbreviations on CMS must comply with Section 1D.08, the designer cannot use DLY on a portable changeable message sign. Standards (mandatory): - \"The abbreviations shown in Table 1D-3 shall not be used in connection with traffic control devices because of their potential to be misinterpreted by road users.\" - \"Abbreviations displayed on CMS shall comply with the provisions of Section 1D.08.\" - \"When the word messages shown in Table 1D-2 need to be abbreviated on a portable changeable message sign, the abbreviations shown in Table 1D-2 shall be used. Unless indicated by an asterisk, these abbreviations shall only be used on portable changeable message signs.\" (If \"Delay\" needs abbreviating, only an abbreviation approved in Table 1D-2 could be used — not DLY.) Guidance (recommended): - If a permissible alternative abbreviation exists in Table 1D-1 or 1D-2 with more than one allowed form, \"the same abbreviation should be used throughout a single jurisdiction.\" Visual evidence: [Image 1] shows Table 1D-3 (Unacceptable Abbreviations), which lists \"DLY\" with the intended word \"Delay\" and the common misinterpretation \"Daily,\" confirming that DLY is expressly prohibited. Citations: - Section 1D.08 Standard §4 (p.34) - Section 2L.05 Standard §6 (p.516) - Section 1D.08 Standard §2 (p.34) - Section 1D.08 Guidance §5 (p.34) - Table 1D-3 (p.37)",
+  "gold_answer": "No. DLY is explicitly prohibited because it can be misinterpreted as DAILY.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.95,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 98.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=0.95, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "DLY is explicitly prohibited because it can be misinterpreted as DAILY.",
+      "token_coverage": 0.8
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1D.08",
+    "Section 2L.05",
+    "Table 1D-3",
+    "Table 1D-2",
+    "Table 1D-1",
+    "p.34",
+    "p.516",
+    "p.37"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.5,
+    "ndcg6": 0.7816510974258781,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 98.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 1D.08, Section 2L.05, Table 1D-3, Table 1D-2, Table 1D-1, p.34. Gold elements clearly reflected in the response: DLY is explicitly prohibited because it can be misinterpreted as DAILY. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 2, which produced MRR=0.500. The six-chunk ordering produced nDCG@6=0.782 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

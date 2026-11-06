@@ -1,0 +1,61 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "F027",
+  "question": "How many milliseconds does each steady-yellow and steady-red stage last in Figure 4J-3?",
+  "primary_modality": "figure",
+  "difficulty": "easy",
+  "answerable": false,
+  "answerability_subtype": "unsupported_precision",
+  "model_answer": "Direct Answer: Figure 4J-3 does not specify any durations in milliseconds (or seconds) — it only shows the sequence of displays for a pedestrian hybrid beacon. The only timing information in the evidence is Guidance that the steady yellow change interval should last 3 to 6 seconds (i.e., 3,000–6,000 milliseconds); no duration is given for the steady-red pedestrian walk interval, which depends on local signal timing. Standards (mandatory): - \"Following an actuation by a pedestrian, a pedestrian hybrid beacon face shall display a flashing CIRCULAR yellow signal indication, followed by a steady CIRCULAR yellow signal indication, followed by both steady CIRCULAR RED signal indications during the pedestrian walk interval, followed by alternating flashing CIRCULAR RED signal indications during the pedestrian change interval (see Figure 4J-3).\" (This sets the sequence, not the durations.) Guidance (recommended): - \"A steady yellow change interval should have a minimum duration of 3 seconds and a maximum duration of 6 seconds (see Section 4F.17). The longer intervals should be reserved for use on approaches with higher speeds.\" (Equivalent to 3,000–6,000 ms.) Options (permitted): - \"A steady red clearance interval may be used after the steady yellow change interval.\" (No duration is specified in the evidence.) Visual evidence: [Image 1] Figure 4J-3 shows the six-interval sequence (dark, flashing yellow, steady yellow, steady red during walk, alternating flashing red, dark again) with a note about optional steady red clearance and buffer intervals, but no timing values. [Image 7] shows the same figure with the surrounding text of Section 4J.03, which likewise contains no millisecond durations. Citations: - Section 4J.03 Standard §2 (p.730) - Section 4J.03 Guidance §11 (p.730) - Section 4J.03 Option §12 (p.730) - Figure 4J-3 (p.729) - Page 730",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.077
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 4F.17",
+    "Section 4J.03",
+    "Figure 4J-3",
+    "p.730",
+    "p.729",
+    "Page 730"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9469024295259744,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.25,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the response correctly states that the requested information or precision is not supported. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4F.17, Section 4J.03, Figure 4J-3, p.730, p.729, Page 730. Gold elements clearly reflected in the response: The MUTCD does not specify this information. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.947 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.25."
+}

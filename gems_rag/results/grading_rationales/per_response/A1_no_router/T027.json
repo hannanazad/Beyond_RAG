@@ -1,0 +1,60 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T027",
+  "question": "How should the advance placement of warning signs be determined?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Advance placement of warning signs should be determined by providing drivers adequate Perception-Response Time (PRT), using Table 2C-3 distances (based on posted or 85th-percentile speed and the condition being warned of) applied with engineering judgment. In temporary traffic control (TTC) zones, signs should be placed at varying distances depending on roadway type, condition, and posted speed, using Table 6B-1 — roughly 100 feet on low-speed urban streets, 4 to 8 times the speed limit on urban streets, 8 to 12 times the speed limit on rural highways, and ½ mile or more on freeways and expressways. Placement effectiveness should also be periodically evaluated under both day and night conditions. Standards (mandatory): - No Standard provisions appear in the evidence for this question. Guidance (recommended): - The effectiveness of the placement of warning signs should be periodically evaluated under both day and night conditions; Table 2C-3 provides guidelines for advance placement distances keyed to posted or 85th-percentile speed and Condition A (speed reduction and lane changing in heavy traffic) or Condition B (deceleration to a listed advisory speed). - Table 2C-3 distances range from 225 ft (Condition A at 20 mph) up to 1,600 ft (at 85 mph); for warning signs with less than 6-inch legend or more than four words, a minimum of 100 feet should be added to the advance placement distance to provide adequate legibility. - In TTC zones, where highway conditions permit, warning signs should be placed in advance of the transition and activity areas at varying distances depending on roadway type, condition, and posted speed (see Table 6B-1); where a series of two or more advance warning signs is used, the closest sign should be placed approximately 100 feet for low-speed urban streets to 1,000 feet or more for freeways and expressways. - On urban streets, the effective placement of the nearest warning sign to the TTC zone, in feet, should range from 4 to 8 times the speed limit in mph, with the high end used when speeds are relatively high; with two or more signs on higher-speed streets, the advance warning area should extend a greater distance. - On rural highways, the effective placement of the first warning sign should be substantially longer—from 8 to 12 times the speed limit in mph—and the advance warning area should extend 1,500 feet or more for open highway conditions. - On freeways and expressways, typical distances should be longer because drivers are conditioned to uninterrupted flow; advance warning sign placement should extend as far as ½ mile or more. Visual evidence: - [Image 1] Table 2C-3 shows advance placement distances by posted or 85th-percentile speed (20–85 mph) for Condition A and Condition B advisory speeds, with footnotes on sign legibility adjustments and minimum 100-ft spacing between signs. - [Image 2] Table 6B-1 (Warning Sign Minimum Spacing) lists distances between signs (A, B, C dimensions) by road type: 100 feet for low-speed urban, 350 feet for high-speed urban, 500 feet for rural, and 1,000/1,500/2,640 feet for expressways/freeways. - [Image 3] Page 193 shows Section 2C.04 (Placement of Warning Signs), including the Guidance that distances in Table 2C-3 should be applied with engineering judgment, and reproduces Table 2C-3. - [Image 4] Page 839 shows Section 6H.02 (Position of Advance Warning Signs) with Guidance on placing warning signs in advance of transition and activity areas per Table 6B-1. - [Image 5] Page 197 shows Figure 2C-2, an example of horizontal alignment warning sign placement, noting that Table 2C-3 should be consulted for advance placement distance guidelines. - [Image 6] Page 812 shows Section 6B.04 (Advance Warning Area) with the 4–8 times (urban) and 8–12 times (rural) speed-limit placement guidance and the ½-mile-or-more freeway/expressway guidance. Citations: - Section 2C.04 Guidance §5 (p.152) - Section 2C.04 Guidance §804 (p.153) - Section 6H.02 Guidance §1 (p.798) - Section 6B.04 Guidance §3 (p.771) - Section 6B.04 Guidance §4 (p.771) - Section 6B.04 Guidance §6 (p.771) - Table 2C-3 (p.152) - Table 6B-1 (p.773) - Page 193 - Page 839 - Page 197 - Page 812",
+  "gold_answer": "Warning signs should be placed to provide adequate perception-response time. Table 2C-3 is an aid, but its distances should be applied with engineering judgment and can be adjusted for roadway features, other signing, and visibility.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 0.95,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 98.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=1.00, F=0.95, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "Warning signs should be placed to provide adequate perception-response time.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2C.04",
+    "Section 6H.02",
+    "Section 6B.04",
+    "Table 2C-3",
+    "Table 6B-1",
+    "Figure 2C-2",
+    "Page 193",
+    "Page 839",
+    "Page 197",
+    "Page 812"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.25,
+    "ndcg6": 0.5012658353418871,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 2.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 98.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2C.04, Section 6H.02, Section 6B.04, Table 2C-3, Table 6B-1, Figure 2C-2. Gold elements clearly reflected in the response: Warning signs should be placed to provide adequate perception-response time. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 4, which produced MRR=0.250. The six-chunk ordering produced nDCG@6=0.501 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

@@ -1,0 +1,61 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T048",
+  "question": "What minimum geometry and operational restrictions apply to a bicycle box, and how must optional green pavement be applied?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: A bicycle box must be at least 10 feet deep (measured from its upstream edge nearest the motor vehicle stop line to its downstream edge nearest the crosswalk or intersection) and must contain at least one bicycle symbol marking. If green-colored pavement is used, it must cover the full limits of the bicycle box, and bicycle boxes are among the only applications where green-colored pavement is permitted. The evidence provided does not contain further operational restrictions (such as signal or turn restrictions) for bicycle boxes. Standards (mandatory): - \"If used, the distance from the upstream edge of the bicycle box that is nearest to the stop line for motor vehicles to the downstream edge of the bicycle box that is nearest the crosswalk or intersection shall be at least 10 feet. At least one bicycle symbol marking (see Figure 9E-12) shall be used in the bicycle box.\" - \"If used, green-colored pavement shall be used in the full limits of the bicycle box.\" - \"If used, green-colored pavement shall be limited to: A. Bicycle lanes..., B. Extensions of bicycle lanes through intersections..., C. Extensions of bicycle lanes through areas where motor vehicles enter a mandatory turn lane in which motor vehicles must weave across bicyclists in bicycle lanes..., D. Two-stage bicycle turn boxes..., E. Bicycle Boxes (see Section 9E.12), and F. As a background for bicycle detector symbols...\" Guidance (recommended): - If green-colored pavement is used within separated bicycle lanes on an independent alignment, it should be used only at the entrances to those facilities from roadways open to public travel or at conflict, weaving, or crossing locations. Options (permitted): - Green-colored pavement may be installed for the entire length of a bicycle lane or bicycle lane extension or for only a portion (or portions) of it — but note that within a bicycle box specifically, the Standard requires full coverage of the box if green pavement is used. Citations: - Section 9E.12 Standard §6 (p.1105) - Section 9E.12 Standard §13 (p.1106) - Section 3H.06 Standard §2 (p.626) - Section 3H.06 Guidance §5 (p.626) - Section 3H.06 Option §7 (p.626) - Section 3H.06 Support §1 (p.625)",
+  "gold_answer": "The box must be at least 10 feet from its upstream edge near the motor-vehicle stop line to its downstream edge near the crosswalk or intersection, must include at least one bicycle symbol, and turns on red must be prohibited from the lane containing the box. If green pavement is used, it must fill the full limits of the bicycle box.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.75, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "If green pavement is used, it must fill the full limits of the bicycle box.",
+      "token_coverage": 0.875
+    },
+    {
+      "text": "The box must be at least 10 feet from its upstream edge near the motor-vehicle stop line to its downstream edge near the crosswalk or intersection, must include at least one bicycle symbol, and turns on red must be prohibited from the lane containing the box.",
+      "token_coverage": 0.704
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 9E.12",
+    "Section 3H.06",
+    "Figure 9E-12",
+    "p.1105",
+    "p.1106",
+    "p.626",
+    "p.625"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.5,
+    "ndcg6": 0.6509209298071326,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 9E.12, Section 3H.06, Figure 9E-12, p.1105, p.1106, p.626. Gold elements clearly reflected in the response: If green pavement is used, it must fill the full limits of the bicycle box. | The box must be at least 10 feet from its upstream edge near the motor-vehicle stop line to its downstream edge near the crosswalk or intersection, must include at least one bicyc… Adjudication note: Correct geometry, symbol, and green-pavement rule; omits the turn-on-red prohibition. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 2, which produced MRR=0.500. The six-chunk ordering produced nDCG@6=0.651 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

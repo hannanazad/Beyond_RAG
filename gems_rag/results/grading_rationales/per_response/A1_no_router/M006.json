@@ -1,0 +1,60 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "M006",
+  "question": "Compare the quantitative triggers in the four-leg All-Way Stop crash warrant and the 8-hour volume warrant.",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The two all-way stop warrants use different metrics: the crash warrant is triggered by crash frequency, while the 8-hour volume warrant is triggered by multimodal entering volumes. For a four-leg intersection, the crash warrant is met by five or more reported crashes in 12 months or six or more in 36 months (of a type correctable by all-way stop control), whereas the 8-hour volume warrant requires at least 300 combined vehicle/bicycle/pedestrian units per hour from the major-street approaches and at least 200 units per hour from the minor-street approaches for each of the same 8 hours of a typical day. Both are Option (permissive) provisions, so meeting either threshold permits — but does not require — all-way stop control based on an engineering study. Options (permitted): - Crash warrant (four-leg trigger): \"All-way stop control may be installed at an intersection where an engineering study indicates that: A. For a four-leg intersection, there are five or more reported crashes in a 12-month period or six or more reported crashes in a 36-month period that were of a type susceptible to correction by the installation of all-way stop control.\" - 8-hour volume warrant: \"All-way stop control may be installed at an intersection where an engineering study indicates: A. The combined motor vehicle, bicycle, and pedestrian volume entering the intersection from the major-street approaches is at least 300 units per hour for each of any 8 hours of a typical day; and B. The combined motor vehicle, bicycle, and pedestrian volume entering the intersection from the minor-street approaches is at least 200 units per hour for each of any of the same 8 hours.\" - Key contrasts: (1) metric — crash counts (5/yr or 6/3 yr, four legs) versus hourly volumes (300 major / 200 minor units per hour); (2) time frame — 12- or 36-month crash history versus any 8 hours of a single typical day; (3) mode coverage — the volume warrant explicitly combines motor vehicles, bicycles, and pedestrians, while the crash warrant counts reported crashes of a correctable type; (4) the volume warrant's two thresholds must both be satisfied concurrently (same 8 hours), whereas the crash warrant offers alternative time windows (12-month OR 36-month). Visual evidence: [Image 3] shows Sections 2B.13 and 2B.16 side by side, including the four-leg crash thresholds (five in 12 months / six in 36 months), the 300/200 units-per-hour criteria, and the provision that the volume thresholds may be reduced to 70 percent when the major-street 85th-percentile speed exceeds 40 mph. [Image 5] shows Section 2B.12, which lists both warrants (Warrant A: Crash Experience and Warrant D: 8-Hour Volume) among the all-way stop control warrants and states that satisfaction of a warrant does not in itself require installation. Citations: - Section 2B.13 Option §1 (p.79) - Section 2B.16 Option §1 (p.79) - Page 120 - Page 119",
+  "gold_answer": "The crash warrant may apply with at least 5 correctable crashes in 12 months or 6 in 36 months. The volume warrant may apply when, for the same 8 hours, major-street entering volume is at least 300 units/hour and minor-street entering volume at least 200 units/hour, with a possible 70-percent adjustment if major-street 85th-percentile speed exceeds 40 mph.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.75, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "The crash warrant may apply with at least 5 correctable crashes in 12 months or 6 in 36 months.",
+      "token_coverage": 0.917
+    },
+    {
+      "text": "The volume warrant may apply when, for the same 8 hours, major-street entering volume is at least 300 units/hour and minor-street entering volume at least 200 units/hour, with a possible 70-percent adjustment if major-street 85th-percentile speed exceeds 40 mph.",
+      "token_coverage": 0.848
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2B.12",
+    "Section 2B.13",
+    "Section 2B.16",
+    "p.79",
+    "Page 120",
+    "Page 119"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.5,
+    "ndcg6": 0.6240505200038379,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 2.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2B.12, Section 2B.13, Section 2B.16, p.79, Page 120, Page 119. Gold elements clearly reflected in the response: The crash warrant may apply with at least 5 correctable crashes in 12 months or 6 in 36 months. | The volume warrant may apply when, for the same 8 hours, major-street entering volume is at least 300 units/hour and minor-street entering volume at least 200 units/hour, with a p… Adjudication note: Correct crash and eight-hour volume thresholds; omits the 70-percent high-speed adjustment. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 2, which produced MRR=0.500. The six-chunk ordering produced nDCG@6=0.624 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

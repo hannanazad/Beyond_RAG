@@ -1,0 +1,60 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T020",
+  "question": "What minimum vertical clearance is required for overhead signs over the pavement and shoulders?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Overhead signs must provide a minimum vertical clearance of 17 feet to the sign, light fixture, or sign bridge over the entire width of the pavement and shoulders. A lesser clearance is allowed only where the mounting structure or nearby structures along the roadway have a lesser vertical clearance, and in special cases such as tunnels or double-deck bridges. Standards (mandatory): - \"Overhead signs shall provide a vertical clearance of not less than 17 feet to the sign, light fixture, or sign bridge over the entire width of the pavement and shoulders, except where the structure on which the overhead signs are to be mounted or other structures along the roadway near the sign structure have a lesser vertical clearance.\" (Section 2A.15, shown in [Image 2]) - \"Signs that are post-mounted on a median barrier that overhang any portion of the traveled way shall be mounted with a vertical clearance that complies with that of overhead signs.\" (Section 2A.15, shown in [Image 2]) Options (permitted): - If the vertical clearance of other structures along the roadway near the sign structure is less than 16 feet, the vertical clearance to an overhead sign structure or support may be as low as 1 foot higher than the vertical clearance of the other structures in order to improve visibility of the overhead signs (shown in [Image 2]). - Preferential Lane regulatory signs post-mounted on a median barrier that are 72 inches or less in width may be mounted higher, such that the vertical clearance to the bottom of the sign, light fixture, or structural support, whichever is lowest, is not less than 17 feet above any portion of the pavement and shoulders. - Warning signs applicable only to a preferential lane, post-mounted on a median barrier and 72 inches or less in width, may similarly be mounted higher with a vertical clearance of not less than 17 feet above any portion of the pavement and shoulders. - Preferential Lane guide signs 72 inches or less in width may likewise be mounted higher with not less than 17 feet of vertical clearance above any portion of the pavement and shoulders. Visual evidence: - [Image 1] Figure 2A-2, panel H (\"Overhead sign\"), illustrates the \"17 ft MIN.\" vertical clearance from the pavement to the bottom of an overhead sign, along with the 6-foot lateral offset from the shoulder to the support. - [Image 2] This page contains the Section 2A.15 Standard requiring not less than 17 feet of vertical clearance for overhead signs over the entire width of the pavement and shoulders, plus the related exceptions. Citations: - Figure 2A-2 (p.51) - Page 100 - Section 2G.03 Option §14 (p.411) - Section 2G.08 Option §4 (p.419) - Section 2G.10 Option §18 (p.422)",
+  "gold_answer": "At least 17 feet, except where nearby structures or special constrained structures qualify for the specific exceptions in Section 2A.15.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "At least 17 feet, except where nearby structures or special constrained structures qualify for the specific exceptions in Section 2A.15.",
+      "token_coverage": 0.75
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2A.15",
+    "Section 2G.03",
+    "Section 2G.08",
+    "Section 2G.10",
+    "Figure 2A-2",
+    "p.51",
+    "Page 100",
+    "p.411",
+    "p.419",
+    "p.422"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.3333333333333333,
+    "ndcg6": 0.5249810332008933,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2A.15, Section 2G.03, Section 2G.08, Section 2G.10, Figure 2A-2, p.51. Gold elements clearly reflected in the response: At least 17 feet, except where nearby structures or special constrained structures qualify for the specific exceptions in Section 2A.15. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 3, which produced MRR=0.333. The six-chunk ordering produced nDCG@6=0.525 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

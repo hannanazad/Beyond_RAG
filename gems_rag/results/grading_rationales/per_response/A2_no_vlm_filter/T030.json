@@ -1,0 +1,58 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T030",
+  "question": "Which five pavement-marking colors are permitted by the general MUTCD color rule?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided does not contain the MUTCD's general color rule for pavement markings (i.e., the Standard provision that enumerates the permitted marking colors). The excerpts supplied cover the 13-color sign color code (Section 1D.05), sign dimensions, sign retroreflectivity maintenance, and specific colored-pavement provisions (yellow-, red-, and green-colored pavement), none of which states the general list of permitted pavement-marking colors. I therefore cannot answer the question from this evidence. Visual evidence: [Image 1] shows Table 2A-2, which addresses common uses of sign colors, not pavement-marking colors; [Image 2] shows Figure 3H-4 examples of green-colored pavement applications, which concern colored pavement rather than the general marking color rule; [Images 3–8] address sign retroreflectivity, compliance dates, and tables of contents, none of which state the permitted pavement-marking colors. Citations: - Section 1D.05 Standard §2 (p.33) - Section 3H.04 Standard §2 (p.623) - Section 3H.07 Standard §3 (p.626)",
+  "gold_answer": "Yellow, white, red, blue, and purple.",
+  "correctness_score": 0.0,
+  "completeness_score": 0.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 25.0,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.00, Comp=0.00, F=1.00, Cit=0.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "Yellow, white, red, blue, and purple.",
+      "token_coverage": 0.4
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1D.05",
+    "Section 3H.04",
+    "Section 3H.07",
+    "Table 2A-2",
+    "Figure 3H-4",
+    "p.33",
+    "p.623",
+    "p.626"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 0.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 25.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response does not provide the required conclusion or gives a conclusion that conflicts with the locked answer. Completeness rationale: The response omits or underdevelops these locked elements: Yellow, white, red, blue, and purple. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Adjudication note: Abstains instead of listing yellow, white, red, blue, and purple. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision did not match the locked modality requirement for this question. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity."
+}

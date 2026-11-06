@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "TB003",
+  "question": "In Table 1D-2, how is 'Road Work' abbreviated on a portable changeable message sign, and what may follow it?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: In Table 1D-2, \"Road Work\" is abbreviated as RD WK, and this abbreviation is reserved for temporary messages on portable changeable message signs. The table lists no prompt word preceding the abbreviation, but the prompt word \"Ahead\" or a distance (e.g., \"1 MILE\") may follow it, as shown by the table's example \"RD WK 1 MILE.\" Standards (mandatory): - \"When the word messages shown in Table 1D-2 need to be abbreviated on a portable changeable message sign, the abbreviations shown in Table 1D-2 shall be used. Unless indicated by an asterisk, these abbreviations shall only be used on portable changeable message signs.\" Guidance (recommended): - \"The abbreviations for the words listed in Table 1D-2 that also show a prompt word should not be used on a portable changeable message sign... unless the prompt word shown in Table 1D-2 either precedes or follows the abbreviation, as applicable.\" For RD WK, the applicable prompt word following the abbreviation is \"Ahead\" or a \"[Distance]\". Visual evidence: [Image 1] shows the Table 1D-2 row for \"Road Work\" with standard abbreviation \"RD WK,\" a dash (no prompt word) preceding the abbreviation, \"Ahead, [Distance]\" as the prompt word following the abbreviation, and the example \"RD WK 1 MILE.\" [Image 2] presents the same Table 1D-2 (Sheet 1 of 2) on page 36 with the identical Road Work row. [Image 4] (Table 2L-4, Example 6) illustrates a related message-construction example noting that condensing ROAD and WORK into a single word (per Table 1D-2) can accommodate a single-phase message. Citations: - Table 1D-2 (p.36) - Section 1D.08 Standard §2 (p.34) - Section 1D.08 Guidance §3 (p.34)",
+  "gold_answer": "RD WK; it may be followed by AHEAD or a distance, such as 'RD WK 1 MILE.'",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "RD WK",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "it may be followed by AHEAD or a distance, such as 'RD WK 1 MILE.'",
+      "token_coverage": 0.833
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1D.08",
+    "Table 1D-2",
+    "Table 2L-4",
+    "page 36",
+    "p.36",
+    "p.34"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1D.08, Table 1D-2, Table 2L-4, page 36, p.36, p.34. Gold elements clearly reflected in the response: RD WK | it may be followed by AHEAD or a distance, such as 'RD WK 1 MILE.' Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

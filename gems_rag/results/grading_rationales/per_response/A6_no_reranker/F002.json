@@ -1,0 +1,57 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "F002",
+  "question": "In Figure 1B-2, if a proposed change is accepted for Federal rulemaking, what process follows before a Final Rule is published?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: According to Figure 1B-2, once a proposed change is accepted for Federal rulemaking, FHWA develops device provisions for inclusion in the next Notice of Proposed Amendments, publishes that Notice in the Federal Register, holds a docket comment period, reviews the comments received, and then prepares the Final Rule before publishing it. In parallel, FHWA may consider interim approval, allowing jurisdictions to apply for, receive, and deploy the device under interim approval conditions while rulemaking proceeds. After the Final Rule is published, State manuals must be brought into substantial conformance with the National MUTCD within 2 years. Standards (mandatory): - \"States or other Federal agencies that have their own MUTCDs or Supplements shall revise these MUTCDs or Supplements to be in substantial conformance with changes to the National MUTCD within 2 years of the effective date of the Final Rule for the changes [23 CFR 655.603(b)(3)]. Substantial conformance of such State or other Federal agency MUTCDs or Supplements shall be as defined in 23 CFR 655.603(b)(1).\" Visual evidence: [Image 1] Figure 1B-2 shows the \"YES\" branch from the \"Accepted for Federal rulemaking?\" decision leading through the sequence: FHWA develops device provisions for the next Notice of Proposed Amendments → FHWA publishes Notice of Proposed Amendments in the Federal Register → Docket comment period → FHWA reviews comments → FHWA prepares Final Rule → FHWA publishes Final Rule, ending with the box \"State manuals must be in substantial conformance with the National MUTCD within 2 years as specified in 23 CFR 655.603(a)\"; it also shows the parallel \"Interim approval?\" branch in which jurisdictions may deploy devices under interim approval conditions pending the Final Rule. [Image 2] shows the same Figure 1B-2 flowchart in full-page context on Page 10, confirming the identical rulemaking sequence. Citations: - Figure 1B-2 (p.10) - Section 1B.02 Standard §2 (p.4)",
+  "gold_answer": "FHWA develops provisions for a Notice of Proposed Amendments, publishes the notice in the Federal Register, holds a docket comment period, reviews comments, prepares the Final Rule, and publishes it.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "FHWA develops provisions for a Notice of Proposed Amendments, publishes the notice in the Federal Register, holds a docket comment period, reviews comments, prepares the Final Rule, and publishes it.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1B.02",
+    "Figure 1B-2",
+    "Page 10",
+    "p.10",
+    "p.4",
+    "23 CFR 655.603(b)",
+    "23 CFR 655.603(a)"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1B.02, Figure 1B-2, Page 10, p.10, p.4, 23 CFR 655.603(b). Gold elements clearly reflected in the response: FHWA develops provisions for a Notice of Proposed Amendments, publishes the notice in the Federal Register, holds a docket comment period, reviews comments, prepares the Final Rul… Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

@@ -1,0 +1,57 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T043",
+  "question": "What safety and accessibility priority does the MUTCD establish for temporary traffic control planning and operation?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The MUTCD establishes that road user and worker safety and accessibility should be an integral and high-priority element of every project, from planning through design and construction. This priority extends to all motorists, bicyclists, pedestrians (including those with disabilities), and workers, and TTC planning is intended to provide continuity of movement and accessible passage when a roadway's normal function is suspended. These are Guidance (recommended) provisions rather than mandatory Standards. Guidance (recommended): - Road user and worker safety and accessibility in TTC zones should be an integral and high-priority element of every project from planning through design and construction; maintenance and utility work should be planned and conducted with the safety and accessibility of all motorists, bicyclists, pedestrians (including those with disabilities), and workers considered at all times, and if the TTC zone includes a grade crossing, early coordination with the railroad company or light rail transit agency should take place. - General plans or guidelines should be developed to provide safety for motorists, bicyclists, pedestrians, workers, enforcement/emergency officials, and equipment; the basic safety principles governing the design of permanent roadways and roadsides should also govern the design of TTC zones, routing road users through such zones with geometrics, roadside features, and TTC devices as nearly as possible comparable to normal highway situations; a TTC plan appropriate to the project's complexity should be prepared and understood by all responsible parties before the site is occupied, with changes approved by a knowledgeable official; and road user movement should be inhibited as little as practical, avoiding frequent and abrupt changes in geometrics. - Temporary traffic control operations should minimize the inconvenience, delay, and crash potential to affected traffic, with prior notice given to affected public or private agencies, emergency services, businesses, railroad companies or transit agencies, and road users before free movement is infringed upon or blocked. Citations: - Section 6A.02 Guidance §1 (p.766) - Section 6A.02 Guidance §2 (p.768) - Section 8A.13 Guidance §7 (p.992) - Section 6A.01 Support §3 (p.765) - Section 8A.13 Support §1 (p.992)",
+  "gold_answer": "Road-user and worker safety and accessibility must be treated as integral, high-priority considerations from planning through design and construction, including motorists, bicyclists, pedestrians with disabilities, workers, and coordination with rail transit where applicable.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.8500000000000001,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 96.25,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.85, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Road-user and worker safety and accessibility must be treated as integral, high-priority considerations from planning through design and construction, including motorists, bicyclists, pedestrians with disabilities, workers, and coordination with rail transit where applicable.",
+      "token_coverage": 0.818
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 6A.02",
+    "Section 8A.13",
+    "Section 6A.01",
+    "p.766",
+    "p.768",
+    "p.992",
+    "p.765"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8315546295836225,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 96.2% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6A.02, Section 8A.13, Section 6A.01, p.766, p.768, p.992. Gold elements clearly reflected in the response: Road-user and worker safety and accessibility must be treated as integral, high-priority considerations from planning through design and construction, including motorists, bicycli… Adjudication note: Correct high-priority lifecycle and user coverage; rail-transit coordination is not stated in the direct answer. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.832 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

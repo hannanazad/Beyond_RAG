@@ -1,0 +1,57 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T049",
+  "question": "According to the MUTCD, what exact percentage reduction in crashes is guaranteed by installing a STOP sign or all-way stop control?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "unsupported_precision",
+  "model_answer": "Direct Answer: The MUTCD does not state or guarantee any percentage reduction in crashes from installing a STOP sign or all-way stop control. None of the provided evidence — including the Standard, Guidance, Option, and Support provisions supplied, and the attached figures and pages — contains any crash-reduction percentage. The evidence is insufficient to give any such figure, and asserting one would misrepresent the Manual, which treats warrants and engineering studies (not guaranteed outcomes) as the basis for installing stop control. Visual evidence: [Image 1] shows intersection configurations at a divided highway crossing and contains no crash-reduction statistics; [Image 2] shows dynamic envelope pavement markings at grade crossings, unrelated to stop control crash percentages; [Image 3] shows Advance Traffic Control warning signs (W3-1 through W26-1) with no crash statistics; [Image 4] provides advance placement distances for warning signs, not crash-reduction data; [Image 5] (Page 78 content) discusses Minor Road Stop Control and All-Way Stop Control warrants, explicitly noting that warrants are not conclusive justification and that satisfying a warrant \"shall not in itself require the installation of all-way stop control,\" with no percentage reduction cited; [Image 6] is a table of contents page; [Image 7] shows Do Not Block Intersection markings and speed reduction markings with no crash percentages; [Image 8] covers STOP sign plaques and YIELD sign provisions with no crash-reduction figures. Citations: - Page 119 - Page 115",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Page 78",
+    "Page 119",
+    "Page 115"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Page 78, Page 119, Page 115. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

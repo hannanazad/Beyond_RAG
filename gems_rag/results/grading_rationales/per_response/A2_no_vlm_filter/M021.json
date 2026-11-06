@@ -1,0 +1,57 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "M021",
+  "question": "For a Type C arrow board in Figure 6L-3, state its minimum size, legibility distance, minimum number of elements, and required categories of display modes.",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Per Figure 6L-3, a Type C arrow board must have a minimum size of 96 x 48 inches, a minimum legibility distance of 1 mile, and a minimum of 15 elements. In addition, every arrow board (including Type C) must provide three categories of mode selections: (A) a Flashing Arrow, Sequential Arrow, or Sequential Chevron mode; (B) a flashing Double Arrow mode; and (C) a flashing Caution or Alternating Diamond mode. Standards (mandatory): - \"Arrow boards shall meet the minimum size, legibility distance, number of elements, and other specifications shown in Figure 6L-3.\" For Type C, Figure 6L-3 specifies 96 x 48 inches minimum size, 1 mile minimum legibility distance, and 15 minimum elements. - \"An arrow board shall have the following three mode selections: A. A Flashing Arrow, Sequential Arrow, or Sequential Chevron mode; B. A flashing Double Arrow mode; and C. A flashing Caution or Alternating Diamond mode.\" - \"The arrow board shall have suitable elements capable of the various operating modes. The color presented by the elements shall be yellow.\" - \"An arrow board shall be a sign with a matrix of elements capable of either flashing or sequential displays.\" Visual evidence: - [Image 1] Figure 6L-3 tabulates Type C as 96 x 48 inches minimum size, 1 mile minimum legibility distance, and 15 minimum elements, and illustrates the required display modes (Flashing Arrow, Sequential Arrow, Sequential Chevron, Flashing Double Arrow, Flashing Caution, and Alternating Diamond Caution) using a Type C arrow board. - [Image 5] Page 875 shows the full Figure 6L-3 page, confirming the Type C row (96 x 48 inches, 1 mile, 15 elements) and the three numbered operating-mode categories. - [Image 6] Page 874 shows the Section 6L.06 Standard text requiring conformance with Figure 6L-3 and listing the three required mode selections. Support (informational): Type C arrow boards are intended to be used on high-speed, high-volume motor vehicle traffic control projects. Citations: - Section 6L.06 Standard §5 (p.833) - Section 6L.06 Standard §16 (p.833) - Section 6L.06 Standard §13 (p.833) - Section 6L.06 Standard §1 (p.832) - Section 6L.06 Support §6 (p.833) - Figure 6L-3 (p.834) - Page 875 - Page 874",
+  "gold_answer": "Minimum size 96 x 48 inches, minimum legibility distance 1 mile, and at least 15 elements. It must provide at least one directional merge mode, the flashing double-arrow mode, and at least one caution mode.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Minimum size 96 x 48 inches, minimum legibility distance 1 mile, and at least 15 elements.",
+      "token_coverage": 0.933
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 6L.06",
+    "Figure 6L-3",
+    "Page 875",
+    "Page 874",
+    "p.833",
+    "p.832",
+    "p.834"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0000000000000002,
+    "precision6": 1.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.25,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6L.06, Figure 6L-3, Page 875, Page 874, p.833, p.832. Gold elements clearly reflected in the response: Minimum size 96 x 48 inches, minimum legibility distance 1 mile, and at least 15 elements. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=1.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.25."
+}

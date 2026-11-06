@@ -1,0 +1,64 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T032",
+  "question": "When are no-passing-zone markings required at horizontal or vertical curves, and what should be done when successive no-passing zones are separated by less than 400 feet?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "# Answer Direct Answer: On roadways with center line markings, no-passing-zone markings are mandatory at horizontal or vertical curves wherever the passing sight distance falls below the minimum in Table 3B-1 for the 85th-percentile speed or the speed limit (e.g., 450 feet at 25 mph up to 1,200 feet at 70 mph). When successive no-passing zones are separated by less than 400 feet, the no-passing zone markings should be connected to join the zones. Standards (mandatory): - \"On roadways with center line markings, no-passing zone markings shall be used at horizontal or vertical curves where the passing sight distance is less than the minimum shown in Table 3B-1 for the 85th-percentile speed or the speed limit.\" - \"On two-way, two-lane or three-lane roadways where center line markings are installed, no-passing zones shall be established at vertical and horizontal curves and other locations where an engineering study indicates that passing must be prohibited because of inadequate sight distances or other special conditions.\" - \"No-passing zones shall be marked by either the one-direction no-passing zone pavement markings or the two-direction no-passing zone pavement markings described in Section 3B.01 and shown in Figures 3B-1 and 3B-3.\" - \"No-passing zone markings shall be used on: A. Two-way roadways at lane-reduction transitions (see Section 3B.12), B. Approaches to obstructions that must be passed on the right (see Section 3B.13), C. Approaches to grade crossings (see Section 8C.02), and D. Approaches to crosswalks.\" Guidance (recommended): - \"Where the distance between successive no-passing zones is less than 400 feet, no-passing zone markings should connect the zones.\" Visual evidence: - [Image 1] Figure 3B-4 illustrates the method of locating no-passing zone limits at vertical and horizontal curves, with the zone beginning at point \"a\" where sight distance (measured between points 3.5 feet above the pavement) first becomes less than the minimum and ending at point \"b\" where sight distance again exceeds the minimum. - [Image 2] Table 3B-1 lists the minimum passing sight distances that trigger no-passing zone markings, ranging from 450 feet at 25 mph to 1,200 feet at 70 mph. - [Image 3] Page 584 shows the same table and explains that the upstream end of a no-passing zone (point \"a\") is where sight distance first drops below the Table 3B-1 value and the downstream end (point \"b\") is where it again exceeds the minimum, along with the 400-foot connection guidance. - [Image 4] Page 585 (Figure 3B-4) shows profile and plan views of no-passing zones at vertical and horizontal curves, noting that zones in opposite directions might or might not overlap depending on alignment. - [Image 5] Page 583 contains Section 3B.03 with the Standard provisions listing where no-passing zone markings shall be used, including at curves where an engineering study indicates passing must be prohibited due to inadequate sight distances. - [Image 6] Page 1051 (Figure 8C-1) shows an example of no-passing zone application on an approach to a grade crossing, including the optional W14-3 NO PASSING ZONE sign. Citations: - Section 3B.03 Standard §4 (p.543) - Section 3B.03 Standard §3 (p.543) - Section 3B.03 Standard §2 (p.542) - Section 3B.03 Standard §1 (p.542) - Section 3B.03 Guidance §7 (p.543) - Section 2B.36 Support §3 (p.102) - Figure 3B-4 (p.544) - Table 3B-1 (p.543) - Page 584 - Page 585 - Page 583 - Page 1051",
+  "gold_answer": "They are required on roadways with center line markings where passing sight distance is below the minimum in Table 3B-1 for the relevant speed. If successive no-passing zones are less than 400 feet apart, the markings should connect the zones.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 0.8500000000000001,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 96.25,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=1.00, F=0.85, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "If successive no-passing zones are less than 400 feet apart, the markings should connect the zones.",
+      "token_coverage": 0.917
+    },
+    {
+      "text": "They are required on roadways with center line markings where passing sight distance is below the minimum in Table 3B-1 for the relevant speed.",
+      "token_coverage": 0.867
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 3B.01",
+    "Section 3B.12",
+    "Section 3B.13",
+    "Section 8C.02",
+    "Section 3B.03",
+    "Section 2B.36",
+    "Table 3B-1",
+    "Figure 3B-4",
+    "Figure 8C-1",
+    "Page 584"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.8333333333333334,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 2.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 96.2% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 3B.01, Section 3B.12, Section 3B.13, Section 8C.02, Section 3B.03, Section 2B.36. Gold elements clearly reflected in the response: If successive no-passing zones are less than 400 feet apart, the markings should connect the zones. | They are required on roadways with center line markings where passing sight distance is below the minimum in Table 3B-1 for the relevant speed. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.833. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

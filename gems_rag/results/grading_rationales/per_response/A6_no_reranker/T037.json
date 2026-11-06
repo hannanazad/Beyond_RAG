@@ -1,0 +1,65 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T037",
+  "question": "What is the function of the yellow change interval, how is its duration established, and may a pre-yellow vehicular countdown display be used?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence establishes that the duration of the yellow change interval must be determined using engineering practices, and this same requirement extends by reference to hybrid beacons and bicycle signal phases. The yellow change interval also may not be shortened or omitted during a transition into preemption control. However, the provided evidence does not describe the function/purpose of the yellow change interval, nor does it address whether a pre-yellow vehicular countdown display may be used — the evidence is insufficient on those two points. Standards (mandatory): - \"The duration of the yellow change interval shall be determined using engineering practices.\" - For emergency-vehicle hybrid beacons: \"The duration of the steady yellow change interval shall be determined using engineering practices in accordance with the provisions in Section 4F.17.\" - For pedestrian hybrid beacons: \"The duration of the steady yellow change interval shall be determined using engineering practices in accordance with the provisions in Section 4F.17.\" - For bicycle signal faces: \"The provisions of Section 4F.17 shall apply to the duration of the yellow change and the red clearance intervals of a bicycle signal phase.\" - During preemption: \"During the transition into preemption control, the yellow change interval, and any red clearance interval that follows, shall not be shortened or omitted.\" - For red/yellow lens automated flagger assistance devices: \"A change interval shall be provided as the transition between the display of the flashing CIRCULAR YELLOW indication and the display of the steady CIRCULAR RED indication. During the change interval, the CIRCULAR YELLOW lens shall be steadily illuminated. The gate arm shall remain in the upright position during the display of the steadily illuminated CIRCULAR YELLOW change interval.\" Citations: - Section 4F.17 Standard §3 (p.708) - Section 4N.03 Standard §4 (p.743) - Section 4J.03 Standard §10 (p.730) - Section 4H.11 Standard §1 (p.717) - Section 4F.19 Standard §3 (p.710) - Section 6L.04 Standard §8 (p.830) Note on insufficiency: The provided evidence does not contain any provision defining the function of the yellow change interval (e.g., warning that the related green movement is ending), and it contains no provision permitting or prohibiting a pre-yellow vehicular countdown display. I cannot answer those parts from this evidence.",
+  "gold_answer": "The yellow change interval warns that permission to proceed or a protected movement is ending. Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds. Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons.",
+  "correctness_score": 0.25,
+  "completeness_score": 0.25,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.5,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 50.0,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.25, Comp=0.25, F=1.00, Cit=0.50, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds.",
+      "token_coverage": 0.714
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons.",
+      "token_coverage": 0.417
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 4F.17",
+    "Section 4N.03",
+    "Section 4J.03",
+    "Section 4H.11",
+    "Section 4F.19",
+    "Section 6L.04",
+    "p.708",
+    "p.743",
+    "p.730",
+    "p.717"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 50.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response shows limited overlap with the required conclusion and does not supply the governing answer. Completeness rationale: The response omits or underdevelops these locked elements: Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 4F.17, Section 4N.03, Section 4J.03, Section 4H.11, Section 4F.19, Section 6L.04. Gold elements clearly reflected in the response: Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

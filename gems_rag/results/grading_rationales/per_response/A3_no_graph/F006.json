@@ -1,0 +1,56 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "F006",
+  "question": "On the single-lane approach in Figure 2A-4, which warning sign is shown furthest upstream in the illustrated sequence?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided is insufficient to answer this question. Although Figure 2A-4 is referenced, the attached image of it [Image 1] shows only fragmentary text (e.g., \"…sufficiently far apart for the…,\" \"…of signs should be the posted or…\") and does not depict the single-lane approach or any warning sign sequence. The remaining images show unrelated figures (an entrance ramp terminal, an AFAD work-zone layout, signal indications, and a grade crossing), and none of the text evidence describes the sign sequence illustrated in Figure 2A-4. Visual evidence: - [Image 1] is a cropped portion of the Figure 2A-4 page showing only partial sentences of text, with no visible sign sequence or single-lane approach diagram. - [Image 2] shows Figure 2B-16 (regulatory signing at an entrance ramp terminal), which is not Figure 2A-4. - [Image 3] shows Figure 6L-1 (STOP/SLOW AFAD in a temporary traffic control zone), which is not Figure 2A-4. - [Image 4] shows Figure 4F-15 (signal indications for combined left-turn/right-turn lanes), which is not Figure 2A-4. - [Image 5] shows Figure 8C-1 (warning signs and pavement markings at grade crossings), which is not Figure 2A-4. Citations: - Figure 2A-4 (p.50)",
+  "gold_answer": "The Cross Road warning sign, W2-1.",
+  "correctness_score": 0.2,
+  "completeness_score": 0.25,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 36.25,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.20, Comp=0.25, F=1.00, Cit=0.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "The Cross Road warning sign, W2-1.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Figure 2A-4",
+    "Figure 2B-16",
+    "Figure 6L-1",
+    "Figure 4F-15",
+    "Figure 8C-1",
+    "p.50"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 36.2% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response shows limited overlap with the required conclusion and does not supply the governing answer. Completeness rationale: The response omits or underdevelops these locked elements: The Cross Road warning sign, W2-1. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

@@ -1,0 +1,64 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T017",
+  "question": "What casing and orientation rules generally apply to word messages on signs?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: In general, all word messages on signs must be aligned horizontally and read left to right, and must use the standard wording shown in the Manual and the \"Standard Highway Signs\" publication. Casing rules vary by sign type: for example, on community wayfinding guide signs, destination lettering must be mixed-case (initial capitals with lower-case letters) while all other word messages must be all upper-case. Minor modifications to the layout of word messages are allowed, but shapes and colors must remain as standardized. Standards (mandatory): - \"Except as otherwise provided in this Manual, all word messages shall be aligned horizontally across a sign, reading left to right.\" - \"Except as provided in Section 2A.04, all word messages shall use standard wording as shown in this Manual and in the 'Standard Highway Signs' publication (see Section 1A.05).\" - \"The lettering for destinations on community wayfinding guide signs shall be a combination of lower-case letters with initial upper-case letters (see Section 2D.04). All other word messages on community wayfinding guide signs shall be in all upper-case letters.\" - \"Standardization of these designs does not preclude further improvement by minor modifications to the orientation of symbols (see Section 2A.09), width of borders, or layout of word messages, but all shapes and colors shall be as indicated.\" Guidance (recommended): - For pavement marking word messages of more than one line, the message should read in the direction of travel, with the first word nearest to the road user. - Word messages (on community wayfinding signs) should be as brief as practical, with lettering large enough to provide the necessary legibility distance. Visual evidence: [Image 1] shows example CMS messages composed entirely in upper-case lettering with horizontally aligned lines, consistent with general word-message orientation practice (with a note that certain full-matrix CMS should use upper- and lower-case lettering where appropriate). [Image 2] illustrates Destination Guide signing on a shared-use path, where destination lettering is required to be mixed-case (initial upper-case with lower-case letters) while all other word messages are all upper-case — paralleling the community wayfinding casing rule. [Image 3] shows standard abbreviations used when full word messages cannot be accommodated on portable changeable message signs. Citations: - Section 2A.08 Standard §1 (p.45) - Section 2A.08 Standard §2 (p.45) - Section 2D.55 Standard §32 (p.271) - Section 2A.04 Standard §8 (p.40) - Section 3B.21 Guidance §2 (p.575) - Section 2D.55 Guidance §28 (p.271) - Table 2L-3 (p.517) - Figure 9D-5 (p.1082) - Table 1D-2 (p.37)",
+  "gold_answer": "Word messages generally read horizontally from left to right. Place, street, and highway names use initial upper-case letters with lower-case letters; other legends use upper-case letters unless another MUTCD provision specifies otherwise.",
+  "correctness_score": 0.55,
+  "completeness_score": 0.45,
+  "faithfulness_score": 0.7000000000000001,
+  "citation_score": 0.45,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 53.75,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.55, Comp=0.45, F=0.70, Cit=0.45, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "Word messages generally read horizontally from left to right.",
+      "token_coverage": 0.857
+    },
+    {
+      "text": "Place, street, and highway names use initial upper-case letters with lower-case letters",
+      "token_coverage": 0.7
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2A.04",
+    "Section 1A.05",
+    "Section 2D.04",
+    "Section 2A.09",
+    "Section 2A.08",
+    "Section 2D.55",
+    "Section 3B.21",
+    "Table 2L-3",
+    "Table 1D-2",
+    "Figure 9D-5"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8315546295836225,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 53.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 2A.04, Section 1A.05, Section 2D.04, Section 2A.09, Section 2A.08, Section 2D.55. Gold elements clearly reflected in the response: Word messages generally read horizontally from left to right. | Place, street, and highway names use initial upper-case letters with lower-case letters Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.832 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

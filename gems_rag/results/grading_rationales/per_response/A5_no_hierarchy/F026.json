@@ -1,0 +1,63 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "F026",
+  "question": "What foundation depth is required for the sign posts drawn in Figure 2A-2?",
+  "primary_modality": "figure",
+  "difficulty": "easy",
+  "answerable": false,
+  "answerability_subtype": "absent_information",
+  "model_answer": "Direct Answer: The MUTCD does not specify a foundation depth for the sign posts shown in Figure 2A-2. The figure and its associated provisions govern mounting heights and lateral offsets (e.g., 5-foot and 7-foot minimum heights, 12-foot and 6-foot minimum offsets), not the depth of post foundations. The only related requirement is a performance-based standard that foundations must hold signs in a proper and permanent position; no numeric depth is given in the evidence provided. Standards (mandatory): - \"Sign posts, foundations, and mountings shall be so constructed as to hold signs in a proper and permanent position, and to resist swaying in the wind or displacement by vandalism.\" (This is a performance requirement, not a specified depth.) - \"In rural areas, the minimum height, measured vertically from the bottom of the sign to the elevation of the near edge of the pavement, of signs installed at the side of the road shall be 5 feet (see Figure 2A-2).\" - \"In business, commercial, or residential areas where parking, bicyclist, or pedestrian movements are likely to occur, or where the view of the sign might be obstructed, the minimum height, measured vertically from the bottom of the sign to the top of the curb, or in the absence of curb, measured vertically from the bottom of the sign to the elevation of the near edge of the traveled way, of signs installed at the side of the road shall be 7 feet (see Figure 2A-2).\" Visual evidence: - [Image 1] Figure 2A-2 shows dimensioned mounting heights (5 ft, 7 ft, 4 ft, 8 ft, 17 ft minimums) and lateral offsets (2 ft, 6 ft, 12 ft minimums) for typical sign installations, but the posts are drawn without any dimensioned foundation or embedment depth. - [Image 4] The same Figure 2A-2 page (p.51) confirms all annotated dimensions relate to sign height and lateral position; no foundation depth appears anywhere in the drawing. Citations: - Section 2A.18 Standard §1 (p.60) - Section 2A.15 Standard §4 (p.58) - Section 2A.15 Standard §5 (p.58) - Section 2A.13 Support §1 (p.50) - Figure 2A-2 (p.51)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.154
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2A.18",
+    "Section 2A.15",
+    "Section 2A.13",
+    "Figure 2A-2",
+    "p.51",
+    "p.60",
+    "p.58",
+    "p.50"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9558295932317544,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the response correctly states that the requested information or precision is not supported. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2A.18, Section 2A.15, Section 2A.13, Figure 2A-2, p.51, p.60. Gold elements clearly reflected in the response: The MUTCD does not specify this information. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.956 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

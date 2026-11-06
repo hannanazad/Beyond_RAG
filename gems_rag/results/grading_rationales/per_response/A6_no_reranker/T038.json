@@ -1,0 +1,52 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T038",
+  "question": "What walking speed is generally used to calculate pedestrian clearance time, and what alternative speed may be used with an extended push-button feature?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided is insufficient to answer this question. None of the excerpts state a walking speed value (in feet per second or otherwise) used to calculate pedestrian clearance time, nor an alternative walking speed associated with an extended push-button feature. The excerpts address extended push button press mechanics, signage, audible features, and the relationship between the pedestrian change interval, buffer interval, and calculated pedestrian clearance time — but the actual walking speed figures (which would appear in Paragraphs 7 through 16 of Section 4I.06, referenced but not included here) are not present in the evidence. Citations: - Section 4I.06 Standard §4 (p.724)",
+  "gold_answer": "The general walking speed is 3.5 feet per second. Up to 4 feet per second may be used to evaluate sufficiency where an extended push-button press provides slower pedestrians a longer clearance time.",
+  "correctness_score": 0.0,
+  "completeness_score": 0.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 25.0,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.00, Comp=0.00, F=1.00, Cit=0.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "The general walking speed is 3.5 feet per second.",
+      "token_coverage": 0.625
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4I.06",
+    "p.724"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.1666666666666666,
+    "ndcg6": 0.3562071871080222,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 25.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response does not provide the required conclusion or gives a conclusion that conflicts with the locked answer. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: The general walking speed is 3.5 feet per second. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. The first relevant text chunk appeared at rank 6, which produced MRR=0.167. The six-chunk ordering produced nDCG@6=0.356 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

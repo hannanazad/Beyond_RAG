@@ -1,0 +1,60 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "F013",
+  "question": "Name two optional pavement-marking features explicitly labeled in Figure 3D-1 at the roundabout.",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Figure 3D-1 explicitly labels at least two optional pavement-marking features: (1) optional white diagonal markings placed within the circulatory roadway area adjacent to the splitter islands, and (2) the yellow edge line around the inner (left-hand) edge of the circulatory roadway, which is labeled \"Optional\" in the figure. Options (permitted): - \"A yellow edge line may be placed around the inner (left-hand) edge of the circulatory roadway (see Figure 3D-1) and may be used to channelize traffic.\" - \"Channelizing lines (see Section 3B.08) and chevron and diagonal markings (see Section 3B.25) may be used on the approaches to and within the circulatory roadway of multi-lane roundabouts to separate traffic lanes, discourage lane changing, and/or compensate for off-tracking of larger trucks and vehicles.\" - \"YIELD (word) (see Figure 3D-1) and YIELD AHEAD (symbol or word) pavement markings may be used on approaches to roundabouts.\" Guidance (recommended): - Where a white edge line is used for the circulatory roadway, it should be: \"A. A solid line adjacent to the splitter island, and B. A wide dotted line across the lane(s) entering the roundabout\" (see Figure 3D-1). Visual evidence: [Image 1] Figure 3D-1 shows a callout reading \"Optional white diagonal markings\" pointing to the white hatched area near the east splitter island, and an \"Optional\" callout with a leader line pointing to the yellow edge line around the inner edge of the circulatory roadway. [Image 2] The full-page view of Figure 3D-1 (page 596) confirms these same labels, including the \"Optional\" callouts, the \"Optional white diagonal markings\" label, and the \"Wide dotted white extension of circulatory roadway edge line\" annotation. [Image 4] Figure 3D-3 (Sheet 1) similarly labels \"Optional white diagonal markings\" with an asterisk legend for \"Optional,\" consistent with Figure 3D-1's treatment. [Image 5] Figure 3D-3 (Sheet 2, Drawing B) shows the \"Optional yellow edge line and diagonal yellow markings,\" which corresponds to the channelizing use of the yellow inner edge line referenced from Figure 3D-1. [Image 3] Figure 3D-8 shows additional optional markings (white chevron and diagonal yellow markings) at roundabout ramp terminals, illustrating the same optional treatments in another context. Citations: - Section 3D.03 Option §4 (p.605) - Section 3D.02 Option §5 (p.595) - Section 3D.05 Option §1 (p.605) - Section 3D.03 Guidance §2 (p.595) - Section 3D.01 Support §4 (p.595) - Figure 3D-1 (p.596) - Page 637 - Page 639 - Page 640",
+  "gold_answer": "Optional diagonal markings in the splitter island and an optional wide dotted extension of the circulatory roadway edge line.",
+  "correctness_score": 0.55,
+  "completeness_score": 0.6000000000000001,
+  "faithfulness_score": 0.75,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 72.5,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.55, Comp=0.60, F=0.75, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "Optional diagonal markings in the splitter island and an optional wide dotted extension of the circulatory roadway edge line.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 3B.08",
+    "Section 3B.25",
+    "Section 3D.03",
+    "Section 3D.02",
+    "Section 3D.05",
+    "Section 3D.01",
+    "Figure 3D-1",
+    "Figure 3D-3",
+    "Figure 3D-8",
+    "page 596"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.974742952856788,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 72.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 3B.08, Section 3B.25, Section 3D.03, Section 3D.02, Section 3D.05, Section 3D.01. Gold elements clearly reflected in the response: Optional diagonal markings in the splitter island and an optional wide dotted extension of the circulatory roadway edge line. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.975 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

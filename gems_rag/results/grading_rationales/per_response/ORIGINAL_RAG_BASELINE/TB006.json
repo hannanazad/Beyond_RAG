@@ -1,0 +1,68 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "TB006",
+  "question": "Using Table 2A-2, identify the characteristic background colors for temporary traffic control, incident management, and ETC-account-only signs.",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: According to Table 2A-2, temporary traffic control signs characteristically use a black legend on an orange background; incident management signs use a black legend on an orange or fluorescent pink background; and ETC-Account-Only signs use a black legend on a purple background (with purple use restricted per Chapter 2F). Chapter 6 provisions expressly permit the fluorescent pink background for incident management signs, and Chapter 2F requires purple underlay/background treatment for ETC pictographs. Standards (mandatory): - \"Except for ETC pictographs whose predominant background color is purple, if incorporated within the green background of a guide sign, the ETC pictograph shall be on a white rectangular or square panel set on a purple underlay panel with a white border. For rectangular ETC pictographs whose predominant background color is purple, a white border shall be used at the outer edges of the purple rectangle to provide contrast between the pictograph and the sign background color.\" Options (permitted): - \"Warning signs used for TTC incident management situations may have a black legend and border on a fluorescent pink background.\" - \"Guide signs used in TTC incident management situations may have a black legend and border on a fluorescent pink background.\" - \"Detour signs in TTC incident management situations may have a black legend and border on a fluorescent pink background.\" - \"Warning and guide signs used for TTC traffic incident management situations may have a black legend and border on a fluorescent pink background (see Figure 6O-1).\" Support (informational): - \"Common uses of sign colors are shown in Table 2A-2. Color schemes on specific signs are shown in the illustrations located in each applicable Chapter.\" Visual evidence: [Image 1] Table 2A-2 shows \"Temporary Traffic Control\" with a black legend \"X\" and an orange background \"X\"; \"Incident Management\" with a black legend \"X\" and both orange and fluorescent pink background \"X\"s; and \"ETC-Account Only\" with a black legend \"X\" and a purple background \"X⁵\" (footnote 5: \"The use of purple on signs is restricted per the provisions of Chapter 2F\"). [Image 2] Figure 6O-1 illustrates incident management warning, guide, and detour signs (W3-4, W4-2, W9-3, E5-2a, M4-8a, M4-9, M4-10) rendered with black legends on fluorescent pink backgrounds. [Image 3] Figure 2F-8 shows toll highway entrance guide signs with the ETC pictograph on a white panel set on a purple underlay panel with the white ONLY legend. [Image 4] The full-page view of Table 2A-2 confirms the color assignments for all three sign categories, including the changeable message sign rows. [Image 5] Figure 2F-16 shows an ETC Account-Only toll plaza canopy sign with a purple background, and the accompanying Standard states the canopy sign background \"shall be purple.\" [Image 7] Figure 6P-12 shows typical temporary traffic control signs (W20-1, W20-4, W3-3) with black legends on orange backgrounds. Citations: - Table 2A-2 (p.43) - Section 2A.06 Support §3 (p.43) - Section 2F.03 Standard §2 (p.381) - Section 6H.01 Option §7 (p.798) - Section 6I.01 Option §4 (p.811) - Section 6I.02 Option §2 (p.811) - Section 6O.01 Option §10 (p.854) - Figure 6O-1 (p.855) - Figure 2F-8 (p.391) - Page 443 - Page 924",
+  "gold_answer": "Temporary traffic control: orange; incident management: fluorescent pink; ETC-account-only: purple.",
+  "correctness_score": 0.75,
+  "completeness_score": 1.0,
+  "faithfulness_score": 0.75,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 87.5,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.75, Comp=1.00, F=0.75, Cit=1.00, Strict full credit=No",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Temporary traffic control: orange",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "incident management: fluorescent pink",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "ETC-account-only: purple.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2A.06",
+    "Section 2F.03",
+    "Section 6H.01",
+    "Section 6I.01",
+    "Section 6I.02",
+    "Section 6O.01",
+    "Table 2A-2",
+    "Figure 6O-1",
+    "Figure 2F-8",
+    "Figure 2F-16"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.3333333333333333,
+    "retrieved_visual_count": 3.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 87.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2A.06, Section 2F.03, Section 6H.01, Section 6I.01, Section 6I.02, Section 6O.01. Gold elements clearly reflected in the response: Temporary traffic control: orange | incident management: fluorescent pink | ETC-account-only: purple. Adjudication note: Correct temporary-traffic-control and ETC colors but incorrectly includes orange as an incident-management background. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.33."
+}

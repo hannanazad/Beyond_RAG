@@ -1,0 +1,59 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "T038",
+  "question": "What walking speed is generally used to calculate pedestrian clearance time, and what alternative speed may be used with an extended push-button feature?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Pedestrian clearance time is generally calculated using a walking speed of 3.5 feet per second, measured from the curb or edge of pavement to the far side of the traveled way or a sufficient median. Where an extended push button press feature is installed to give slower pedestrians extra time, a walking speed of up to 4 feet per second may be used instead. A slower speed than 3.5 feet per second should be considered where slower pedestrians or wheelchair users routinely cross. Guidance (recommended): - \"Except as provided in Paragraph 8 of this Section, the pedestrian clearance time should be sufficient to allow a pedestrian crossing in the crosswalk who left the curb or edge of pavement at the end of the WALKING PERSON (symbolizing WALK) signal indication to travel at a walking speed of 3.5 feet per second to at least the far side of the traveled way or to a median of sufficient width for pedestrians to wait.\" - Where pedestrians who walk slower than 3.5 feet per second, or pedestrians who use wheelchairs, routinely use the crosswalk, a walking speed of less than 3.5 feet per second should be considered in determining the pedestrian clearance time. - The total of the walk interval and pedestrian clearance time should be sufficient to allow a pedestrian who left the pedestrian detector (or a location 6 feet behind the face of the curb or edge of pavement) at the beginning of the WALK indication to travel at 3 feet per second to the far side of the traveled way (or to the median in a two-stage crossing); any additional time required should be added to the walk interval. Options (permitted): - \"A walking speed of up to 4 feet per second may be used to evaluate the sufficiency of the pedestrian clearance time at locations where an extended push button press function has been installed to provide slower pedestrians an opportunity to request and receive a longer pedestrian clearance time.\" Passive pedestrian detection may also be used to automatically adjust clearance time based on actual walking speed or actual clearance of the crosswalk. - The additional time provided by an extended push button press to satisfy pedestrian clearance time needs may be added to either the walk interval or the pedestrian change interval. - Pedestrians may be provided with additional features such as increased crossing time, audible beaconing, or a speech push button information message as a result of an extended push button press. Citations: - Section 4I.06 Guidance §7 (p.724) - Section 4I.06 Option §8 (p.724) - Section 4I.06 Option §9 (p.725) - Section 4I.06 Guidance §10 (p.725) - Section 4I.06 Guidance §14 (p.725) - Section 4K.05 Option §1 (p.734)",
+  "gold_answer": "The general walking speed is 3.5 feet per second. Up to 4 feet per second may be used to evaluate sufficiency where an extended push-button press provides slower pedestrians a longer clearance time.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The general walking speed is 3.5 feet per second.",
+      "token_coverage": 0.875
+    },
+    {
+      "text": "Up to 4 feet per second may be used to evaluate sufficiency where an extended push-button press provides slower pedestrians a longer clearance time.",
+      "token_coverage": 0.875
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4I.06",
+    "Section 4K.05",
+    "p.724",
+    "p.725",
+    "p.734"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4I.06, Section 4K.05, p.724, p.725, p.734. Gold elements clearly reflected in the response: The general walking speed is 3.5 feet per second. | Up to 4 feet per second may be used to evaluate sufficiency where an extended push-button press provides slower pedestrians a longer clearance time. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

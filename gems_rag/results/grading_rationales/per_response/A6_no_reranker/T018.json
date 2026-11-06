@@ -1,0 +1,57 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T018",
+  "question": "If a NEW plaque is used to call attention to a new sign, how long should it remain, and may strobe lights be used to enhance sign conspicuity?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided does not contain any provision about a NEW plaque or how long it should remain in place, so that part of the question cannot be answered from this evidence. On the second part, the MUTCD flatly prohibits the use of strobe lights to enhance sign conspicuity. Standards (mandatory): - \"Strobe lights shall not be used to enhance the conspicuity of highway signs.\" Citations: - Section 2A.11 Standard §4 (p.49)",
+  "gold_answer": "The NEW plaque should remain only for a period determined by engineering judgment and no more than 12 months. Strobe lights may not be used to enhance highway-sign conspicuity.",
+  "correctness_score": 0.5,
+  "completeness_score": 0.5,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.75,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 68.75,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.50, Comp=0.50, F=1.00, Cit=0.75, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "Strobe lights may not be used to enhance highway-sign conspicuity.",
+      "token_coverage": 0.833
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "The NEW plaque should remain only for a period determined by engineering judgment and no more than 12 months.",
+      "token_coverage": 0.231
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2A.11",
+    "p.49"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8772153153380493,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 68.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The response omits or underdevelops these locked elements: The NEW plaque should remain only for a period determined by engineering judgment and no more than 12 months. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 2A.11, p.49. Gold elements clearly reflected in the response: Strobe lights may not be used to enhance highway-sign conspicuity. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.877 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

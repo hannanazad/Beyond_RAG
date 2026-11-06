@@ -1,0 +1,68 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "M017",
+  "question": "Using the definition of ADS and Table 5A-1, explain why Level 2 is not an ADS level while Level 3 is.",
+  "primary_modality": "mixed",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: An Automated Driving System (ADS) is defined as hardware and software \"collectively capable of performing the entire Dynamic Driving Task (DDT) on a sustained basis,\" a term \"used specifically to describe a Level 3, 4, or 5 driving automation system.\" At Level 2, the system executes only steering and acceleration/deceleration while \"the human driver performs all remaining aspects of the Dynamic Driving Task\" — it performs only part of the DDT, so it is categorized as an Advanced Driver Assistance System (ADAS), not an ADS. At Level 3, the system provides \"sustained performance by an ADS of all aspects of the Dynamic Driving Task within a given ODD,\" with the human's role reduced to responding to a request to intervene; because the entire DDT is performed by the system, Level 3 crosses into the ADS category in Table 5A-1. Standards (mandatory): - \"The following acronyms and abbreviations, when used in this Manual, shall have the following meanings: … 5. ADAS-Advanced Driver Assistance Systems 6. ADS-Automated Driving System … 17. DDT-Dynamic Driving Task …\" (establishing the mandatory meanings of the terms compared here). Visual evidence: - [Image 1] Table 5A-1 shows Level 2 grouped under the \"Advanced Driver Assistance Systems (ADAS)\" Automation Category (human driver performs all remaining aspects of the DDT), while Levels 3–5 are grouped under \"Automated Driving System (ADS)\" because the ADS performs all aspects of the DDT. - [Image 2] Page 801 contains the Section 5A.03 definition: \"Automated Driving System (ADS) – The hardware and software that are collectively capable of performing the entire Dynamic Driving Task (DDT) on a sustained basis … this term is used specifically to describe a Level 3, 4, or 5 driving automation system,\" and the DDT definition. - [Image 4] Page 800 (Section 5A.01–5A.03) provides the surrounding context for driving automation system terminology drawn from SAE J3016. - [Image 3] Page 877 and [Image 5] Page 104 do not bear on the ADS/Level distinction. Citations: - Table 5A-1 (p.760) - Page 801 - Page 800 - Section 1C.03 Standard §1 (p.31)",
+  "gold_answer": "An ADS performs the entire dynamic driving task on a sustained basis and the term applies to Levels 3-5. Level 2 performs steering and acceleration/deceleration but still expects the human to perform all remaining aspects of the task, so it is ADAS rather than ADS. Level 3 performs all aspects within its ODD, subject to a human fallback request.",
+  "correctness_score": 0.95,
+  "completeness_score": 0.95,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 97.5,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=0.95, Comp=0.95, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "Level 3 performs all aspects within its ODD, subject to a human fallback request.",
+      "token_coverage": 0.8
+    },
+    {
+      "text": "An ADS performs the entire dynamic driving task on a sustained basis and the term applies to Levels 3-5.",
+      "token_coverage": 0.769
+    },
+    {
+      "text": "Level 2 performs steering and acceleration/deceleration but still expects the human to perform all remaining aspects of the task, so it is ADAS rather than ADS.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 5A.03",
+    "Section 5A.01–5A.03",
+    "Section 1C.03",
+    "Table 5A-1",
+    "Page 801",
+    "Page 800",
+    "Page 877",
+    "Page 104",
+    "p.760",
+    "p.31"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 97.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 5A.03, Section 5A.01–5A.03, Section 1C.03, Table 5A-1, Page 801, Page 800. Gold elements clearly reflected in the response: Level 3 performs all aspects within its ODD, subject to a human fallback request. | An ADS performs the entire dynamic driving task on a sustained basis and the term applies to Levels 3-5. | Level 2 performs steering and acceleration/deceleration but still expects the human to perform all remaining aspects of the task, so it is ADAS rather than ADS. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

@@ -1,0 +1,62 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "M020",
+  "question": "Using Section 6D.02 and Figure 6D-1, which hand-signaling device is preferred, and how should it be displayed to stop traffic?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The STOP/SLOW paddle is the primary and preferred hand-signaling device because it gives road users more positive guidance than red flags; flags are reserved for emergency situations. To stop traffic, the flagger must face road users and aim the STOP paddle face toward them in a stationary position with the arm extended horizontally, while holding the free arm with the palm above shoulder level toward approaching traffic. Standards (mandatory): - \"To stop road users, the flagger shall face road users and aim the STOP paddle face toward road users in a stationary position with the arm extended horizontally away from the body. The free arm shall be held with the palm of the hand above shoulder level toward approaching traffic.\" Guidance (recommended): - \"The STOP/SLOW paddle (see Figure 6D-1 and Table 6G-1) should be the primary and preferred hand-signaling device because the STOP/SLOW paddle gives road users more positive guidance than red flags.\" Support (informational): - The optimum method of displaying a STOP or SLOW message is to place the paddle on a rigid staff tall enough that, when the end of the staff rests on the ground, the message is high enough to be seen by approaching or stopped traffic. Visual evidence: [Image 1] Figure 6D-1 labels the STOP/SLOW paddle column \"PREFERRED METHOD\" (with the flag column marked \"EMERGENCY SITUATIONS ONLY\") and illustrates the \"TO STOP TRAFFIC\" posture — the flagger holding the R1-1 STOP paddle face (18 inches minimum) toward traffic on a staff with the free hand raised, palm toward approaching traffic. [Image 2] shows the same Figure 6D-1 in its full-page context on page 784, confirming the preferred paddle method versus the emergency-only flag method. Citations: - Section 6D.02 Guidance §1 (p.783) - Section 6D.05 Standard §3 (p.785) - Section 6D.02 Support §5 (p.783) - Figure 6D-1 (p.784)",
+  "gold_answer": "The STOP/SLOW paddle is the primary and preferred device. To stop traffic, the flagger faces traffic, displays the STOP face in a stationary position, and raises the free arm with the palm toward traffic.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The STOP/SLOW paddle is the primary and preferred device.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "To stop traffic, the flagger faces traffic, displays the STOP face in a stationary position, and raises the free arm with the palm toward traffic.",
+      "token_coverage": 0.812
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 6D.02",
+    "Section 6D.05",
+    "Table 6G-1",
+    "Figure 6D-1",
+    "page 784",
+    "p.783",
+    "p.785",
+    "p.784"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8756458727267334,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6D.02, Section 6D.05, Table 6G-1, Figure 6D-1, page 784, p.783. Gold elements clearly reflected in the response: The STOP/SLOW paddle is the primary and preferred device. | To stop traffic, the flagger faces traffic, displays the STOP face in a stationary position, and raises the free arm with the palm toward traffic. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.876 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

@@ -1,0 +1,67 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "M009",
+  "question": "For a potential stop condition on a 55-mph approach, what advance placement distance is shown in Table 2C-3, and should it be treated as an inflexible mandatory distance?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: For a 55-mph posted or 85th-percentile speed, Table 2C-3 shows an advance placement distance of 495 feet under Condition B at 0 mph — the \"potential stop\" condition (footnote 3), which applies to Stop Ahead, Yield Ahead, Signal Ahead, and Intersection Warning signs. No — the table is expressly titled \"Guidelines,\" and the accompanying Guidance in Section 2C.04 indicates the distances should be applied with engineering judgment and periodically evaluated, so 495 feet is a recommended value, not an inflexible mandate. What is mandatory is that an advance traffic control sign be installed where the primary device is not sufficiently visible, with Table 2C-3 used as the placement reference. Standards (mandatory): - \"The Stop Ahead (W3-1), Yield Ahead (W3-2), and Signal Ahead (W3-3) Advance Traffic Control signs (see Figure 2C-8) shall be installed on an approach to a primary traffic control device that is not visible for a sufficient distance to permit the road user to respond to the device (see Table 2C-3).\" - At passive grade crossings with a YIELD or STOP sign: \"The Yield Ahead or Stop Ahead sign shall be located in accordance with Table 2C-3. The minimum distance between the signs shall be in accordance with Section 2C.04 and Table 2C-3.\" Guidance (recommended): - Table 2C-3 is presented as \"Guidelines for Advance Placement of Warning Signs,\" and Section 2C.04 recommends that \"the effectiveness of the placement of warning signs should be periodically evaluated under both day and night conditions\" — reinforcing that the tabulated distances are recommended values to be applied with engineering judgment rather than fixed requirements. Visual evidence: [Image 1] shows Table 2C-3, where the 55-mph row under the Condition B \"0³\" column reads 495 ft, and footnote 3 explains that this column represents the potential stop condition (Stop Ahead, Yield Ahead, Signal Ahead, and Intersection Warning signs) based on 2018 AASHTO stopping sight distance with a 2.5-second PRT and 11.2 ft/s² deceleration. [Image 2] shows the full Section 2C.04 page, where the Guidance statements state that warning signs \"should be placed so that they provide an adequate PRT\" and that \"the distances contained in Table 2C-3 should be applied with engineering judgment,\" confirming the distances are recommendations. [Image 3] and [Image 5] show example sign-sequence figures that direct the reader to \"See Table 2C-3 to determine the advance placement distance,\" illustrating the table's role as a placement guide. [Image 4] shows a horizontal alignment figure whose notes reference Table 2C-3 \"for advance placement distance guidelines,\" again characterizing the table as guidelines. Citations: - Table 2C-3 (p.152) - Section 2C.04 Guidance §5 (p.152) - Section 2C.35 Standard §1 (p.177) - Section 8B.06 Standard §3 (p.1001)",
+  "gold_answer": "The table shows 495 feet. It is a guideline to be applied with engineering judgment and may be adjusted for roadway features, other signing, and visibility; it is not an inflexible universal mandate.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The table shows 495 feet.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "it is not an inflexible universal mandate.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "It is a guideline to be applied with engineering judgment and may be adjusted for roadway features, other signing, and visibility",
+      "token_coverage": 0.3
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2C.04",
+    "Section 2C.35",
+    "Section 8B.06",
+    "Table 2C-3",
+    "Figure 2C-8",
+    "p.152",
+    "p.177",
+    "p.1001"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2C.04, Section 2C.35, Section 8B.06, Table 2C-3, Figure 2C-8, p.152. Gold elements clearly reflected in the response: The table shows 495 feet. | it is not an inflexible universal mandate. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

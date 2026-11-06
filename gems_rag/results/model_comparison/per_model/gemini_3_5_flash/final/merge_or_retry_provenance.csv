@@ -1,0 +1,4 @@
+question_id,primary_status,primary_attempts,primary_answer_characters,primary_stop_reason,retry_status,retry_attempts,retry_answer_characters,retry_stop_reason,answers_identical,selected_for_final,selection_reason
+M026,ok,2,255,stop,ok,1,277,stop,False,primary,The primary record was already a valid successful benchmark outcome; the external rerun is redundant.
+T027,ok,2,3048,stop,ok,1,4641,stop,False,primary,The primary record was already a valid successful benchmark outcome; the external rerun is redundant.
+T038,ok,2,2765,stop,ok,1,2598,stop,False,primary,The primary record was already a valid successful benchmark outcome; the external rerun is redundant.

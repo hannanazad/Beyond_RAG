@@ -1,0 +1,60 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "T060",
+  "question": "Which machine-learning architecture does the MUTCD require automated vehicles to use for recognizing signs and pavement markings?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "out_of_scope",
+  "model_answer": "Direct Answer: The MUTCD does not require — or even mention — any machine-learning architecture for automated vehicles. The evidence contains no Standard, Guidance, or Option provision specifying how driving automation systems must be built; the MUTCD only offers explanatory (Support) material noting that driving automation systems use \"sensors, algorithms, and processing\" to read pavement markings, and it explicitly states that it does not address standardization of digital infrastructure or related technology items. The question's premise is not supported by the evidence. Standards (mandatory): - None relevant. The only Standard in evidence establishes that the MUTCD \"shall be recognized as the national standard for all traffic control devices installed on any street, highway, bikeway, or site roadway open to public travel\" — it says nothing about machine-learning architectures for vehicles. Visual evidence: (none) Citations: - Section 5B.02 Support §1 (p.762) - Section 5A.01 Support §3 (p.759) - Section 1B.01 Standard §1 (p.4)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.077
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 5B.02",
+    "Section 5A.01",
+    "Section 1B.01",
+    "p.762",
+    "p.759",
+    "p.4"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.1666666666666666,
+    "ndcg6": 0.3562071871080222,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 5B.02, Section 5A.01, Section 1B.01, p.762, p.759, p.4. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. The first relevant text chunk appeared at rank 6, which produced MRR=0.167. The six-chunk ordering produced nDCG@6=0.356 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

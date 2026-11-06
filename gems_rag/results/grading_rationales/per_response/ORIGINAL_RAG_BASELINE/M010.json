@@ -1,0 +1,64 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "M010",
+  "question": "For a curve with an advisory speed of 40 mph and a radius within 401 to 700 feet, what Chevron Alignment sign spacing and placement are indicated?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: For an advisory speed of 40 mph (within the \"35 to 45 mph\" row) and a curve radius of 401 to 700 feet, Table 2C-5 indicates a Chevron Alignment sign spacing of approximately 120 feet, measured along the curve from the point of curvature (PC). If used, the signs must be installed on the outside of the curve, facing approaching traffic at approximately a right angle, at a minimum mounting height of 4 feet. Standards (mandatory): - \"If used, Chevron Alignment signs shall be installed on the outside of a turn or curve, in line with and at approximately a right angle to approaching traffic. Chevron Alignment signs shall be installed at a minimum height of 4 feet, measured vertically from the bottom of the sign to the elevation of the near edge of the traveled way.\" Guidance (recommended): - \"The approximate spacing of Chevron Alignment signs on the turn or curve measured from the point of curvature (PC) should be as shown in Table 2C-5.\" For the 35 to 45 mph advisory speed / 401 to 700 feet curve radius row, the sign spacing is 120 feet. Visual evidence: - [Image 1] Table 2C-5 shows the row \"35 to 45 mph / 401 to 700 feet / 120 feet,\" which covers a 40-mph advisory speed, and notes that the radius-to-advisory-speed relationship in the table should not be used to determine the advisory speed. - [Image 2] Page 199 shows Section 2C.08 in full, including the Standard on outside-of-curve placement at a right angle with 4-foot minimum height, and the Guidance referencing Table 2C-5 for spacing from the PC. - [Image 3] Page 197 (Figure 2C-2, Sheet 1, A – Curve) illustrates W1-8L/W1-8R chevrons placed along the outside of a curve, with a note to \"See Table 2C-5 for spacing of W1-8 signs.\" - [Image 4] Page 195 lists Chevron Alignment (W1-8) signs among the treatments used in advance of or within a change in horizontal alignment (see Section 2C.08). - [Image 5] Page 660 (Figure 3G-1) shows delineator placement on a curve and notes that Chevron Alignment signs (W1-8) may be used instead of or in addition to standard delineators. Citations: - Table 2C-5 (p.158) - Section 2C.08 Guidance §5 (p.158) - Section 2C.08 Standard §4 (p.158) - Section 2C.05 Support §2 (p.154) - Section 2C.07 Option §6 (p.158) - Page 199 - Page 197 - Page 195 - Page 660",
+  "gold_answer": "Typical spacing is 120 feet. The signs must be on the outside of the curve, approximately at right angles to approaching traffic, with a minimum mounting height of 4 feet.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The signs must be on the outside of the curve, approximately at right angles to approaching traffic, with a minimum mounting height of 4 feet.",
+      "token_coverage": 0.917
+    },
+    {
+      "text": "Typical spacing is 120 feet.",
+      "token_coverage": 0.8
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2C.08",
+    "Section 2C.05",
+    "Section 2C.07",
+    "Table 2C-5",
+    "Figure 2C-2",
+    "Figure 3G-1",
+    "Page 199",
+    "Page 197",
+    "Page 195",
+    "Page 660"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8854598815714874,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2C.08, Section 2C.05, Section 2C.07, Table 2C-5, Figure 2C-2, Figure 3G-1. Gold elements clearly reflected in the response: The signs must be on the outside of the curve, approximately at right angles to approaching traffic, with a minimum mounting height of 4 feet. | Typical spacing is 120 feet. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.885 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

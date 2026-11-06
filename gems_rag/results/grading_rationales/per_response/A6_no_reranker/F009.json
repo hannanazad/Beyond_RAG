@@ -1,0 +1,53 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "F009",
+  "question": "Which sign is placed above the other in every paired assembly shown in Figure 2B-17?",
+  "primary_modality": "figure",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided does not include Figure 2B-17 or any text describing the paired sign assemblies shown in that figure. The attached images and provisions relate to Figure 2B-18 (Locations of ONE WAY Signs) and other unrelated figures, so I cannot determine which sign is placed above the other in the paired assemblies of Figure 2B-17. The evidence is insufficient to answer this question. Visual evidence: [Image 1] shows Figure 2B-18 (Locations of ONE WAY Signs), not Figure 2B-17; the remaining images ([Image 2], [Image 3], [Image 4], [Image 5]) depict lane-reduction transition markings, route sign consolidation, recreational-area plaques, and signal face arrangements, none of which show Figure 2B-17. Citations: - Figure 2B-18 (p.116)",
+  "gold_answer": "The DO NOT ENTER sign is above the WRONG WAY sign.",
+  "correctness_score": 0.0,
+  "completeness_score": 0.0,
+  "faithfulness_score": 0.95,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 23.75,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.00, Comp=0.00, F=0.95, Cit=0.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "The DO NOT ENTER sign is above the WRONG WAY sign.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Figure 2B-17",
+    "Figure 2B-18",
+    "p.116"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 23.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response does not provide the required conclusion or gives a conclusion that conflicts with the locked answer. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: The DO NOT ENTER sign is above the WRONG WAY sign. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

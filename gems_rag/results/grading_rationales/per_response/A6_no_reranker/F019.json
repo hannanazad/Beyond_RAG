@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "F019",
+  "question": "In Figure 6D-1, how is the preferred STOP/SLOW paddle positioned to stop traffic?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: To stop traffic with the preferred STOP/SLOW paddle, Figure 6D-1 shows the flagger facing road users with the STOP (R1-1) face of the paddle — at least 18 inches wide — held stationary on its rigid staff with one arm extended horizontally away from the body, while the free arm is raised with the palm above shoulder level toward approaching traffic. This paddle method is the preferred hand-signaling technique; the flag is reserved for emergency situations only. Standards (mandatory): - \"To stop road users, the flagger shall face road users and aim the STOP paddle face toward road users in a stationary position with the arm extended horizontally away from the body. The free arm shall be held with the palm of the hand above shoulder level toward approaching traffic.\" (Section 6D.05, shown on Page 826) - \"The STOP/SLOW paddle (R1-1 and W20-8) shall have an octagonal shape on a rigid handle. When used at night, the STOP/SLOW paddle shall be retroreflectorized.\" - \"Flaggers shall use a STOP/SLOW paddle, a flag, or an Automated Flagger Assistance Device (AFAD) (see Sections 6L.02 through 6L.04) to control road users approaching a TTC zone. The use of hand movements alone without a paddle, flag, or AFAD to control road users shall be prohibited when controlling traffic in a one-lane two-way operation except when the control is provided by emergency responders at incident scenes as described in Section 6O.01 or provided by uniformed law enforcement officers.\" Guidance (recommended): - \"The STOP/SLOW paddle (see Figure 6D-1 and Table 6G-1) should be the primary and preferred hand-signaling device because the STOP/SLOW paddle gives road users more positive guidance than red flags.\" Visual evidence: [Image 1] Figure 6D-1's \"TO STOP TRAFFIC\" row shows the preferred method: the flagger holds the octagonal STOP (R1-1) paddle, labeled 18 inches minimum in width, upright on its staff in a stationary position while raising the free hand with palm outward above shoulder level toward approaching traffic. [Image 2] Page 825 reproduces Figure 6D-1 with the same STOP paddle posture — paddle stationary, free hand raised palm-out. [Image 3] Page 826 contains the Section 6D.05 Standard text describing the required stopping posture with the paddle. [Image 5] Page 824 (Section 6D.02) establishes the STOP/SLOW paddle's octagonal shape, rigid handle, and preferred status referenced in Figure 6D-1. Citations: - Figure 6D-1 (p.784) - Section 6D.05 Standard §2 (p.785) - Section 6D.02 Standard §2 (p.783) - Section 6D.02 Guidance §1 (p.783) - Page 825 - Page 826 - Page 824",
+  "gold_answer": "The flagger faces traffic and holds the STOP face toward road users with the paddle in a stationary position and the free arm raised with the palm toward traffic.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The flagger faces traffic and holds the STOP face toward road users with the paddle in a stationary position and the free arm raised with the palm toward traffic.",
+      "token_coverage": 0.944
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 6D.05",
+    "Section 6O.01",
+    "Section 6D.02",
+    "Table 6G-1",
+    "Figure 6D-1",
+    "Page 826",
+    "Page 825",
+    "Page 824",
+    "p.784",
+    "p.785"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0000000000000002,
+    "precision6": 1.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6D.05, Section 6O.01, Section 6D.02, Table 6G-1, Figure 6D-1, Page 826. Gold elements clearly reflected in the response: The flagger faces traffic and holds the STOP face toward road users with the paddle in a stationary position and the free arm raised with the palm toward traffic. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=1.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

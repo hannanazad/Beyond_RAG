@@ -1,0 +1,67 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "T037",
+  "question": "What is the function of the yellow change interval, how is its duration established, and may a pre-yellow vehicular countdown display be used?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The exclusive function of the yellow change interval is to warn approaching traffic that their permission to proceed is being terminated, after which they will be directed to stop (or, for a protected/permissive turn, that the protected movement is ending). Its duration must be determined using engineering practices, with a recommended range of 3 to 6 seconds in the hybrid beacon context, longer values reserved for higher-speed approaches. The evidence provided contains no provisions addressing pre-yellow vehicular countdown displays, so that part of the question cannot be answered from this evidence. Standards (mandatory): - \"The duration of the yellow change interval shall be determined using engineering practices.\" - For pedestrian hybrid beacons: \"The duration of the steady yellow change interval shall be determined using engineering practices in accordance with the provisions in Section 4F.17.\" - For emergency-vehicle hybrid beacons: \"The duration of the steady yellow change interval shall be determined using engineering practices in accordance with the provisions in Section 4F.17.\" Guidance (recommended): - For emergency-vehicle hybrid beacons, a yellow change interval should have a minimum duration of 3 seconds and a maximum duration of 6 seconds, with the longer intervals reserved for use on approaches with higher speeds. Citations: - Section 4F.17 Support §1 (p.708) - Section 4F.17 Standard §3 (p.708) - Section 4H.11 Support §3 (p.717) - Section 4J.03 Standard §10 (p.730) - Section 4N.03 Standard §4 (p.743) - Section 4N.03 Guidance §5 (p.743) Note: Support provisions (explanatory only) describe the interval's function — warning traffic that permission to proceed is terminating — and clarify that providing clearance time through the intersection is the purpose of the red clearance interval, not the yellow change interval. No provision in the supplied evidence addresses whether a pre-yellow vehicular countdown display may be used; the evidence is insufficient on that point.",
+  "gold_answer": "The yellow change interval warns that permission to proceed or a protected movement is ending. Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds. Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons.",
+  "correctness_score": 0.9,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.75,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 85.0,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.90, Comp=0.75, F=1.00, Cit=0.75, Strict full credit=No",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "The yellow change interval warns that permission to proceed or a protected movement is ending.",
+      "token_coverage": 0.889
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 4F.17",
+    "Section 4H.11",
+    "Section 4J.03",
+    "Section 4N.03",
+    "p.708",
+    "p.717",
+    "p.730",
+    "p.743"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 85.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The response omits or underdevelops these locked elements: Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 4F.17, Section 4H.11, Section 4J.03, Section 4N.03, p.708, p.717. Gold elements clearly reflected in the response: Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds. | The yellow change interval warns that permission to proceed or a protected movement is ending. Adjudication note: Correct function, engineering basis, and duration guidance; omits the prohibition on pre-yellow displays. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

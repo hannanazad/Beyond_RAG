@@ -1,0 +1,58 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T035",
+  "question": "Does satisfying a traffic signal warrant automatically require installation of a traffic control signal?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. The MUTCD explicitly states that meeting one or more traffic signal warrants does not by itself require installing a traffic control signal. A signal must be justified by an engineering study of traffic conditions, pedestrian characteristics, and physical characteristics of the location, with the warrants serving as factors in that investigation. Standards (mandatory): - \"The satisfaction of a traffic signal warrant or warrants shall not in itself require the installation of a traffic control signal.\" - \"Except for a temporary traffic control signal (see Section 4D.11) installed in a temporary traffic control zone, before a traffic control signal is installed at a particular location, an engineering study of traffic conditions, pedestrian characteristics, and physical characteristics of the location shall be performed to determine whether installation of a traffic control signal is justified at that location.\" - \"The investigation of the need for a traffic control signal shall include an analysis of factors related to the existing operation and safety at the study location and the potential to improve these conditions, and the applicable factors contained in the following traffic signal warrants: Warrant 1, Eight-Hour Vehicular Volume; Warrant 2, Four-Hour Vehicular Volume; Warrant 3, Peak Hour; Warrant 4, Pedestrian Volume; Warrant 5, School Crossing; Warrant 6, Coordinated Signal System; Warrant 7, Crash Experience; Warrant 8, Roadway Network; Warrant 9, Intersection Near a Grade Crossing.\" - If Warrant 4 (Pedestrian Volume) is met and a signal is justified by an engineering study, \"the traffic control signal shall be equipped with pedestrian signal heads complying with the provisions set forth in Chapter 4I.\" - If Warrant 5 (School Crossing) is met and a signal is justified by an engineering study, \"the traffic control signal shall be equipped with pedestrian signal heads complying with the provisions set forth in Chapter 4I.\" - A parallel principle applies to all-way stop control: \"The satisfaction of an all-way stop control warrant or warrants shall not in itself require the installation of all-way stop control at an unsignalized intersection.\" Citations: - Section 4C.01 Standard §3 (p.651) - Section 4C.01 Standard §1 (p.651) - Section 4C.01 Standard §2 (p.651) - Section 4C.05 Standard §6 (p.660) - Section 4C.06 Standard §5 (p.660) - Section 2B.12 Standard §5 (p.79)",
+  "gold_answer": "No. A warrant is a threshold that triggers analysis; it is not conclusive justification. Installation must be based on an engineering study considering safety, operation, alternatives, and the site. A signal can also be installed where no warrant is met if an engineering study documents why it is the best solution.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.75, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "it is not conclusive justification.",
+      "token_coverage": 0.0
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 4D.11",
+    "Section 4C.01",
+    "Section 4C.05",
+    "Section 4C.06",
+    "Section 2B.12",
+    "p.651",
+    "p.660",
+    "p.79"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8710785440003369,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The response omits or underdevelops these locked elements: it is not conclusive justification. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4D.11, Section 4C.01, Section 4C.05, Section 4C.06, Section 2B.12, p.651. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Adjudication note: Correct non-compulsion rule; omits the documented installation case where no warrant is met. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.871 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

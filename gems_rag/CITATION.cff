@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: "GEMS-RAG: structure-aware multimodal retrieval over the MUTCD"
+message: "If you use this software, the MUTCD-150 benchmark, or these results, please cite this repository."
+type: software
+authors:
+  - family-names: Azad
+    given-names: Hannan
+repository-code: "https://github.com/hannanazad/gemsrag"
+abstract: >-
+  GEMS-RAG is a structure-aware multimodal retrieval-augmented generation
+  system for the Manual on Uniform Traffic Control Devices (MUTCD, 11th
+  Edition). It encodes the manual's section hierarchy, its normative typology
+  of Standard, Guidance, Option and Support provisions, and its internal
+  cross-reference graph, then uses all three as retrieval priors alongside
+  hybrid dense and sparse text search and late-interaction visual retrieval
+  over page images and figure crops. The repository includes the MUTCD-150
+  benchmark of 150 annotated questions, a twelve-configuration model
+  comparison, a six-condition leave-one-out ablation study, and a comparison
+  against BM25, GraphRAG and PaperQA.
+keywords:
+  - retrieval-augmented generation
+  - multimodal retrieval
+  - knowledge graph
+  - technical standards
+  - MUTCD
+  - benchmark

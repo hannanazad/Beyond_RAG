@@ -1,0 +1,56 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "F029",
+  "question": "What exact crossing angle, in degrees, is shown for the railroad tracks in Figure 8E-1?",
+  "primary_modality": "figure",
+  "difficulty": "easy",
+  "answerable": false,
+  "answerability_subtype": "unsupported_precision",
+  "model_answer": "Direct Answer: The evidence does not state any exact crossing angle in degrees for Figure 8E-1. Figure 8E-1 (Illustration of the Difference between a Pathway Grade Crossing and a Sidewalk Grade Crossing) depicts the tracks crossing the pathway/sidewalk approximately at a right angle, but no degree value is annotated in the figure, and none of the provided text provisions specify one. The evidence is therefore insufficient to answer the question as asked. Visual evidence: [Image 6] shows Figure 8E-1, in which the railroad tracks cross the pathway and sidewalk perpendicularly, but no numerical angle (in degrees) is labeled anywhere in the figure. Citations: - Page 1076",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 0.75,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=1.00, F=0.75, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Figure 8E-1",
+    "Page 1076"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as unanswerable. The response lost credit because it did not match the required refusal, limitation, or correction closely enough. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Figure 8E-1, Page 1076. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Adjudication note: Correctly says no exact angle is specified but adds an unsupported perpendicular interpretation. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

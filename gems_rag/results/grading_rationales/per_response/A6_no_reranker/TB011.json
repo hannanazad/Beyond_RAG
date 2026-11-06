@@ -1,0 +1,54 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "TB011",
+  "question": "At a posted or 85th-percentile speed of 60 mph, what advance placement distance does Table 2C-3 show for deceleration to an advisory speed of 30 mph?",
+  "primary_modality": "table",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: For a posted or 85th-percentile speed of 60 mph, Table 2C-3 shows an advance placement distance of 275 feet for Condition B deceleration to a 30 mph advisory speed. This distance is based on a 2.5-second PRT, a deceleration rate of 10 feet/second², and is adjusted for a 250-foot sign legibility distance. Guidance (recommended): - Warning signs should be placed so that they provide an adequate PRT; per Section 2C.04, \"The distances contained in Table 2C-3 should be applied with engineering judgment,\" and \"The effectiveness of the placement of warning signs should be periodically evaluated under both day and night conditions.\" Visual evidence: - [Image 1] Table 2C-3 shows the 60 mph row intersecting the Condition B \"30\" advisory-speed column at 275 ft. - [Image 3] Page 152 presents Section 2C.04 and Table 2C-3, confirming the 60 mph / 30 mph cell value of 275 ft along with table footnote 4 explaining the Condition B deceleration basis (2.5-second PRT, 10 feet/second² deceleration, 250-foot legibility distance). Citations: - Table 2C-3 (p.152) - Section 2C.04 Guidance §5 (p.152)",
+  "gold_answer": "200 feet.",
+  "correctness_score": 0.0,
+  "completeness_score": 0.0,
+  "faithfulness_score": 0.45,
+  "citation_score": 0.95,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 35.0,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.00, Comp=0.00, F=0.45, Cit=0.95, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "200 feet.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2C.04",
+    "Table 2C-3",
+    "Page 152",
+    "p.152"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 35.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response does not provide the required conclusion or gives a conclusion that conflicts with the locked answer. Completeness rationale: The response omits or underdevelops these locked elements: 200 feet. Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 2C.04, Table 2C-3, Page 152, p.152. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

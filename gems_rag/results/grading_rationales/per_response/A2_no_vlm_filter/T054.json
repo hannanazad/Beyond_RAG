@@ -1,0 +1,63 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T054",
+  "question": "How many licensed traffic engineers must a road agency employ per 100 centerline miles to comply with the MUTCD?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "out_of_scope",
+  "model_answer": "Direct Answer: The MUTCD does not specify any required number of licensed traffic engineers per centerline mile, and nothing in the provided evidence supports such a staffing ratio. The Manual sets uniform national criteria for traffic control devices themselves — not agency staffing levels — and it explicitly does not mandate that an engineer make the final decision to implement a traffic control solution; that responsibility rests with the agency having jurisdiction. Standards (mandatory): - The MUTCD \"shall be recognized as the national standard for all traffic control devices installed on any street, highway, bikeway, or site roadway open to public travel\" — a compliance obligation for devices, not for agency staffing. Support (explanatory): - The purpose of the MUTCD is \"to establish uniform national criteria for the use of traffic control devices,\" not personnel requirements. - \"The MUTCD does not mandate, and is not intending to imply, that an engineer must make the final decision whether to implement or execute the determination or advice of an engineer…\" — the final decision rests with the agency having jurisdiction, after consultation with the engineer. - MUTCD principles are \"developed for and used by individuals who are duly authorized and qualified to conduct traffic control device activities,\" without prescribing how many such individuals an agency must employ. Citations: - Section 1A.01 Support §1 (p.1) - Section 1B.01 Standard §1 (p.4) - Section 1D.03 Support §4 (p.32) - Section 1A.04 Support §1 (p.2)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.154
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1A.01",
+    "Section 1B.01",
+    "Section 1D.03",
+    "Section 1A.04",
+    "p.1",
+    "p.4",
+    "p.32",
+    "p.2"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.3333333333333333,
+    "ndcg6": 0.5706417189553201,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the response correctly states that the requested information or precision is not supported. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1A.01, Section 1B.01, Section 1D.03, Section 1A.04, p.1, p.4. Gold elements clearly reflected in the response: The MUTCD does not specify this information. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 3, which produced MRR=0.333. The six-chunk ordering produced nDCG@6=0.571 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

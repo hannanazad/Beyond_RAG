@@ -1,0 +1,68 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T025",
+  "question": "What must a Speed Limit sign display, in what increments, and may it be used to show an advisory speed for a roadway condition?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: A Speed Limit (R2-1) sign must display the limit established by law, ordinance, regulation, or as adopted by the authorized agency based on an engineering study, and the displayed limits must be in multiples of 5 mph. A Speed Limit sign should not be used to show an advisory speed for a roadway condition; instead, an advisory speed plaque mounted below a warning sign is the appropriate device for that purpose. Standards (mandatory): - \"The Speed Limit (R2-1) sign (see Figure 2B-3) shall display the limit established by law, ordinance, regulation, or as adopted by the authorized agency based on an engineering study. The speed limits displayed shall be in multiples of 5 mph.\" - For variable installations: \"The regulatory speed displayed on a variable Speed Limit sign shall comply with Paragraph 13 of\" Section 2B.21 (i.e., the same display and 5-mph increment requirements apply). Guidance (recommended): - Per Section 2B.21 Guidance (visible on Page 89, ¶23): \"An advisory speed plaque (see Section 2C.59) mounted below a warning sign should be used to warn road users of an advisory speed for a roadway condition. A Speed Limit sign should not be used for this purpose.\" Options (permitted): - \"An Advisory Speed plaque (see Figure 2C-1 and Section 2C.59) may be used when the change in roadway condition requires a reduced speed.\" - \"An Advisory Exit Speed or Advisory Ramp Speed sign may be used based on engineering judgment when the difference between the mainline roadway speed limit and the exit or ramp advisory speed in the vicinity of the departure is 10 mph or less.\" - \"A Speed Limit Sign Beacon may be used with a fixed or variable Speed Limit sign,\" and a flashing Speed Limit Sign Beacon (with an appropriate accompanying sign) may be used to indicate that the displayed speed limit is in effect. Visual evidence: [Image 1] Figure 2B-3 shows the R2-1 Speed Limit sign (\"SPEED LIMIT 50\") and related signs and plaques, all displaying limits in multiples of 5 mph. [Image 2] Figure 2C-1 shows the Advisory Speed plaque (W13-1P, \"35 MPH\") and advisory exit/ramp speed signs used with warning signs — the devices used instead of the R2-1 for advisory speeds. [Image 3] Figure 2C-4 shows the Vehicle Speed Feedback sign and plaque, which display an approaching vehicle's speed in relation to a posted speed limit or advisory speed. [Image 4] Figure 2C-9 shows speed zone warning signs (W3-5 series) used in advance of speed zones. [Image 5] Page 197 shows Figure 2C-2 with W13-1P Advisory Speed plaques posted with horizontal alignment warning signs on a curve. [Image 8] Page 89 contains Section 2B.21 ¶13 (the \"multiples of 5 mph\" Standard) and ¶23 (the Guidance stating a Speed Limit sign should not be used for advisory speed purposes). Citations: - Section 2B.21 Standard §13 (p.85) - Section 2G.26 Standard §3 (p.457) - Section 2C.28 Option §2 (p.173) - Section 2C.12 Option §5 (p.160) - Section 4S.04 Option §3 (p.753) - Section 2C.13 Support §1 (p.166) - Figure 2B-3 (p.86) - Figure 2C-1 (p.153) - Figure 2C-4 (p.166) - Figure 2C-9 (p.179) - Page 197 - Page 89",
+  "gold_answer": "It must display the speed limit established by law, ordinance, regulation, or an authorized agency based on an engineering study, in multiples of 5 mph. It should not be used for an advisory speed; an advisory speed plaque below an appropriate warning sign should be used instead.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "It must display the speed limit established by law, ordinance, regulation, or an authorized agency based on an engineering study, in multiples of 5 mph.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "It should not be used for an advisory speed",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "an advisory speed plaque below an appropriate warning sign should be used instead.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2B.21",
+    "Section 2C.59",
+    "Section 2G.26",
+    "Section 2C.28",
+    "Section 2C.12",
+    "Section 4S.04",
+    "Section 2C.13",
+    "Figure 2B-3",
+    "Figure 2C-1",
+    "Figure 2C-4"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2B.21, Section 2C.59, Section 2G.26, Section 2C.28, Section 2C.12, Section 4S.04. Gold elements clearly reflected in the response: It must display the speed limit established by law, ordinance, regulation, or an authorized agency based on an engineering study, in multiples of 5 mph. | It should not be used for an advisory speed | an advisory speed plaque below an appropriate warning sign should be used instead. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

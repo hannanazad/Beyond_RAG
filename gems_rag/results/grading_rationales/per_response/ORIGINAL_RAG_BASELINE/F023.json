@@ -1,0 +1,60 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "F023",
+  "question": "What is the principal layout difference between the pathway grade crossing and the sidewalk grade crossing in Figure 8E-1?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The principal layout difference is the relationship to a roadway. In Panel A, the pathway grade crossing is shown in its own independent \"Pathway right-of-way\" with no adjacent roadway, while in Panel B the sidewalk grade crossing runs immediately alongside a roadway within a shared \"Highway right-of-way.\" This distinction matters because roadway grade crossing traffic control devices can typically warn sidewalk users but not pathway users. Note that this explanation is Support (informational) material, not a normative provision. Standards (mandatory): - Although not the layout distinction itself, both crossing types in the figure show detectable warnings, which are required: \"Detectable warnings (see Chapter 3C) shall be used at pathway grade crossings where pedestrian travel is permitted and at sidewalk grade crossings and shall extend across the full width of the pathway or sidewalk.\" Visual evidence: - [Image 1] Figure 8E-1 shows Panel A with a stand-alone pathway crossing the tracks within its own \"Pathway right-of-way,\" and Panel B with a sidewalk directly adjacent to a roadway (with yellow centerline) inside a single \"Highway right-of-way,\" both with detectable warnings on each side of the tracks. - [Image 2] Page 1035 presents the full context of Figure 8E-1, including Section 8E.01's explanation that a pathway is on an alignment independent of any roadway while a sidewalk runs parallel to and close to a roadway. - [Image 4] Page 1036 shows Figure 8E-2, which further illustrates a sidewalk crossing configured alongside a roadway within the highway right-of-way. Citations: - Section 8E.01 Support §4 (p.1035) - Figure 8E-1 (p.1035) - Section 8E.04 Standard §7 (p.1038) - Page 1076 - Page 1077",
+  "gold_answer": "The pathway crossing is on a separate pathway alignment outside the roadway, whereas the sidewalk crossing is part of the highway corridor alongside the roadway and crosses the tracks with the roadway.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The pathway crossing is on a separate pathway alignment outside the roadway, whereas the sidewalk crossing is part of the highway corridor alongside the roadway and crosses the tracks with the roadway.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 8E.01",
+    "Section 8E.04",
+    "Figure 8E-1",
+    "Figure 8E-2",
+    "Page 1035",
+    "Page 1036",
+    "p.1035",
+    "p.1038",
+    "Page 1076",
+    "Page 1077"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9060254355346824,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 8E.01, Section 8E.04, Figure 8E-1, Figure 8E-2, Page 1035, Page 1036. Gold elements clearly reflected in the response: The pathway crossing is on a separate pathway alignment outside the roadway, whereas the sidewalk crossing is part of the highway corridor alongside the roadway and crosses the tr… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.906 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

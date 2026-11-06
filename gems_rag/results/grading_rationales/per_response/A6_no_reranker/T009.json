@@ -1,0 +1,55 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T009",
+  "question": "When a non-compliant traffic control device is replaced because it is damaged, missing, or no longer serviceable, what is the general rule and the limited replacement-in-kind exception?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The general rule is that a non-compliant device being replaced or refurbished because it is damaged, missing, or no longer serviceable must be replaced with a compliant device. The rule itself points to a limited exception \"as provided for in Paragraph 13 of this Section,\" but the text of Paragraph 13 (the replacement-in-kind exception) is not included in the evidence, so its specific terms cannot be stated here. Standards (mandatory): - \"A non-compliant traffic control device that is being replaced or refurbished because it is damaged, missing, or no longer serviceable (see definition in Section 1C.02) for any reason shall be replaced with a compliant device, except as provided for in Paragraph 13 of this Section.\" - \"Unless a particular device is no longer serviceable (see definition in Section 1C.02), non-compliant devices on existing highways and bikeways shall be brought into compliance with the current edition of the National MUTCD as part of the systematic upgrading of substandard traffic control devices (and installation of new required traffic control devices) required pursuant to the Highway Safety Program, 23 U.S.C. §402(a).\" - For Federal-aid projects involving new construction, reconstruction, resurfacing, restoration, or rehabilitation, \"the traffic control devices installed (temporary or permanent) shall comply with the most recent edition of the National MUTCD before that highway is opened or re-opened to the public for unrestricted travel [23 CFR 655.603(d)(2) and (d)(3)].\" Options (permitted): - The evidence provided does not include the text of Paragraph 13 of Section 1B.03, which contains the limited replacement-in-kind exception; its specific conditions cannot be quoted from the available evidence. Citations: - Section 1B.03 Standard §12 (p.6) - Section 1B.03 Standard §5 (p.5) - Section 1B.03 Standard §4 (p.5)",
+  "gold_answer": "The replacement must generally be a compliant device. A non-compliant device may be replaced in kind only when engineering judgment finds that a lone compliant device among adjacent non-compliant devices would confuse users and/or the planned replacement schedule for the whole series will achieve timely compliance.",
+  "correctness_score": 0.9,
+  "completeness_score": 0.8500000000000001,
+  "faithfulness_score": 0.9,
+  "citation_score": 0.95,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 90.0,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.90, Comp=0.85, F=0.90, Cit=0.95, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A non-compliant device may be replaced in kind only when engineering judgment finds that a lone compliant device among adjacent non-compliant devices would confuse users and/or the planned replacement schedule for the whole series will achieve timely compliance.",
+      "token_coverage": 0.32
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1C.02",
+    "Section 1B.03",
+    "p.6",
+    "p.5",
+    "23 CFR 655.603(d)"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.982892081956688,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 90.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The response omits or underdevelops these locked elements: A non-compliant device may be replaced in kind only when engineering judgment finds that a lone compliant device among adjacent non-compliant devices would confuse users and/or the planned… Faithfulness rationale: The audit records an unsupported, overstated, or source-inconsistent element. The package retains the official deduction without inventing a new source citation. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 1C.02, Section 1B.03, p.6, p.5, 23 CFR 655.603(d). Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.983 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

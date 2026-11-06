@@ -1,0 +1,54 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "TB012",
+  "question": "What typical Chevron Alignment sign spacing does Table 2C-5 recommend for an advisory speed of 35 to 45 mph and a curve radius of 401 to 700 feet?",
+  "primary_modality": "table",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: For an advisory speed of 35 to 45 mph and a curve radius of 401 to 700 feet, Table 2C-5 shows a typical Chevron Alignment sign spacing of 120 feet. This spacing is a Guidance (recommended) value, measured from the point of curvature (PC) of the turn or curve. Standards (mandatory): - \"If used, Chevron Alignment signs shall be installed on the outside of a turn or curve, in line with and at approximately a right angle to approaching traffic. Chevron Alignment signs shall be installed at a minimum height of 4 feet, measured vertically from the bottom of the sign to the elevation of the near edge of the traveled way.\" Guidance (recommended): - The approximate spacing of Chevron Alignment signs on the turn or curve, measured from the point of curvature (PC), should be as shown in Table 2C-5. Visual evidence: [Image 1] shows Table 2C-5, in which the row \"35 to 45 mph\" advisory speed and \"401 to 700 feet\" curve radius corresponds to a sign spacing of \"120 feet,\" with a note that the relationship between curve radius and advisory speed shown in the table should not be used to determine the advisory speed. [Image 2] shows the full page 158 context (Section 2C.08) containing the same Table 2C-5 with the 120-feet spacing for the 35 to 45 mph / 401 to 700 feet row. Citations: - Table 2C-5 (p.158) - Section 2C.08 Guidance §5 (p.158) - Section 2C.08 Standard §4 (p.158)",
+  "gold_answer": "120 feet.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "120 feet.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2C.08",
+    "Table 2C-5",
+    "page 158",
+    "p.158"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9558295932317544,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2C.08, Table 2C-5, page 158, p.158. Gold elements clearly reflected in the response: 120 feet. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.956 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

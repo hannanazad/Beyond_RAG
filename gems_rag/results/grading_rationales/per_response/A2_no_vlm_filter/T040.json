@@ -1,0 +1,56 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T040",
+  "question": "What is the required indication sequence of a pedestrian hybrid beacon after a pedestrian actuation?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: After a pedestrian actuation, the beacon must display, in order: a flashing CIRCULAR yellow indication, then a steady CIRCULAR yellow indication, then both steady CIRCULAR RED indications during the pedestrian walk interval, then alternating flashing CIRCULAR RED indications during the pedestrian change interval. When the pedestrian change interval ends, the beacon faces must go dark, and the beacon must remain dark between actuations. Standards (mandatory): - \"Following an actuation by a pedestrian, a pedestrian hybrid beacon face shall display a flashing CIRCULAR yellow signal indication, followed by a steady CIRCULAR yellow signal indication, followed by both steady CIRCULAR RED signal indications during the pedestrian walk interval, followed by alternating flashing CIRCULAR RED signal indications during the pedestrian change interval (see Figure 4J-3). Upon ... termination of the pedestrian change interval, the pedestrian hybrid beacon faces shall revert to a dark (not illuminated) condition.\" - \"Pedestrian hybrid beacon indications shall be dark (not illuminated) during periods between actuations.\" - \"A pedestrian hybrid beacon face shall consist of three signal sections, with a CIRCULAR YELLOW signal indication centered below two horizontally-aligned CIRCULAR RED signal indications (see Figure 4J-3).\" Guidance (recommended): - If the pedestrian hybrid beacon is coordinated as a part of a signal system, it should remain in the dark condition after a pedestrian actuation has been received until the point in the background cycle when the predetermined duration of the flashing yellow interval needs to be initiated in order to achieve the appropriate coordinated offset. Options (permitted): - If a minimum dark time between activations has been set on the controller, the beacon may remain in the dark condition after a pedestrian actuation has been received until the minimum dark time has been provided. - Per the note in Figure 4J-3, an optional steady red clearance interval may be added after Interval 3 (steady yellow), and an optional short buffer interval (alternating flashing red while the pedestrian signal heads display a steady UPRAISED HAND) may be added after Interval 5. Visual evidence: [Image 1] (Figure 4J-3) illustrates the six-step sequence — 1. Dark Until Activated, 2. Flashing Yellow Upon Activation, 3. Steady Yellow, 4. Steady Red During Pedestrian Walk Interval, 5. Alternating Flashing Red During Pedestrian Change Interval, and 6. Dark Again Until Activated — with a legend defining SY, FY, SR, and FR, and a note describing the optional steady red clearance and buffer intervals. Citations: - Section 4J.03 Standard §2 (p.730) - Section 4J.03 Standard §1 (p.729) - Section 4J.02 Standard §2 (p.728) - Section 4J.03 Guidance §7 (p.730) - Section 4J.03 Option §8 (p.730) - Figure 4J-3 (p.729)",
+  "gold_answer": "Flashing circular yellow, then steady circular yellow, then both steady circular red during the walk interval, then alternating flashing circular red during the pedestrian change interval, followed by return to dark.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Flashing circular yellow, then steady circular yellow, then both steady circular red during the walk interval, then alternating flashing circular red during the pedestrian change interval, followed by return to dark.",
+      "token_coverage": 0.958
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4J.03",
+    "Section 4J.02",
+    "Figure 4J-3",
+    "p.730",
+    "p.729",
+    "p.728"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.974742952856788,
+    "precision6": 0.8333333333333334,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4J.03, Section 4J.02, Figure 4J-3, p.730, p.729, p.728. Gold elements clearly reflected in the response: Flashing circular yellow, then steady circular yellow, then both steady circular red during the walk interval, then alternating flashing circular red during the pedestrian change… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.975 and Context Precision@6=0.833. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

@@ -1,0 +1,64 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T048",
+  "question": "What minimum geometry and operational restrictions apply to a bicycle box, and how must optional green pavement be applied?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: A bicycle box must be at least 10 feet deep (measured from the upstream edge nearest the motor-vehicle stop line to the downstream edge nearest the crosswalk/intersection) and must contain at least one bicycle symbol marking. Operationally, turns on red must be prohibited from the lane where the box is placed, signal change/clearance intervals must be recalculated if the stop line is relocated upstream, and countdown pedestrian signals are required where the box extends across more than one approach lane. Green-colored pavement is optional, but if used it must cover the full limits of the bicycle box, since bicycle boxes are one of the applications to which green pavement is expressly limited. Standards (mandatory): - \"If used, the distance from the upstream edge of the bicycle box that is nearest to the stop line for motor vehicles to the downstream edge of the bicycle box that is nearest the crosswalk or intersection shall be at least 10 feet. At least one bicycle symbol marking (see Figure 9E-12) shall be used in the bicycle box.\" - \"If used, green-colored pavement shall be used in the full limits of the bicycle box.\" - \"If used, green-colored pavement shall be limited to: A. Bicycle lanes…, B. Extensions of bicycle lanes through intersections…, C. Extensions of bicycle lanes through areas where motor vehicles enter a mandatory turn lane…, D. Two-stage bicycle turn boxes…, E. Bicycle Boxes (see Section 9E.12), and F. As a background for bicycle detector symbols…\" - Additional operational Standards visible on the Section 9E.12 page: \"Where an existing stop line for motor vehicles is relocated upstream to install a new bicycle box, the yellow change and red clearance intervals (see Section 4F.17) shall be recalculated and if necessary, reprogrammed to accommodate the length of the bicycle box.\"; \"Countdown pedestrian signals … shall accompany bicycle boxes that extend across more than one approach lane for motor vehicles. Countdown pedestrian signals used with bicycle boxes shall display the pedestrian change interval countdown without the need for actuation.\"; and \"Turns on red shall be prohibited from the lane where a bicycle box is placed.\" Guidance (recommended): - If green-colored pavement is used within separated bicycle lanes on an independent alignment, it should be used only at entrances to those facilities from roadways open to public travel or at conflict, weaving, or crossing locations. - From the Section 9E.12 page shown in the images: a bicycle lane should be used on the approach to a bicycle box; a bicycle box should not be contiguous with a crosswalk; and a stop line on the downstream end of the box should mark where bicycles are required to stop. Options (permitted): - Green-colored pavement may be installed for the entire length of a bicycle lane or bicycle lane extension or for only a portion (or portions) of it (this partial-application option applies to lanes/extensions; within a bicycle box, green must be full-limits per the Standard above). - From the Section 9E.12 page shown in the images: \"Green-colored pavement may be used in a bicycle box.\" Visual evidence: [Image 1] Figure 9E-12 (Sheet 1) depicts a single-lane bicycle box with the \"10 ft MIN.\" dimension between the intersection stop line and advance stop line, bicycle symbol markings, optional green pavement, and accompanying R3-7R and R4-4 signs. [Image 2] shows Figure 9E-12 (Sheet 2), a bicycle box across multiple lanes with the required countdown pedestrian signals, the NO TURN ON RED (R10-11) sign, and the STOP HERE ON RED (R10-6a) sign with EXCEPT BICYCLES (R3-7bP) plaque. [Image 3] repeats Sheet 1 of Figure 9E-12 with the same 10-foot minimum dimension and green-pavement labeling. [Image 4] shows the Section 9E.12 text page, including the Standards on 10-foot minimum depth, signal-interval recalculation, countdown pedestrian signals, and the prohibition of turns on red, plus the Option that green-colored pavement may be used in a bicycle box. [Image 5] shows Section 3H.06, whose Standard limits green-colored pavement to enumerated bicycle facility applications including Bicycle Boxes. Citations: - Section 9E.12 Standard §6 (p.1105) - Section 9E.12 Standard §13 (p.1106) - Section 3H.06 Standard §2 (p.626) - Section 3H.06 Guidance §5 (p.626) - Section 3H.06 Option §7 (p.626) - Section 3H.06 Support §1 (p.625) - Figure 9E-12 (p.1106) - Page 1146 - Page 1147 - Page 1148 - Page 666",
+  "gold_answer": "The box must be at least 10 feet from its upstream edge near the motor-vehicle stop line to its downstream edge near the crosswalk or intersection, must include at least one bicycle symbol, and turns on red must be prohibited from the lane containing the box. If green pavement is used, it must fill the full limits of the bicycle box.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.8,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 95.0,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.80, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "If green pavement is used, it must fill the full limits of the bicycle box.",
+      "token_coverage": 0.875
+    },
+    {
+      "text": "The box must be at least 10 feet from its upstream edge near the motor-vehicle stop line to its downstream edge near the crosswalk or intersection, must include at least one bicycle symbol, and turns on red must be prohibited from the lane containing the box.",
+      "token_coverage": 0.852
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 9E.12",
+    "Section 4F.17",
+    "Section 3H.06",
+    "Figure 9E-12",
+    "p.1105",
+    "p.1106",
+    "p.626",
+    "p.625",
+    "Page 1146",
+    "Page 1147"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.5,
+    "ndcg6": 0.6509209298071326,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 95.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 9E.12, Section 4F.17, Section 3H.06, Figure 9E-12, p.1105, p.1106. Gold elements clearly reflected in the response: If green pavement is used, it must fill the full limits of the bicycle box. | The box must be at least 10 feet from its upstream edge near the motor-vehicle stop line to its downstream edge near the crosswalk or intersection, must include at least one bicyc… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 2, which produced MRR=0.500. The six-chunk ordering produced nDCG@6=0.651 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

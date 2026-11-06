@@ -1,0 +1,60 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "F014",
+  "question": "According to Figure 4D-2, what are the general minimum and maximum longitudinal distances from the stop line for the primary signal faces, absent the near-side supplemental-face exception?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Figure 4D-2 shows a general minimum longitudinal distance of 40 feet from the stop line for primary signal faces, and a general maximum of 180 feet beyond the stop line (for 12-inch signal indications) unless a near-side supplemental signal face is provided. The figure also depicts a 120-foot maximum from the stop line for 8-inch signal faces. Standards (mandatory): - Primary signal faces \"shall be located: 1. No less than 40 feet beyond the stop line, and 2. No more than 180 feet beyond the stop line unless a supplemental near-side signal face is provided.\" - \"The primary signal faces that are used to satisfy the requirements of Item A shall simultaneously satisfy the lateral placement requirement described in Section 4D.07 (see Figure 4D-2).\" - The lateral requirement referenced by the figure: the primary signal faces \"shall be located between two lines intersecting with the center of the approach at a point 10 feet behind the stop line, one making an angle of approximately 20 degrees to the right of the center of the approach extended, and the other making an angle of approximately 20 degrees to the left of the center of the approach extended.\" Visual evidence: - [Image 1] Figure 4D-2 shows the dimensioned placement area with \"40 ft*\" (minimum distance of signal faces from stop line), \"120 ft**\" (maximum distance for 8-inch signal faces), and \"180 ft***\" (maximum distance for 12-inch signal faces, unless a near-side supplemental signal face is used), bounded laterally by two 20-degree lines from a point 10 feet behind the stop line. - [Image 2] Page 713 reproduces Figure 4D-2 with the same 40 ft minimum, 120 ft (8-inch) and 180 ft (12-inch) maximum dimensions and footnotes. - [Image 3] Page 714 contains Section 4D.08, stating the 40-foot minimum and 180-foot maximum (unless a supplemental near-side signal face is provided) longitudinal placement requirements. - [Image 4] Page 712 contains Section 4D.07, including the figure footnotes defining the 40 ft minimum, 120 ft (8-inch) maximum, and 180 ft (12-inch) maximum distances from the stop line. - [Image 5] Page 709 provides Section 4D.05 context on the number and location of signal faces referenced in Note 1 of Figure 4D-2. Citations: - Section 4D.08 Standard §1 (p.673) - Section 4D.07 Standard §1 (p.671) - Section 4D.07 Option §7 (p.672) - Figure 4D-2 (p.672) - Page 713 - Page 714 - Page 712 - Page 709",
+  "gold_answer": "At least 40 feet and no more than 180 feet beyond the stop line.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.95,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 98.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.95, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "At least 40 feet and no more than 180 feet beyond the stop line.",
+      "token_coverage": 0.917
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4D.07",
+    "Section 4D.08",
+    "Section 4D.05",
+    "Figure 4D-2",
+    "Page 713",
+    "Page 714",
+    "Page 712",
+    "Page 709",
+    "p.673",
+    "p.671"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 98.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4D.07, Section 4D.08, Section 4D.05, Figure 4D-2, Page 713, Page 714. Gold elements clearly reflected in the response: At least 40 feet and no more than 180 feet beyond the stop line. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

@@ -1,0 +1,64 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "M008",
+  "question": "On a multi-lane roadway posted at 35 mph, may the single-lane regulatory-sign size be used, and what size must a STOP sign still use?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. The reduced (\"Minimum\" column) sign sizes may only be used on low-speed roadways, alleys, site roadways open to public travel, and low-volume rural roads with operating speeds of 30 mph or less — a multi-lane roadway posted at 35 mph does not qualify, so the full (Conventional Road / multi-lane) sizes must be used. The evidence provided does not include the specific regulatory sign size table (e.g., Table 2B-1) giving the exact STOP sign (R1-1) dimensions, so I cannot state the precise required STOP sign size from this evidence; what the evidence does establish is that a sign on this roadway shall not be smaller than the Conventional Road size, since the Minimum-column exception does not apply. Standards (mandatory): - \"The sign dimensions prescribed in the sign size tables in the various Parts and Chapters in this Manual and in the 'Standard Highway Signs' publication (see Section 1A.05) shall be used unless engineering judgment determines that other sizes are appropriate in accordance with the following.\" - \"Except as provided in Paragraph 3 of this Section, where engineering judgment determines that sizes smaller than the prescribed dimensions are appropriate for use, the sign dimensions shall not be less than the minimum dimensions specified in this Manual.\" - \"The sizes shown in the Minimum columns that are smaller than the sizes shown in the Conventional Road columns in the various sign size tables in this Manual shall only be used on low-speed roadways, alleys, site roadways open to public travel, and on low-volume rural roads with operating speeds of 30 mph or less; and only where the reduced legend size would be adequate for the regulation or warning or where physical conditions preclude the use of larger sizes.\" (A 35 mph multi-lane roadway exceeds this 30 mph threshold, so reduced sizes are prohibited.) Guidance (recommended): - For guide-sign lettering, Table 2D-2 separates Single-Lane and Multi-Lane columns by speed range (Less than 30 mph, 30–40 mph, Greater than 40 mph); on a multi-lane 35 mph roadway the Multi-Lane 30–40 mph column applies, not the Single-Lane column. Visual evidence: - [Image 1] Table 2D-2 shows distinct Single-Lane and Multi-Lane letter/numeral size columns for post-mounted guide signs, with the Multi-Lane 30–40 mph values generally larger than the Single-Lane values, confirming that single-lane sizes are not the applicable values on a multi-lane 35 mph roadway. - [Image 2] Table 7B-1's notes state that minimum sign sizes for multi-lane conventional roads shall be as shown in the Conventional Road column, illustrating that Minimum-column reductions are not available on multi-lane roads. Citations: - Section 2A.07 Standard §2 (p.45) - Section 2D.07 Guidance §5 (p.210) - Table 2D-2 (p.210) - Table 7B-1 (p.971) Note on the STOP sign size: the specific dimensional table for the STOP sign (R1-1) is not included in the evidence provided, so the exact required dimension (e.g., a specific width x height) cannot be quoted here; the evidence supports only that the full Conventional Road size — not a reduced Minimum size — must be used on this roadway.",
+  "gold_answer": "For regulatory signs other than STOP, the single-lane size may be used at 35 mph or less. The STOP-sign exception remains: the multi-lane STOP size is 36 x 36 inches.",
+  "correctness_score": 0.1,
+  "completeness_score": 0.0,
+  "faithfulness_score": 0.6000000000000001,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 17.5,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.10, Comp=0.00, F=0.60, Cit=0.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "For regulatory signs other than STOP, the single-lane size may be used at 35 mph or less.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "The STOP-sign exception remains: the multi-lane STOP size is 36 x 36 inches.",
+      "token_coverage": 0.364
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1A.05",
+    "Section 2A.07",
+    "Section 2D.07",
+    "Table 2B-1",
+    "Table 2D-2",
+    "Table 7B-1",
+    "p.45",
+    "p.210",
+    "p.971"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 17.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response shows limited overlap with the required conclusion and does not supply the governing answer. Completeness rationale: The response omits or underdevelops these locked elements: The STOP-sign exception remains: the multi-lane STOP size is 36 x 36 inches. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: For regulatory signs other than STOP, the single-lane size may be used at 35 mph or less. Adjudication note: Reverses the 35-mph sign-size exception and omits the required 36 x 36-inch STOP size. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

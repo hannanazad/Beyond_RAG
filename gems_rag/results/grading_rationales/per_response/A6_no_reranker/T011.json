@@ -1,0 +1,57 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T011",
+  "question": "What reporting deadline applies to the final report for an approved MUTCD experiment, and what can happen if required progress reports are repeatedly missed?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The experimenting agency must submit a final report within 3 months of the conclusion of an approved experiment; if no final report (or notice of mitigating circumstances) reaches FHWA within 6 months of the end of the experimentation period, the experiment is considered terminated and FHWA's approval is rescinded. Similarly, missing two consecutive semi-annual progress reports results in termination of the experiment and rescission of FHWA's approval, with the site(s) required to be restored to MUTCD-compliant condition within 3 months. Standards (mandatory): - \"The experimenting agency shall submit a final report within 3 months of the conclusion of an approved experiment. If a final report is not received by the FHWA's Office of Transportation Operations, and the experimenting agency fails to notify the FHWA of any mitigating circumstances within 6 months of the end of the approved experimentation period, then the experiment shall be considered terminated and shall constitute rescission of the FHWA's approval to the experimenting agency, requiring restoration of the site(s) to a condition that complies with the provisions of this Manual within 3 months.\" - \"The experimenting agency shall submit a semi-annual progress report for any approved experiment even if no work was performed during the previous reporting period. Failure to submit two consecutive progress reports shall result in termination of the experiment and shall constitute rescission of the FHWA's approval to the experimenting agency, requiring restoration of the site(s) to a condition that complies with the provisions of this Manual within 3 months.\" - \"The required semi-annual progress reports shall be submitted throughout the course of an approved experiment in accordance with the following schedule: A. No later than August 1st for the preceding period of January through June; and B. No later than February 1st for the preceding period of July through December.\" Citations: - Section 1B.05 Standard §14 (p.9) - Section 1B.05 Standard §13 (p.8) - Section 1B.05 Standard §12 (p.8)",
+  "gold_answer": "The final report must be submitted within 3 months after the experiment concludes. Failure to submit two consecutive semi-annual progress reports terminates the experiment and rescinds FHWA approval, requiring restoration of the sites to MUTCD-compliant conditions within 3 months.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Failure to submit two consecutive semi-annual progress reports terminates the experiment and rescinds FHWA approval, requiring restoration of the sites to MUTCD-compliant conditions within 3 months.",
+      "token_coverage": 0.789
+    },
+    {
+      "text": "The final report must be submitted within 3 months after the experiment concludes.",
+      "token_coverage": 0.75
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1B.05",
+    "p.9",
+    "p.8"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1B.05, p.9, p.8. Gold elements clearly reflected in the response: Failure to submit two consecutive semi-annual progress reports terminates the experiment and rescinds FHWA approval, requiring restoration of the sites to MUTCD-compliant conditio… | The final report must be submitted within 3 months after the experiment concludes. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

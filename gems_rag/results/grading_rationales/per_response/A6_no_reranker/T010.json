@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T010",
+  "question": "May a non-compliant experimental traffic control device be used on a street open to public travel before FHWA approval to experiment is received?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. A traffic control device or application that does not comply with the MUTCD is prohibited from use on any street, highway, bikeway, or site roadway open to public travel until official approval to experiment has first been received from FHWA's Office of Transportation Operations. This flows from the broader requirement that non-adopted devices are prohibited unless the formal processes for interpretations, experiments, MUTCD changes, or interim approvals are followed. Standards (mandatory): - \"A traffic control device or application that does not comply with the provisions of this Manual shall not be used on any street, highway, bikeway, or site roadway open to public travel (see definition in Section 1C.02) without first receiving official approval to experiment from the FHWA's Office of Transportation Operations.\" - \"Design, application, and placement of traffic control devices other than those adopted in this Manual shall be prohibited unless the provisions of Sections 1B.04 through 1B.08 are followed regarding official interpretations, experiments, changes to the MUTCD, and interim approvals granted by the FHWA.\" - Traffic control devices on all streets and highways open to public travel \"shall be in substantial conformance with the Standards issued or endorsed by the FHWA,\" per the U.S. Secretary of Transportation under the Highway Safety Act of 1966. - The request for permission to experiment shall contain specified elements, including a statement of the problem and hypothesis, a description of the proposed change and how it deviates from the Manual, illustrations, supporting data, comparison to compliant devices, a legally-binding public-domain statement, time period and locations, control sites (or justification for not using them), and a detailed research and evaluation plan. - A request involving a new device or new application \"shall include... a legally-binding statement certifying that the traffic control device is not protected by a patent, trademark, or copyright... and that the traffic control device is in the public domain,\" and acknowledging that future proprietary protection will result in removal from the MUTCD, cancellation of interim approval, or cancellation of the authorization for experimentation. - \"A traffic control device design or application shall not be eligible for official experimentation (see Section 1B.05) or interim approval (see Section 1B.07) unless it is in the public domain.\" Citations: - Section 1B.05 Standard §2 (p.6) - Section 1B.03 Standard §8 (p.5) - Section 1B.03 Standard §1 (p.5) - Section 1B.05 Standard §10 (p.8) - Section 1B.05 Standard §16 (p.9) - Section 1D.06 Standard §2 (p.34)",
+  "gold_answer": "No. A non-compliant device or application may not be used on a covered public-travel facility without first receiving official experimentation approval from the FHWA Office of Transportation Operations.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "A non-compliant device or application may not be used on a covered public-travel facility without first receiving official experimentation approval from the FHWA Office of Transportation Operations.",
+      "token_coverage": 0.765
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1C.02",
+    "Section 1B.05",
+    "Section 1B.07",
+    "Section 1B.03",
+    "Section 1D.06",
+    "p.6",
+    "p.5",
+    "p.8",
+    "p.9",
+    "p.34"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9469024295259744,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1C.02, Section 1B.05, Section 1B.07, Section 1B.03, Section 1D.06, p.6. Gold elements clearly reflected in the response: A non-compliant device or application may not be used on a covered public-travel facility without first receiving official experimentation approval from the FHWA Office of Transpo… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.947 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

@@ -1,0 +1,68 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T037",
+  "question": "What is the function of the yellow change interval, how is its duration established, and may a pre-yellow vehicular countdown display be used?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The yellow change interval's sole function is to warn approaching traffic that its permission to proceed is ending, after which vehicles will be directed to stop (or, for protected/permissive turns, must complete the turn permissively). Its duration must be determined using engineering practices, with a recommended range of 3 to 6 seconds (longer values reserved for higher-speed approaches). Pre-yellow vehicular countdown displays may NOT be used: the MUTCD expressly prohibits signal displays intended to provide a \"pre-yellow warning\" at signalized locations, because research has found they increase crash frequency. Standards (mandatory): - \"The duration of the yellow change interval shall be determined using engineering practices.\" - For pedestrian hybrid beacons: \"The duration of the steady yellow change interval shall be determined using engineering practices in accordance with the provisions in Section 4F.17.\" - For emergency-vehicle hybrid beacons: \"The duration of the steady yellow change interval shall be determined using engineering practices in accordance with the provisions in Section 4F.17.\" - As shown on the Section 4F.17 page [Image 2]: \"Except for Warning Beacons mounted on advance warning signs on the approach to a signalized location (see Section 2C.35), signal displays that are intended to provide a 'pre-yellow warning' interval, such as flashing green signal indications, vehicular countdown displays, or other similar displays, shall not be used at a signalized location.\" Guidance (recommended): - \"A yellow change interval should have a minimum duration of 3 seconds and a maximum duration of 6 seconds (see Section 4F.17). The longer intervals should be reserved for use on approaches with higher speeds.\" Visual evidence: - [Image 1] Figure 4I-4 shows the yellow change interval (of at least 3 seconds) in its possible relationships with the pedestrian buffer interval and red clearance interval. - [Image 2] shows Section 4F.17 in full, including the Support statement of the interval's exclusive warning function, the Standard requiring engineering practices for its duration, the 3–6 second Guidance, and the Standard prohibiting pre-yellow warning displays such as vehicular countdown displays. - [Image 3] shows Figure 4I-4 in context in Section 4I.06, illustrating how the yellow change interval relates to pedestrian intervals. - [Image 4] shows related Standards that the yellow change interval shall not be shortened or omitted during preemption and priority control transitions. - [Image 5] shows Section 4H.11 applying the Section 4F.17 duration provisions to bicycle signal phases and explaining the interval's warning function for bicyclists. Citations: - Section 4F.17 Support §1 (p.708) - Section 4F.17 Standard §3 (p.708) - Section 4H.11 Support §3 (p.717) - Section 4N.03 Standard §4 (p.743) - Section 4J.03 Standard §10 (p.730) - Section 4N.03 Guidance §5 (p.743) - Figure 4I-4 (p.724) - Page 749",
+  "gold_answer": "The yellow change interval warns that permission to proceed or a protected movement is ending. Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds. Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons.",
+  "correctness_score": 0.9,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.75,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 85.0,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.90, Comp=0.75, F=1.00, Cit=0.75, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "The yellow change interval warns that permission to proceed or a protected movement is ending.",
+      "token_coverage": 0.778
+    },
+    {
+      "text": "Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4F.17",
+    "Section 2C.35",
+    "Section 4I.06",
+    "Section 4H.11",
+    "Section 4N.03",
+    "Section 4J.03",
+    "Figure 4I-4",
+    "p.708",
+    "p.717",
+    "p.743"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 85.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 4F.17, Section 2C.35, Section 4I.06, Section 4H.11, Section 4N.03, Section 4J.03. Gold elements clearly reflected in the response: Its duration must be determined using engineering practices, with guidance of 3 to 6 seconds. | The yellow change interval warns that permission to proceed or a protected movement is ending. | Pre-yellow displays such as vehicular countdowns or flashing green indications are prohibited, except for permitted advance-warning beacons. Adjudication note: Correct function, engineering basis, and duration guidance; omits the prohibition on pre-yellow displays. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

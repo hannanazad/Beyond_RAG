@@ -1,0 +1,62 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T059",
+  "question": "What minimum miles-per-gallon rating must a vehicle achieve to qualify as an inherently low-emission vehicle under the MUTCD?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": false,
+  "answerability_subtype": "contradicted_premise",
+  "model_answer": "Direct Answer: The MUTCD does not specify any miles-per-gallon (fuel economy) rating for a vehicle to qualify as an inherently low-emission vehicle (ILEV). ILEV status is based on emissions certification by the EPA, not fuel economy: ILEVs are vehicles having no fuel vapor (hydrocarbon) emissions that are certified by the EPA under 40 CFR §88.311-93 and 40 CFR §88.312-93(c). There is no MPG threshold anywhere in the provided evidence. Standards (mandatory): - The Manual mandates only the meaning of the acronym itself: \"The following acronyms and abbreviations, when used in this Manual, shall have the following meanings: ... 28. ILEV—inherently low emission vehicle.\" Guidance (recommended): - \"The Inherently Low Emission Vehicle (ILEV) (R3-10a) sign (see Figure 2G-1) should be used when it is permissible for a properly labeled and certified ILEV, regardless of the number of occupants, to use an HOV lane.\" Note that eligibility hinges on being \"properly labeled and certified,\" not on fuel economy. Visual evidence: [Image 1] Table 1D-1 lists \"Inherently Low Emission Vehicle — ILEV\" as an acceptable abbreviation without any performance criteria; [Image 5] shows the R3-10a \"INHERENTLY LOW EMISSION VEHICLES ALLOWED\" sign in Figure 2G-1 with no MPG-based qualification; [Image 8] contains Section 2G.04 text confirming ILEVs are defined by EPA emissions certification, not fuel economy. Citations: - Section 1C.03 Standard §1 (p.31) - Section 2G.04 Guidance §2 (p.412) - Section 2G.04 Support §3 (p.412) - Table 1D-1 (p.35)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.154
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2G.04",
+    "Section 1C.03",
+    "Table 1D-1",
+    "Figure 2G-1",
+    "p.31",
+    "p.412",
+    "p.35"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 0.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the response correctly states that the requested information or precision is not supported. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2G.04, Section 1C.03, Table 1D-1, Figure 2G-1, p.31, p.412. Gold elements clearly reflected in the response: The MUTCD does not specify this information. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision did not match the locked modality requirement for this question. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity."
+}

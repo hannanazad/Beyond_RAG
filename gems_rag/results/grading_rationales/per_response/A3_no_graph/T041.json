@@ -1,0 +1,65 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T041",
+  "question": "What orientation and locator-tone requirements apply to an accessible pedestrian push button?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Each accessible pedestrian push button must have a vibrotactile arrow on the button itself, with high visual contrast, aligned parallel to the direction of travel on the associated crosswalk so pedestrians can identify the correct button and align with the crosswalk. A locator tone is also required to help pedestrians with vision disabilities find the arrow and the push button. The locator tone may be deactivated during the steady DONT WALK phase only if passive pedestrian detection activates it whenever a pedestrian is within a 12-foot radius. Standards (mandatory): - \"Each push button shall clearly indicate by means of a vibrotactile arrow which crosswalk signal is actuated by the push button. Vibrotactile arrows shall be located on the button of the push button assembly, shall have high visual contrast (light on dark or dark on light), and shall be aligned parallel to the direction of travel on the associated crosswalk.\" - \"A locator tone shall be incorporated into the accessible pedestrian signal equipment to help pedestrians with vision disabilities locate the vibrotactile arrow, and the associated push button if a push button is provided.\" Guidance (recommended): - In temporary traffic control contexts, if a pushbutton is used to provide equivalent TTC information to pedestrians with vision disabilities, it should be equipped with a locator tone to notify pedestrians that a special accommodation is available and to help them locate the pushbutton. Options (permitted): - The push button locator tone may default to a deactivated mode during periods when the steady UPRAISED HAND (DONT WALK) indication is displayed, if a passive pedestrian detection system activates the locator tone at all times (other than when the audible walk indication is active) that a pedestrian is present within a 12-foot radius of the push button; where pedestrian facilities such as sidewalks are present, the passive detection requirement may be limited to pedestrians on those facilities within the 12-foot radius. Citations: - Section 4K.04 Standard §1 (p.734) - Section 4K.04 Standard §2 (p.734) - Section 6C.03 Guidance §8 (p.781) - Section 4K.04 Option §5 (p.734) - Section 4K.04 Support §3 (p.734) - Section 4K.01 Support §11 (p.731)",
+  "gold_answer": "The push button must have a high-contrast vibrotactile arrow on the button, aligned parallel to travel on the associated crosswalk. A locator tone must be incorporated; normally it is 0.15 seconds or less and repeats at 1-second intervals when the audible walk indication is not active, subject to stated exceptions.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.75, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "A locator tone must be incorporated",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "The push button must have a high-contrast vibrotactile arrow on the button, aligned parallel to travel on the associated crosswalk.",
+      "token_coverage": 0.909
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "normally it is 0.15 seconds or less and repeats at 1-second intervals when the audible walk indication is not active, subject to stated exceptions.",
+      "token_coverage": 0.25
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 4K.04",
+    "Section 6C.03",
+    "Section 4K.01",
+    "p.734",
+    "p.781",
+    "p.731"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9558295932317544,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The response omits or underdevelops these locked elements: normally it is 0.15 seconds or less and repeats at 1-second intervals when the audible walk indication is not active, subject to stated exceptions. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4K.04, Section 6C.03, Section 4K.01, p.734, p.781, p.731. Gold elements clearly reflected in the response: A locator tone must be incorporated | The push button must have a high-contrast vibrotactile arrow on the button, aligned parallel to travel on the associated crosswalk. Adjudication note: Correct arrow and locator-tone requirements; omits the normal 0.15-second duration and 1-second repetition. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.956 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

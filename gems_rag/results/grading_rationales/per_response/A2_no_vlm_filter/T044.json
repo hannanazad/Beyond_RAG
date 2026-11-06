@@ -1,0 +1,59 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T044",
+  "question": "What high-visibility apparel is generally required for workers within a temporary traffic control zone?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: All workers within the right-of-way who are within a TTC zone, including emergency responders, must wear high-visibility safety apparel meeting ANSI/ISEA 107-2015 Performance Class 2 or 3 for both daytime and nighttime activity, with the appropriate class selected by an employer-designated safety person. This requirement extends to uniformed law enforcement directing traffic and to firefighters and other emergency responders, though responders may alternatively wear ANSI/ISEA 207-2006 public safety vests. Standards (mandatory): - \"For daytime and nighttime activity, all workers, including emergency responders, within the right-of-way who are within the TTC zone shall wear high-visibility safety apparel that meets the Performance Class 2 or 3 requirements of the ANSI/ISEA 107-2015 publication entitled 'American National Standard for High-Visibility Safety Apparel and Headwear,' or equivalent revisions, except as provided in Paragraph 4 of this Section. A person designated by the employer to be responsible for worker safety shall make the selection of the appropriate class of garment.\" - \"When uniformed law enforcement personnel are used to direct traffic, to investigate crashes, or to handle lane closures, obstructed roadways, and disasters, high-visibility safety apparel as described in this Section shall be worn by the law enforcement personnel.\" - \"Except as provided in Paragraph 6 of this Section, firefighters or other emergency responders working within the right-of-way shall wear high-visibility safety apparel as described in this Section.\" Guidance (recommended): - For flagger wear during nighttime activity, apparel meeting the Performance Class 3 requirements of ANSI/ISEA 107-2015 (or equivalent revision), and labeled as meeting the ANSI 107-2015 standard performance for Class 3 risk exposure, should be worn. - All on-scene responders and news media personnel should constantly be aware of their visibility to oncoming traffic and wear high-visibility apparel; on-scene responder organizations should train their personnel in TTC practices. Options (permitted): - Emergency and incident responders and law enforcement personnel within the TTC zone may wear high-visibility safety apparel meeting the performance requirements of ANSI/ISEA 207-2006 (\"American National Standard for High-Visibility Public Safety Vests\"), or equivalent revisions, and labeled as ANSI 207-2006, in lieu of ANSI/ISEA 107-2015 apparel. Citations: - Section 6C.05 Standard §1 (p.782) - Section 6C.05 Standard §3 (p.782) - Section 6C.05 Standard §5 (p.782) - Section 6C.05 Guidance §7 (p.783) - Section 6O.01 Guidance §7 (p.854) - Section 6C.05 Option §4 (p.782)",
+  "gold_answer": "Workers, including emergency responders, within the right-of-way and TTC zone must wear ANSI/ISEA 107-2015 Performance Class 2 or 3 apparel, or an equivalent revision, subject to specified responder exceptions. The employer's designated safety person selects the appropriate class.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Workers, including emergency responders, within the right-of-way and TTC zone must wear ANSI/ISEA 107-2015 Performance Class 2 or 3 apparel, or an equivalent revision, subject to specified responder exceptions.",
+      "token_coverage": 0.864
+    },
+    {
+      "text": "The employer's designated safety person selects the appropriate class.",
+      "token_coverage": 0.857
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 6C.05",
+    "Section 6O.01",
+    "p.782",
+    "p.783",
+    "p.854"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.951231200062686,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6C.05, Section 6O.01, p.782, p.783, p.854. Gold elements clearly reflected in the response: Workers, including emergency responders, within the right-of-way and TTC zone must wear ANSI/ISEA 107-2015 Performance Class 2 or 3 apparel, or an equivalent revision, subject to… | The employer's designated safety person selects the appropriate class. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.951 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

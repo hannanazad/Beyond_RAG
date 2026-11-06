@@ -1,0 +1,56 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "T003",
+  "question": "Are islands, curbs, speed humps, raised roadway surfaces, and rumble strips considered traffic control devices under the MUTCD?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. The MUTCD explicitly explains (as Support) that infrastructure elements restricting travel paths or vehicle speeds—such as islands, curbs, speed humps, and other raised roadway surfaces—are not traffic control devices, and that transverse or longitudinal rumble strips are also not traffic control devices. This is consistent with the mandatory definition of traffic control devices, which covers signs, signals, markings, channelizing devices, or other devices whose primary purpose is communicating a regulatory, warning, or guidance message. Standards (mandatory): - \"Traffic control devices shall be defined as all signs, signals, markings, channelizing devices, or other devices that use colors, shapes, symbols, words, sounds, or tactile information for the primary purpose of communicating a regulatory, warning, or guidance message to road users on a street, highway, pedestrian facility, bikeway, pathway, or site roadway open to public travel.\" Physical infrastructure elements like islands, curbs, speed humps, and rumble strips do not fit this definition because their primary function is restricting travel paths or speeds, not communicating a message. Visual evidence: (none) Citations: - Section 1A.02 Support §2 (p.1) - Section 3I.01 Support §2 (p.632) - Section 6A.03 Standard §2 (p.768) Supporting notes (informational, non-normative): Section 1A.02 states that islands, curbs, speed humps, other raised roadway surfaces, and rumble strips are not traffic control devices, and that operational devices such as fencing, roadway lighting, barriers, and attenuators are shown in the Manual only for context. Section 3I.01 confirms that raised islands, \"[a]lthough they are not considered to be traffic control devices,\" are sometimes used to channelize traffic.",
+  "gold_answer": "No. Infrastructure elements that physically restrict travel paths or speeds, including islands, curbs, speed humps, other raised surfaces, and transverse or longitudinal rumble strips, are not traffic control devices.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Infrastructure elements that physically restrict travel paths or speeds, including islands, curbs, speed humps, other raised surfaces, and transverse or longitudinal rumble strips, are not traffic control devices.",
+      "token_coverage": 0.864
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1A.02",
+    "Section 3I.01",
+    "Section 6A.03",
+    "p.1",
+    "p.632",
+    "p.768"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9197207891481876,
+    "precision6": 0.3333333333333333,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1A.02, Section 3I.01, Section 6A.03, p.1, p.632, p.768. Gold elements clearly reflected in the response: Infrastructure elements that physically restrict travel paths or speeds, including islands, curbs, speed humps, other raised surfaces, and transverse or longitudinal rumble strips… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.920 and Context Precision@6=0.333. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

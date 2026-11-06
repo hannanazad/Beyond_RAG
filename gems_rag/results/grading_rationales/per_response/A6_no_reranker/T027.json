@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T027",
+  "question": "How should the advance placement of warning signs be determined?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Advance placement of warning signs should be based on providing drivers adequate Perception-Response Time (PRT), using the distances in Table 2C-3 applied with engineering judgment; the use of warning signs itself must be based on an engineering study or engineering judgment. Table 2C-3 gives distances by posted or 85th-percentile speed for Condition A (speed reduction/lane changing in heavy traffic) and Condition B (deceleration to a listed advisory speed). In temporary traffic control zones, signs should be placed in advance of the transition and activity areas at distances varying with roadway type, condition, and speed, extending longer (½ mile or more) on freeways and expressways. Standards (mandatory): - \"The use of warning signs shall be based on an engineering study or on engineering judgment.\" Guidance (recommended): - \"Warning signs should be placed so that they provide an adequate PRT. The distances contained in Table 2C-3 should be applied with engineering judgment.\" - \"The effectiveness of the placement of warning signs should be periodically evaluated under both day and night conditions.\" - In TTC zones, \"warning signs should be placed in advance of the transition and activity areas at varying distances depending on roadway type, condition, and posted speed,\" with the closest sign of a series placed approximately 100 feet for low-speed urban streets to 1,000 feet or more for freeways and expressways (see Table 6B-1). - On freeways and expressways, advance warning sign placement should extend farther—as far as ½ mile or more—because drivers are conditioned to uninterrupted flow. Visual evidence: - [Image 1] Table 2C-3 lists advance placement distances by posted or 85th-percentile speed (20–85 mph) for Condition A (speed reduction and lane changing in heavy traffic) and Condition B (deceleration to advisory speeds of 0–80 mph), with footnotes explaining the sign-legibility adjustments, PRT assumptions, deceleration rates, and the 100-foot minimum spacing. - [Image 2] Page 193 shows Section 2C.04, Placement of Warning Signs, containing the guidance that signs should provide adequate PRT and that Table 2C-3 distances should be applied with engineering judgment, together with the full Table 2C-3. - [Image 3] Page 839 shows Sections 6H.01–6H.02, including the guidance on positioning TTC advance warning signs in advance of the transition and activity areas per Table 6B-1. - [Image 4] Page 197 shows Figure 2C-2, an example of curve warning sign placement whose notes direct readers to Table 2C-3 for advance placement distance guidelines. - [Image 5] Page 812 shows Section 6B.04, Advance Warning Area, including the guidance that advance warning placement on freeways and expressways should extend as far as ½ mile or more. Citations: - Section 2C.01 Standard §1 (p.147) - Section 2C.04 Guidance §3 (p.152) - Section 2C.04 Guidance §5 (p.152) - Section 6H.02 Guidance §1 (p.798) - Section 6B.04 Guidance §3 (p.771) - Table 2C-3 (p.152) - Page 193 - Page 839 - Page 197 - Page 812",
+  "gold_answer": "Warning signs should be placed to provide adequate perception-response time. Table 2C-3 is an aid, but its distances should be applied with engineering judgment and can be adjusted for roadway features, other signing, and visibility.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Warning signs should be placed to provide adequate perception-response time.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2C.04",
+    "Section 6B.04",
+    "Section 2C.01",
+    "Section 6H.02",
+    "Table 2C-3",
+    "Table 6B-1",
+    "Figure 2C-2",
+    "Page 193",
+    "Page 839",
+    "Page 197"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.25,
+    "ndcg6": 0.482475559390755,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2C.04, Section 6B.04, Section 2C.01, Section 6H.02, Table 2C-3, Table 6B-1. Gold elements clearly reflected in the response: Warning signs should be placed to provide adequate perception-response time. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 4, which produced MRR=0.250. The six-chunk ordering produced nDCG@6=0.482 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

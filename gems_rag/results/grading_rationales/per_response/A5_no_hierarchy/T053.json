@@ -1,0 +1,64 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "T053",
+  "question": "What is the maximum number of words permitted on every static regulatory or warning sign?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "false_presupposition",
+  "model_answer": "Direct Answer: The evidence provided does not contain any provision establishing a maximum number of words permitted on static regulatory or warning signs. The only message-length limitation in the evidence applies to changeable message signs (CMS), which are limited by phases and lines of text, not by a word count, and that provision does not apply to static signs. The evidence is insufficient to answer the question as asked. Standards (mandatory): - For changeable message signs only (not static signs): \"Each message shall consist of no more than two phases. A phase shall consist of no more than three lines of text. Each phase shall be understood by itself, and the meaning of the entire message shall be the same, regardless of the sequence in which the phases are read.\" This does not establish a word limit for static regulatory or warning signs. Visual evidence: [Image 1] Figure 2A-1 shows methods of enhancing sign conspicuity (plaques, flags, beacons, LEDs) but contains no word-count rule; [Image 2] Figure 6G-1 shows temporary traffic control regulatory signs with varying amounts of text but no maximum word requirement; [Image 3] Table 2B-1 evidence relates to minimum sign sizes, not word counts; [Image 4] Table 6G-1 lists sign sizes for TTC zones, not message length limits. Citations: - Section 2L.05 Standard §4 (p.515) - Figure 2A-1 (p.48) - Figure 6G-1 (p.794) - Table 2B-1 (p.67) - Table 6G-1 (p.793)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.0
+    },
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2L.05",
+    "Table 2B-1",
+    "Table 6G-1",
+    "Figure 2A-1",
+    "Figure 6G-1",
+    "p.515",
+    "p.48",
+    "p.794",
+    "p.67",
+    "p.793"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 0.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 3.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2L.05, Table 2B-1, Table 6G-1, Figure 2A-1, Figure 6G-1, p.515. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision did not match the locked modality requirement for this question. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity."
+}

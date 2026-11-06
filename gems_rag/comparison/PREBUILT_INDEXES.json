@@ -1,0 +1,1758 @@
+{
+  "archive_root": "indexes",
+  "asset": {
+    "bytes": 482843736,
+    "name": "mutcd-rag-prebuilt-indexes-v1.zip",
+    "sha256": "87caba1cc041ba562a11629f4f534d26b44b0fe734a65254bf2d2a00ac505168",
+    "url": "https://github.com/GEMS-RAG/rag/releases/download/v1.0.0/mutcd-rag-prebuilt-indexes-v1.zip"
+  },
+  "files": [
+    {
+      "bytes": 5598269,
+      "path": "indexes/corpus/chunks.jsonl",
+      "sha256": "1035540a107be1e6016a98f7543faadd53a187a2cca8bd528fcf7beb3d6f529d"
+    },
+    {
+      "bytes": 224,
+      "path": "indexes/corpus/manifest.json",
+      "sha256": "fa20aaed29209293f6339d08939f5e6f045a7b5661d2f27c9d6a9233990e2f8d"
+    },
+    {
+      "bytes": 122881,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_1B-1_p0029.png",
+      "sha256": "d1776e47f0be91998ad3cf8a1d62ba3f022107c4317380d990bd34472d506dc0"
+    },
+    {
+      "bytes": 181249,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_1B-1_p0051.png",
+      "sha256": "f5e219b0905f76eb5fe71a0707b1191235ecef89940f2b193d3ad170bf9493cc"
+    },
+    {
+      "bytes": 126886,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_1B-2_p0029.png",
+      "sha256": "aa3e0ce8ed6e7d5ce53f307c273081a723e0eb36357dd7abb9285aca3b8c7dc9"
+    },
+    {
+      "bytes": 69963,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2A-2_p0100.png",
+      "sha256": "eaa457915d92ae4ab0c616cc1ddb65eb84cdcff8911fd3f7b7bbf919c817e3cb"
+    },
+    {
+      "bytes": 352299,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2A-3_p0121.png",
+      "sha256": "23478e86f67a5ae1b1cc86b286bb2092baabc9c9aa37b617c02894052f4b40c9"
+    },
+    {
+      "bytes": 194672,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2A-4_p0218.png",
+      "sha256": "6302679264c1a3a3c018fb4800865554ec8432129fd2086f8568f13bfe4c9553"
+    },
+    {
+      "bytes": 222032,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2A-4_p0221.png",
+      "sha256": "30c54c37e80962ca8ad62d1ebde5bdb540dc50de2feaf67a897cc19c47db68fd"
+    },
+    {
+      "bytes": 237615,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2B-15_p0297.png",
+      "sha256": "c18b7d1c628d73d82171a0754baff88d54d228d35cb6b7cdb6fd31c4160ae3f5"
+    },
+    {
+      "bytes": 304721,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2B-19_p0158.png",
+      "sha256": "50494c5067577d1e5f286e2c447aae3751de28d151213aa2f73375284244ec36"
+    },
+    {
+      "bytes": 391607,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2B-23_p0162.png",
+      "sha256": "f5033247f8a9f7f7b13d0169b4813a3e48cb942932ef826f1cf1acdb46e80df3"
+    },
+    {
+      "bytes": 128822,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2B-25_p0167.png",
+      "sha256": "c3f435d37b53dbfb5b8c6fff3c1e8880643d8e8739f897208b36c1afa987b155"
+    },
+    {
+      "bytes": 64163,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2B-28_p0172.png",
+      "sha256": "0d1faa949c0b2329721a8e53a52067d0a0591b411be80894ae1894342df09b5a"
+    },
+    {
+      "bytes": 59501,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2C-2_p0196.png",
+      "sha256": "286df28f0a97292b13a59ac7cd7e2c4a9ef2a1d27bbba13883abc819c96ff896"
+    },
+    {
+      "bytes": 282559,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2C-3_p0203.png",
+      "sha256": "9e2a3b3994fc7bca0479508c5f30d5e3d10d804506c04aad0f2de65caf2584bb"
+    },
+    {
+      "bytes": 227232,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-12_p0279.png",
+      "sha256": "bfaf7b9da3b581fa26feec4fb93bcba56c9e9fbb5fcf42af8d24b4d1b77d2026"
+    },
+    {
+      "bytes": 220455,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-13_p0279.png",
+      "sha256": "895f90c8ab82a09cb1aae7376867c808f128214067b295883786c3699ad36def"
+    },
+    {
+      "bytes": 122825,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-39_p0501.png",
+      "sha256": "e945b19c826ada6a269f8071c83384252e92d81f5ee71f8930ede8ff954578de"
+    },
+    {
+      "bytes": 173359,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-8_p0264.png",
+      "sha256": "d435a889516f91d24837e00909424223e8deb4dcc7572252ce5f5e61dd8d9e12"
+    },
+    {
+      "bytes": 368255,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-8_p0272.png",
+      "sha256": "6a1c261d2ebc7cd1e252ab3a6896661244ca87fd87d7c8c38b403d7674ecad32"
+    },
+    {
+      "bytes": 208557,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-8_p0280.png",
+      "sha256": "2c1726910ae9f89f0bf9a65b2adf303152e51264d120f6313aef2d11c7d93287"
+    },
+    {
+      "bytes": 252930,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2D-9_p0278.png",
+      "sha256": "1247ae6099d3be9dee21fbd60cc31e3055387d4974106386e34ecd471b229bfd"
+    },
+    {
+      "bytes": 469705,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2E-24_p0365.png",
+      "sha256": "474157bc3e9849bb50dcbee80e75e22bb6f814338036a9d986814270776357fe"
+    },
+    {
+      "bytes": 87063,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2E-25_p0365.png",
+      "sha256": "7988887453c6d22076a241706668e038b847395bed2c859e9d9be290a58b35e5"
+    },
+    {
+      "bytes": 415275,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2E-2_p0345.png",
+      "sha256": "0f73c30510f29c4e7bbb5ddc14ddfe1429c8caf57dabc9978949b221a2a3e395"
+    },
+    {
+      "bytes": 334373,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2E-38_p0388.png",
+      "sha256": "276bb6d8c95e914e398c2cd61469647d09b67246b2e0a206e0e51ce37721fd7c"
+    },
+    {
+      "bytes": 169500,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2E-4_p0347.png",
+      "sha256": "de01abe3bebfced00bbca7b6c8778032e7765c9dd2a7f62d1da73e2ffeb6c1ba"
+    },
+    {
+      "bytes": 108820,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2F-12_p0434.png",
+      "sha256": "0ff583bb5e263be286939811d6d954efe43a933f3f89ec13a42059f0360ac718"
+    },
+    {
+      "bytes": 105204,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2F-13_p0434.png",
+      "sha256": "9aa543ac61ad594633d7e9d122c548581ba4c7e271cd7aaf7ddc1e73400c252b"
+    },
+    {
+      "bytes": 411386,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2F-14_p0440.png",
+      "sha256": "744df91cd1516efd7753a622a50eaec433dbc74d5977e03a591ed1fc035ab695"
+    },
+    {
+      "bytes": 409056,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2F-15_p0440.png",
+      "sha256": "e730c20488f95c2c22118d44eb2b785da44de0862c547d5da3716008b033a73c"
+    },
+    {
+      "bytes": 466203,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2F-1_p0422.png",
+      "sha256": "5b7f0bec209a05c9503851555ece89109002cb0cd2826649dc532664933e22d5"
+    },
+    {
+      "bytes": 45927,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2F-8_p0434.png",
+      "sha256": "faabdd2c87027ecee40507e427b13902b2da551bb32996bf26e907d7b4944160"
+    },
+    {
+      "bytes": 319848,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-14_p0470.png",
+      "sha256": "80c25df5fe01289c05e8c8a314e60b77688afe79e2f958fce7b2eb4e5efd1980"
+    },
+    {
+      "bytes": 229552,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-1_p0450.png",
+      "sha256": "700e85048f786af9fc94b149e14bcee2940bee24a1ec38f4d6e99a30eaa1b7c4"
+    },
+    {
+      "bytes": 530833,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-1_p0456.png",
+      "sha256": "4ffe4e174e538cc0891de27aae8cf667c1a75c9acd2dc9e9ec68788f00937867"
+    },
+    {
+      "bytes": 227679,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-31_p0490.png",
+      "sha256": "55ab0f877eee4cd66e3d12574f83ede52ce8ce7adeebf890c20ba627f46152e7"
+    },
+    {
+      "bytes": 245867,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-32_p0488.png",
+      "sha256": "8c115b007d3d5187fffeda6334b98149c47f54f46f37f215d8ff256c7210aa4d"
+    },
+    {
+      "bytes": 236164,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-6_p0463.png",
+      "sha256": "43fcac658d38a5f524e97dca590c7ac5d236c6a2f5587e73f4016b66b5c647ec"
+    },
+    {
+      "bytes": 133393,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2G-9_p0464.png",
+      "sha256": "7305c2777ce90459f11331d0ab08f37ecf9a1feab31d1d1282b6229db64a2e03"
+    },
+    {
+      "bytes": 261109,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2J-5_p0540.png",
+      "sha256": "df1788a64ea3d198afdc43c2a80ebda99ab41d77c9b079fa026dd4e31eefb4f0"
+    },
+    {
+      "bytes": 203066,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2M-2_p0566.png",
+      "sha256": "51aa5540163516189d1be465281de77714dc9cd2bdc3fe32e23f63d3ae99e4c8"
+    },
+    {
+      "bytes": 374181,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_2M-3_p0564.png",
+      "sha256": "31bd7325892c7e0b6424cc60202dce4cf57f09c463f2c749d8949d7be9560cde"
+    },
+    {
+      "bytes": 111331,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-12_p0619.png",
+      "sha256": "ae9d2c3d964093eebde57903fe70a143a0157efb8ea8f748b5600d2bbccb3d4f"
+    },
+    {
+      "bytes": 64768,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-14_p0143.png",
+      "sha256": "0d6476c799c4bbf332e8742b8f63ff0999d0669acc3dc7229135f48b12533105"
+    },
+    {
+      "bytes": 210294,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-15_p0609.png",
+      "sha256": "79dc078c24521ccd428af276988c9ef7fd2a66de493b9d39a8ec47b567fab812"
+    },
+    {
+      "bytes": 203742,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-17_p0619.png",
+      "sha256": "143c82f22740631518483f6863931925a6c575468a732d02b6d0e693d6b981d0"
+    },
+    {
+      "bytes": 137471,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-21_p0646.png",
+      "sha256": "7ef0fa6ff3b4184abdb992117f480aa1ac649a169083fe8440057262e01c086b"
+    },
+    {
+      "bytes": 283403,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-27_p0627.png",
+      "sha256": "1e1309f175bc16e348b11566622e4f3777a859366a7f5548e19b55756daae9b0"
+    },
+    {
+      "bytes": 5842,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-29_p0627.png",
+      "sha256": "11c92d515ede160707fcf476538dbe3bc22e06d4e2a540973b9667df9aad36a8"
+    },
+    {
+      "bytes": 427118,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-29_p0629.png",
+      "sha256": "1b629ddcd24353d6ace40dc2e6c5427020f7ee7be55dc006096e31ad31c526fe"
+    },
+    {
+      "bytes": 129556,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-29_p0635.png",
+      "sha256": "d7e3079e0321350d4c29a67efe3b238fdb6e76765e37405a57c59766b5c3ebab"
+    },
+    {
+      "bytes": 112629,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3B-9_p0589.png",
+      "sha256": "1c46a58c7a345e48f10b278b548d981864ceb05ab907456e98c719abfa457353"
+    },
+    {
+      "bytes": 368622,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3D-1_p0636.png",
+      "sha256": "f05fa58c4c359a877280cb177c732d4dd06e68777ccbcb0b82b42a425e8c98c7"
+    },
+    {
+      "bytes": 300833,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3D-6_p0643.png",
+      "sha256": "60a63506966966183231270f935994d2fe3eb3caafd90eb28ecd9537bc5846db"
+    },
+    {
+      "bytes": 205879,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3E-1_p0647.png",
+      "sha256": "55cf1f04238e9f1003a2726bb275fb9d3d23edc92853710ec3c788523746dddb"
+    },
+    {
+      "bytes": 154629,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3E-2_p0648.png",
+      "sha256": "23603ab5c08f75d772d3358256d98ca4001155a4e863ce735e4fc4e404239ae4"
+    },
+    {
+      "bytes": 208100,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3E-4_p0649.png",
+      "sha256": "ef43eb1c992d416fe62b78618a803aa8ff1658bb536db8464087e9a2abea61a7"
+    },
+    {
+      "bytes": 215376,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3E-5_p0656.png",
+      "sha256": "4518da49ca78f83ff944d9ce0ab3917ee57bccbcd05f5ba54d0cc82b4aa9f2cf"
+    },
+    {
+      "bytes": 6489,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3H-6_p0669.png",
+      "sha256": "16b865d631c58a1ffe04ab14f787c249db4f9e97936d7c7a59bb1ffe8f12e664"
+    },
+    {
+      "bytes": 188392,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3I-1_p0674.png",
+      "sha256": "58f66118177416df687ed7eed85505b18fb5740144a9a924aa1f53e1ea85045d"
+    },
+    {
+      "bytes": 224041,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3I-1_p0675.png",
+      "sha256": "2757e25e65c64122541028b68e648ae2472b66c79dd43bdd3d41890256ade892"
+    },
+    {
+      "bytes": 201837,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3J-4_p0678.png",
+      "sha256": "9f6d9dbc26310437fd91eb39cb020b976540d5c89627c1cbeb073e6448564d67"
+    },
+    {
+      "bytes": 109182,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3J-6_p0681.png",
+      "sha256": "8b91a70be3701c4918f51b31c90445dfd77da0be91478c18af8ad2a823aee575"
+    },
+    {
+      "bytes": 12210,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_3J-6_p0682.png",
+      "sha256": "304c50507fd6403c815bf0fcbbf5e5ab2219d7b75a9217bec5a9a9d0c310f11f"
+    },
+    {
+      "bytes": 247640,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4C-3_p0697.png",
+      "sha256": "2eed8eda8e4ad011696e351787707c2b1ab84f5cf9ed6f38d24bae3f994b08d2"
+    },
+    {
+      "bytes": 259587,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4C-4_p0697.png",
+      "sha256": "927610f348d5699172fc12e3fc045fc9e5b5791f2228cc18c2faaaebc6df0996"
+    },
+    {
+      "bytes": 578378,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4F-10_p0743.png",
+      "sha256": "740753269e80837befb238388b054ae51cf9327650f5ed6b8074ca95bb64d3a6"
+    },
+    {
+      "bytes": 12199,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4F-15_p0745.png",
+      "sha256": "2af094dd3eef95c787a930f4c54be4fe2a7d1a2531be019e18ae78bda7f5579d"
+    },
+    {
+      "bytes": 320422,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4F-3_p0733.png",
+      "sha256": "d1f2f616d4f6e25a79095a165ca6f1fbcf175a1f322593275fab1066153bb312"
+    },
+    {
+      "bytes": 263393,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4F-4_p0729.png",
+      "sha256": "3c79518e8bdb05da9aeaf6d9a5dc9dcbbc94515bf00a8a4ed25376b8b6ca79d4"
+    },
+    {
+      "bytes": 379584,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_4I-3_p0763.png",
+      "sha256": "cbc2d8258065f9128317e31bb9da408ff4f66fd3d1e4ea04f0e7b35f1954024f"
+    },
+    {
+      "bytes": 132486,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-17_p0934.png",
+      "sha256": "d871b84ed1c24c2498991018438a2cf109fd1004cc9fee1bac7877ea0071c992"
+    },
+    {
+      "bytes": 300805,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-29_p1005.png",
+      "sha256": "5696562304f40dad31ced1bcdc976e996644b5efb6789f8ea642a4f7626c03fe"
+    },
+    {
+      "bytes": 210688,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-29_p1007.png",
+      "sha256": "1bbe844380b9ae47f075db4f7d3e747193b014609f4113571ce12d5023a86920"
+    },
+    {
+      "bytes": 24165,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-34_p0888.png",
+      "sha256": "a5d41518c481646857f4fad06f134b7f44e764a768582bc878f4464ea9842876"
+    },
+    {
+      "bytes": 283649,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-42_p0984.png",
+      "sha256": "5ca2d7a9dbb626a3cd8a9736fc311a6764e34910630c8ff32232d2c603537b91"
+    },
+    {
+      "bytes": 211097,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-46_p0892.png",
+      "sha256": "9ad8f105a5aa3f5660658aa2796f7f3a772d68e8ada8b217a161bb5f9b0da706"
+    },
+    {
+      "bytes": 357511,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_6P-6_p0887.png",
+      "sha256": "b5b9d2752ecf5e9256f264b45e0a7f291c320df531628c74ae4c4cbefa612929"
+    },
+    {
+      "bytes": 463252,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_8B-4_p1046.png",
+      "sha256": "fe8e0fd5388f1b2a7796f93559894739e3f9d85cae19d4aa5f562afbe8a4f97f"
+    },
+    {
+      "bytes": 245910,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_8B-4_p1047.png",
+      "sha256": "7f8541c972fc5193cee604005336953ea29351842ad2852356abf439abc92e4f"
+    },
+    {
+      "bytes": 94904,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_8C-5_p1055.png",
+      "sha256": "bb57697465141a93e62e85a0c31678d033ebae074c3e226b72f258518de749a8"
+    },
+    {
+      "bytes": 107803,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9B-1_p1093.png",
+      "sha256": "4fb2fa9c5811574d58cc87a6d7d5bfbf1b46d1487029ec8c4934e2e62fb6217b"
+    },
+    {
+      "bytes": 190961,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9B-1_p1095.png",
+      "sha256": "7af5e2352c047b9cc76b000a7c47fc9538ccfd86b35377371f1b8207dc2dc76b"
+    },
+    {
+      "bytes": 65480,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9D-2_p1114.png",
+      "sha256": "5698a879ba94b367fab18881893ecc8419e53bc427cd86b8e46c3e738a35a044"
+    },
+    {
+      "bytes": 361556,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9D-3_p1115.png",
+      "sha256": "859d99d01a1aa406dfa2ce63ded4730717a48b6a579fdcc5beab37175d0bf20a"
+    },
+    {
+      "bytes": 50746,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9D-3_p1119.png",
+      "sha256": "7eec2ec25f2a9cc496bf023b2b884152dd41f1b004249c0d8d549d060e23a271"
+    },
+    {
+      "bytes": 273737,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9D-5_p1122.png",
+      "sha256": "d51914c7aaef505d2d13fb45c2824e7e057737f68fe9246d2882597a92adeb07"
+    },
+    {
+      "bytes": 190219,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9D-6_p1123.png",
+      "sha256": "d60c643dc97f84cb2fc14d4fb537ae4fba0ddcb09cf72a8664c09577f891f8cc"
+    },
+    {
+      "bytes": 551163,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9D-7_p1125.png",
+      "sha256": "58b7850d61677a9bf63812605dc230d89d7048a1da8a661585eac80ed02f0697"
+    },
+    {
+      "bytes": 228249,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9E-7_s1_p1140.png",
+      "sha256": "1b2ec883cf262c1fcc9ea67b42bc45ed2843635818888922bb231594f3e0556b"
+    },
+    {
+      "bytes": 276316,
+      "path": "indexes/gems-rag/media_overrides/figures/figure_9E-8_p1141.png",
+      "sha256": "5f14c60984324a9ed46cf1ad5f620407df808063458108faece81a93977d82bd"
+    },
+    {
+      "bytes": 484691,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2B-1_p0109.png",
+      "sha256": "d7d5f57568428e363d4f75bb349fbad06eaacb896f42211077c006596ce748d0"
+    },
+    {
+      "bytes": 474890,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2B-1_p0110.png",
+      "sha256": "5a4129244fcff4462f52012b9e3b6cd646aec4b023de212d2c42095dc125fc02"
+    },
+    {
+      "bytes": 451495,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2B-1_p0111.png",
+      "sha256": "7b220e9223481c84ed8bec32c7949d67bc3da249a8064a06d1ecf80626c62d2c"
+    },
+    {
+      "bytes": 441030,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2B-1_p0112.png",
+      "sha256": "c0feacad681829c5857a1959185337d62e676a56527cde1afa3a75bf9f6de6d6"
+    },
+    {
+      "bytes": 466229,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2B-1_p0113.png",
+      "sha256": "184802239a08d650d086e696aa678e0861b1aa4550cd45b54a00b4a0991a42e2"
+    },
+    {
+      "bytes": 388534,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2B-1_p0114.png",
+      "sha256": "e640972dcef4d4735bd994ad1c662a2f9318933d90e59fb1504d33b1715acd32"
+    },
+    {
+      "bytes": 509595,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2C-1_p0189.png",
+      "sha256": "e502fca00967ee7444e552e6c345221c88ee027ae27256f3b252c1e9a95cd0ff"
+    },
+    {
+      "bytes": 517365,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2C-1_p0190.png",
+      "sha256": "d21a1d1f16b8eccfafd26a934aa12636fbef6229a8a7b74c8081853bd764fe1e"
+    },
+    {
+      "bytes": 501244,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2C-1_p0191.png",
+      "sha256": "3d6baed37e145db9548046629991dc07005a7ef014359e99a336d57d59bdc8a4"
+    },
+    {
+      "bytes": 164459,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2C-1_p0192.png",
+      "sha256": "4dbd721d7d0910b03fa413de20be1f03656cf9e95ea7c4ef2840ca05fef300d8"
+    },
+    {
+      "bytes": 125938,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2C-3_p0201.png",
+      "sha256": "4af2ba982d4077fae9c329ca9e9e5396bebca872990b02e33ff72f629fd9b54d"
+    },
+    {
+      "bytes": 431457,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2D-1_p0248.png",
+      "sha256": "f2b7cefb5b3f9842ec125fc83ad34539c31d4474764d4ea9df22f8d0e5b5d37e"
+    },
+    {
+      "bytes": 442681,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2D-1_p0249.png",
+      "sha256": "f7134fad511b9ae78060903509bd5fe45526cab61bd16e4ea3f96a0c6269e785"
+    },
+    {
+      "bytes": 405305,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2E-1_p0335.png",
+      "sha256": "1cb711253088c4f64df5363d58fb5cd699ce16735b6dd15aa984a970f0434061"
+    },
+    {
+      "bytes": 384845,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2E-1_p0336.png",
+      "sha256": "05f4b33494d3e851a8cfec9341d477447841ebb0f83bdbd9a2120faa882a7776"
+    },
+    {
+      "bytes": 418698,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2E-1_p0337.png",
+      "sha256": "6b4cd8ef168fd7c8f40c47686f820ad00794d4b2aff713e5833440a815170db0"
+    },
+    {
+      "bytes": 482508,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2G-1_p0448.png",
+      "sha256": "657dab5dfe8128cdfe19bc7c72fd0012ce3dbdbde6f6a556be3a2719198f22fe"
+    },
+    {
+      "bytes": 255094,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2G-1_p0449.png",
+      "sha256": "10ceb628d3ec610874932e4489f4ba996c6e3027516c92863e0d5bfcd37816ed"
+    },
+    {
+      "bytes": 447514,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2I-1_p0517.png",
+      "sha256": "400ebf633aee1e0b1ceab4458d36bb40e658753f39208327bb11c5c2e8110045"
+    },
+    {
+      "bytes": 479340,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2I-1_p0518.png",
+      "sha256": "c67d0ffe3b51d5a9f2a3ba07fc626e8447bbd70a802e8bf98406377541ca5f78"
+    },
+    {
+      "bytes": 332526,
+      "path": "indexes/gems-rag/media_overrides/figures/table_2L-2_p0557.png",
+      "sha256": "7e96f4b1e3c567655141838bf5ee4c241ed08c8608887c0f46d7f4116a153575"
+    },
+    {
+      "bytes": 64489,
+      "path": "indexes/gems-rag/media_overrides/figures/table_6P-1_p0898.png",
+      "sha256": "a257f2cf8c5e9a15349b2c6bcdceb3a48659f4f8a2b81f302ee59aa9c1334fb3"
+    },
+    {
+      "bytes": 14457,
+      "path": "indexes/gems-rag/media_overrides/figures/table_8B-1_p0041.png",
+      "sha256": "2551d4b93f641b5bf5c00b235b496ec3e80b2c488eb3c22e1890f30bbe5103ad"
+    },
+    {
+      "bytes": 448332,
+      "path": "indexes/gems-rag/media_overrides/figures/table_8B-1_p1035.png",
+      "sha256": "629f352caaa5b2735122f045481f82d8ad3b901ffc87f01353ab2b658321a998"
+    },
+    {
+      "bytes": 557462,
+      "path": "indexes/gems-rag/media_overrides/figures/table_8B-1_p1036.png",
+      "sha256": "bd5bfb1f897d2d5baf8a5b1fe79a49ea68315aef7cd1ae541245521337086055"
+    },
+    {
+      "bytes": 5744,
+      "path": "indexes/gems-rag/media_overrides/figures/table_9A-1_p0041.png",
+      "sha256": "e880540bd81a6fdcb79b1eac63fc1bc78ad2e401da68b000f730524bd224e175"
+    },
+    {
+      "bytes": 409532,
+      "path": "indexes/gems-rag/media_overrides/figures/table_9A-1_p1090.png",
+      "sha256": "0c889f4e1fd0f8b093673e3cda3c13e15ecbc913e7c977ebbf644421bb299180"
+    },
+    {
+      "bytes": 424573,
+      "path": "indexes/gems-rag/media_overrides/figures/table_9A-1_p1091.png",
+      "sha256": "196806b326540048dcbec28a2bd5a9b58ce3d8831943e8176c3f29c8ee2e9e26"
+    },
+    {
+      "bytes": 450694,
+      "path": "indexes/gems-rag/media_overrides/figures/table_9A-1_p1092.png",
+      "sha256": "849cd543b88b631e9244af20e526976494a05c1fefdcfc8722b040dc8f0e00b7"
+    },
+    {
+      "bytes": 69346,
+      "path": "indexes/gems-rag/media_overrides/figures/table_A2-1_p1160.png",
+      "sha256": "d171ba52c6f2f6de55149e27ba2f728a733cada842af562275ed3283dfdc4f72"
+    },
+    {
+      "bytes": 113573,
+      "path": "indexes/gems-rag/media_overrides/figures/table_A2-2_p1160.png",
+      "sha256": "ac7e507b717a6f1a0073d5565b5225a209d99ea89a32b3d6f46659df5eb317a3"
+    },
+    {
+      "bytes": 30484,
+      "path": "indexes/gems-rag/media_overrides/figures/table_A2-3_p1160.png",
+      "sha256": "b24d5a0e9261da0faa3daec465684f7fbb25bbe0866de6767b35d2114976c66a"
+    },
+    {
+      "bytes": 38128,
+      "path": "indexes/gems-rag/media_overrides/figures/table_A2-4_p1160.png",
+      "sha256": "9d3e8f778070e6a4572f3a5aa3ca6163ecbfa615ea2a314d5fd3e6e35c79e3ba"
+    },
+    {
+      "bytes": 381016,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0003.png",
+      "sha256": "7decfd21d86cc98c3094f27d48291d9538a695e134f92510bbde319a3595dd81"
+    },
+    {
+      "bytes": 190597,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0093.png",
+      "sha256": "f53339ff9d65558feff98c9294b26b22fedddd51b53bd06f8059cfe4535e3ddc"
+    },
+    {
+      "bytes": 235023,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0160.png",
+      "sha256": "4cdb40f7560dd39ad59deb668106107c0e1645e5b2d936c65559ee6eb6f84b9f"
+    },
+    {
+      "bytes": 335988,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0162.png",
+      "sha256": "df699f8f00221e143de7cdcf4b0465cd0de6f9c97993a0ffe57d0f546cf8ff9c"
+    },
+    {
+      "bytes": 435044,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0190.png",
+      "sha256": "3dbc677ba1a72a38544149113f14e57087ccaca2a99ce3cf5f4732d217e7d363"
+    },
+    {
+      "bytes": 412970,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0196.png",
+      "sha256": "2726ba809cc7f8e1b13d420c694916648ad8774afa7930f6668b8858ab3346ad"
+    },
+    {
+      "bytes": 250133,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0203.png",
+      "sha256": "c42af32ce24d83883b550da62c71dc1a4fde867899e817a43e1595436bb9f34b"
+    },
+    {
+      "bytes": 222634,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0265.png",
+      "sha256": "d45d4c0d6dff3c09c8f80e6259a7226ce36715bd3a307762a8cc7ac615d9cae6"
+    },
+    {
+      "bytes": 538575,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0318.png",
+      "sha256": "b2105cbe567f7a458c7844de2e9831a0b425fb5a515f0e8e0e6fb0b5f9d46978"
+    },
+    {
+      "bytes": 370983,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0326.png",
+      "sha256": "740a0f90d143f0b2dbef1f8a1ae27d736c7504737bb3d60c8f6ef314d5d6c2cf"
+    },
+    {
+      "bytes": 266357,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0455.png",
+      "sha256": "f9b03e4c7806254ea43d365033c434176e4a892f2e11ead4612ac2b1ffe4eadf"
+    },
+    {
+      "bytes": 464782,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0457.png",
+      "sha256": "99afa8d2b648bfc706faf3a215275771b490896e45a04dabc10f30fad6262243"
+    },
+    {
+      "bytes": 240802,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0468.png",
+      "sha256": "6b2eb7da6cab379b99f8534e4ea11f6c2ce2597f74cce143926ecae99b542789"
+    },
+    {
+      "bytes": 209932,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0506.png",
+      "sha256": "cb4eeb9e81365143fcfb682f31b78fbaa778193a5efc6b62f9896a039ec8b73f"
+    },
+    {
+      "bytes": 298347,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0618.png",
+      "sha256": "ef5d3a78d6383cd1132c12d328e14e6f463d84f2dad48372d374319656ebabd2"
+    },
+    {
+      "bytes": 167018,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0628.png",
+      "sha256": "4eb7c014e9c1e649dca6f7487c1a17f9a8ebe3d62655505a3a76487f8bbf5654"
+    },
+    {
+      "bytes": 191926,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0679.png",
+      "sha256": "eebd1d1680479ab83e8f5bbc5a2fda928fd4bb352685dbadbb02eb29594b7437"
+    },
+    {
+      "bytes": 175721,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0815.png",
+      "sha256": "1269009cb7ebbffcb72a8a04919afac9c8b8c07e9f422996d078bb42811a1e2c"
+    },
+    {
+      "bytes": 374167,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0836.png",
+      "sha256": "0c567544b4e7d30b5d8777946b1b901f1b8cf554cb77ea0df52ba14fbedc2865"
+    },
+    {
+      "bytes": 274850,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0842.png",
+      "sha256": "f46ecd429a835b27af09a3bad480d240351603491e56eabbc2e6c02b514e433b"
+    },
+    {
+      "bytes": 262862,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0868.png",
+      "sha256": "6e6d9e35859d08fabb5d4d49fc91bb46076ef0dbf66948b676534371bbd0efda"
+    },
+    {
+      "bytes": 218111,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0924.png",
+      "sha256": "ef25e7cf9a8c522ef0e9907392ec79dfe4e51d3c1fe20f2fc3456ab72c4960b2"
+    },
+    {
+      "bytes": 167676,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0930.png",
+      "sha256": "9b3acf94996501a40e8e77c109a281571a91a6a82c00d7bb10c9db604b4d562a"
+    },
+    {
+      "bytes": 138872,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0942.png",
+      "sha256": "404d7c006f3cc29a7b6ef035767cbabdfe3c0d34220cf89770767dfe4f2419f7"
+    },
+    {
+      "bytes": 227236,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0954.png",
+      "sha256": "f6c67ab2f75856ae931306bd36ea5d09136c83dc93b5c582c8ce749e59689fd7"
+    },
+    {
+      "bytes": 230447,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0964.png",
+      "sha256": "c39d0ab3356eb5d1e5d5f054ae083b676473b168c843cf60e94db71000366582"
+    },
+    {
+      "bytes": 358629,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_0990.png",
+      "sha256": "49c09ea0fa2a84714b5dd33b19f25c8895aa6f52b3650ad10d56866ba6aaf1cc"
+    },
+    {
+      "bytes": 528841,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_1010.png",
+      "sha256": "3f2a1b449508324bc217a2b3a6be4ea41c792ba8db936c9b00f90a7e946a26ff"
+    },
+    {
+      "bytes": 3548011,
+      "path": "indexes/gems-rag/media_overrides/page_images/page_1162.png",
+      "sha256": "976e55f8a70b5e0d763aac1d031a91465d275fc171250e65ecfef97133fd4153"
+    },
+    {
+      "bytes": 4300694,
+      "path": "indexes/gems-rag/mmrag_cache_v3/chunks.jsonl",
+      "sha256": "ba12dfa6fcd56bc5fc25802e5e7d828539a1ccd98dd51763b171764aaad68d46"
+    },
+    {
+      "bytes": 2,
+      "path": "indexes/gems-rag/mmrag_cache_v3/chunks_v4.stamp",
+      "sha256": "8e38a1ea5c681c8e9a08f1af465f1f07d33d931de8f71af45ecbe957751c9a86"
+    },
+    {
+      "bytes": 335,
+      "path": "indexes/gems-rag/mmrag_cache_v3/figure_coverage_report.json",
+      "sha256": "cbd3f65ffd87f31046c87670f55761f4b217b70837867b56580b117ffbf5dcdc"
+    },
+    {
+      "bytes": 354069,
+      "path": "indexes/gems-rag/mmrag_cache_v3/figures.jsonl",
+      "sha256": "c688a7dc6ee0cc8589c368ea23c3f892f29daacb389c7d3c2761903e571bfbb3"
+    },
+    {
+      "bytes": 1952929,
+      "path": "indexes/gems-rag/mmrag_cache_v3/graph.gpickle",
+      "sha256": "dff77abce98e7694bce284fa211029a6a9abe0c5be7204fb8ada8cca5a512eb8"
+    },
+    {
+      "bytes": 194959,
+      "path": "indexes/gems-rag/mmrag_cache_v3/sign_codes.json",
+      "sha256": "7cb59b2846a13732cdb878e6c6cb8a809dcda80976d07b9332f8009a28aaf6aa"
+    },
+    {
+      "bytes": 31651303,
+      "path": "indexes/gems-rag/mutcd11theditionr1hl.pdf",
+      "sha256": "f508594285e5fccc45714660cc6aba1f895ae88226449345582fbbc1ceb7ba07"
+    },
+    {
+      "bytes": 62828544,
+      "path": "indexes/gems-rag/qdrant_db/collection/mutcd_chunks/storage.sqlite",
+      "sha256": "e6159e97d687214f18b4c39900abf7a3bb93da4f18ab6f77f543697067f9b32c"
+    },
+    {
+      "bytes": 5701632,
+      "path": "indexes/gems-rag/qdrant_db/collection/mutcd_figures/storage.sqlite",
+      "sha256": "168266b23c726b388fa9ab1891add8e4a1bd9614498c6c1a656496de3fd92f7f"
+    },
+    {
+      "bytes": 2163,
+      "path": "indexes/gems-rag/qdrant_db/meta.json",
+      "sha256": "e46246f34efce7ec3a2fd6bed08c3e757dce47127f5bd6b19b9acb09fa5617d4"
+    },
+    {
+      "bytes": 296146,
+      "path": "indexes/gems-rag/visual_assets.json",
+      "sha256": "b8cccdf5707be283ab316420f0a1027c15014f111b87d6560e7727c766cb78e9"
+    },
+    {
+      "bytes": 279305257,
+      "path": "indexes/gems-rag/visual_qdrant.tar.zst",
+      "sha256": "85f5b6529e04fa15494eb01220e45ee34c4852c142f803a22d91fccee6f536af"
+    },
+    {
+      "bytes": 1463,
+      "path": "indexes/graphrag/.graphrag_index.json",
+      "sha256": "9a4f7cb52cb2d64be0d7844e6f0ffc55df7d4f39f02154cafd3c67219faeabdc"
+    },
+    {
+      "bytes": 2993516,
+      "path": "indexes/graphrag/input/mutcd_chunks.txt",
+      "sha256": "952b9f4a8ab6805055fd1f665bbbf5c2124ce94b11c17774df5426f223824edc"
+    },
+    {
+      "bytes": 11367934,
+      "path": "indexes/graphrag/output/communities.parquet",
+      "sha256": "497133ef5d757b8df4d16fb519d456177b475306c7eb90ba56c3a4b98c8effec"
+    },
+    {
+      "bytes": 569000,
+      "path": "indexes/graphrag/output/community_reports.parquet",
+      "sha256": "03bf943e754d16941765b86c9572685a3fedac3e55c1aebce0ab6e2d1cdb317f"
+    },
+    {
+      "bytes": 2,
+      "path": "indexes/graphrag/output/context.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "bytes": 1036515,
+      "path": "indexes/graphrag/output/documents.parquet",
+      "sha256": "bff6e9d50b831da2a43ca7747c1a6d57e7b9ba0c7d3972321afef429e581cd32"
+    },
+    {
+      "bytes": 430651,
+      "path": "indexes/graphrag/output/entities.parquet",
+      "sha256": "41087635ed47eaeb39e53e7a57eae67c4d30a49000f7db823bab77421d025c58"
+    },
+    {
+      "bytes": 3713,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_indices/224888ad-1cdb-4516-8b6b-41a4bbedacb0/auxiliary.idx",
+      "sha256": "1c3c4c981e765af3e2402c788ccf8591d25f65bf8db3a7faebb1d15285efda9c"
+    },
+    {
+      "bytes": 3410,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_indices/224888ad-1cdb-4516-8b6b-41a4bbedacb0/index.idx",
+      "sha256": "74480532a9e3f31b69c36d215f4cffa4ed8adb29dbbb28f987d77b4c6d4f506b"
+    },
+    {
+      "bytes": 3713,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_indices/f79517b1-638b-4ad6-8c88-dcac8b159b2b/auxiliary.idx",
+      "sha256": "ed861dbfab1328713d21365b361d74e08fee7f20c69b72ba3c99085135b14dab"
+    },
+    {
+      "bytes": 3410,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_indices/f79517b1-638b-4ad6-8c88-dcac8b159b2b/index.idx",
+      "sha256": "ca7ef0214a025382e1ce1745afe0c2945e22260790a778c9b2f9f1cf74b4e825"
+    },
+    {
+      "bytes": 1190,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/0-4723d635-10d0-418e-b0cc-945af9f20e7a.txn",
+      "sha256": "410e4c8b02a784272c0b894f50ed73990143516b4f8319d32bd51191364dde2d"
+    },
+    {
+      "bytes": 146,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/1-c3a02234-8bc9-43a0-b499-56f6fdfb7de3.txn",
+      "sha256": "6efeb4ad19b544a87711d6256aec518713fd5c10a93fb802506e9a88f289e77c"
+    },
+    {
+      "bytes": 64,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/2-1229e074-cdd8-457b-827a-10471e4757c4.txn",
+      "sha256": "e8c00e230138084205071837113194f867e1e8688479ab0a05bb07e619c50064"
+    },
+    {
+      "bytes": 139,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/3-2103b1cf-8b4f-4608-b65a-dbb5fe87ed69.txn",
+      "sha256": "256bab31b3375c5ddb4dfcbf39942754c14941d648bc3e051f90d7e3cc3b7792"
+    },
+    {
+      "bytes": 1116,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/4-0d470060-24ac-4007-80cd-007e52eb7a76.txn",
+      "sha256": "6b5e0527695d56ce7a641de0b81b7779772c8e6b89cb6ae0f9c7b805bb7ae9b2"
+    },
+    {
+      "bytes": 146,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/5-682347cd-fd15-4fcf-8cc9-6717aae3ed79.txn",
+      "sha256": "40275ae306b358924fc55b252d83044e42e0ca0004594154e78bae9ef91c627c"
+    },
+    {
+      "bytes": 64,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/6-b88a2445-89ce-45ef-97e6-3be6903a2a31.txn",
+      "sha256": "93b2360d88fd92b65b5a5a305aa81477fc109baa0414721a2ae41a733a8833e9"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_transactions/7-c38f5a26-2825-48a7-973c-7d72c6f51db9.txn",
+      "sha256": "b3f8e5a9ed70ad1431a8e9c9dfa6ab172ff8f842f4e09a50c225c2eef1a420ff"
+    },
+    {
+      "bytes": 1265,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/1.manifest",
+      "sha256": "0c488ea3babd13bde86bf9abd15062cf338881cdcb34f50b67fa77dabe821e54"
+    },
+    {
+      "bytes": 1374,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/2.manifest",
+      "sha256": "b4aba2c842a8b34fe08aef6bb624da14f88d4771f0f661b0d12976159d8758d6"
+    },
+    {
+      "bytes": 1279,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/3.manifest",
+      "sha256": "3230b423131974100ada0f58c6914060ea02297a9b9fbebd48fad54525d6bcef"
+    },
+    {
+      "bytes": 1377,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/4.manifest",
+      "sha256": "2c145450e75224c138592bd4cf09de3b532c2722df11787e8858457804fce1e6"
+    },
+    {
+      "bytes": 1265,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/5.manifest",
+      "sha256": "27c07e9c0a5ed26cf4f757fe2b981b58c7d047c725ceab6eea252fc8e2ce1c09"
+    },
+    {
+      "bytes": 1374,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/6.manifest",
+      "sha256": "4feb27b523f423c814d854e9450f798d0dcb9327a8dfbc8fcc8dbb7389a61176"
+    },
+    {
+      "bytes": 1279,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/7.manifest",
+      "sha256": "688bcdfacaa1380e2de0d6e2c100b7353ed4495929909d27f2e3f2f15e7fe798"
+    },
+    {
+      "bytes": 1377,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/_versions/8.manifest",
+      "sha256": "0469537fd5ae12fa3f5359455a1400d5687d9dc94f508b7e2e0bdf6d0d8c9589"
+    },
+    {
+      "bytes": 7987,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/data/1d4076ca-6f6b-4353-9645-bd60d213cdf1.lance",
+      "sha256": "afb564a343c11451f82866c8e74bbc12ba6717ed6af20555a48efd3e63f00b6f"
+    },
+    {
+      "bytes": 17132,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/data/8fc6e93e-625e-4f03-973e-9ac5ab68cc2a.lance",
+      "sha256": "53de4c3e9bd421e19cf09d9e863d389d96015c4b734621a5f78447c9278d9071"
+    },
+    {
+      "bytes": 7987,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/data/9b623e35-33d2-48f2-a25c-b95c32abb779.lance",
+      "sha256": "afb564a343c11451f82866c8e74bbc12ba6717ed6af20555a48efd3e63f00b6f"
+    },
+    {
+      "bytes": 857443,
+      "path": "indexes/graphrag/output/lancedb/community_full_content.lance/data/fca3cafa-d355-4545-80ba-e7bf70c3e489.lance",
+      "sha256": "724da56a939d8cf8e4ecfbe8392c12ea0c28515386e9544881f87ed5e18cca0e"
+    },
+    {
+      "bytes": 3713,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_indices/cd949c0b-4353-4474-a566-d480b557d30d/auxiliary.idx",
+      "sha256": "64c6d802953446513afba02d3aaf7a76b93fc6936bcb90efdc54f5bfa7dc9bd6"
+    },
+    {
+      "bytes": 3410,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_indices/cd949c0b-4353-4474-a566-d480b557d30d/index.idx",
+      "sha256": "c6c90dca26af507a13b4c689ae3254d1e7f3ed1bd741d166f2fe61569274cbd8"
+    },
+    {
+      "bytes": 3713,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_indices/f42596a0-23d3-43d6-aeed-ad16a39ec51b/auxiliary.idx",
+      "sha256": "961d0d18f2fd21bd4b6c96d53d0b1ca93c220456105fabb5ae97f4c45d2b5e0e"
+    },
+    {
+      "bytes": 3410,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_indices/f42596a0-23d3-43d6-aeed-ad16a39ec51b/index.idx",
+      "sha256": "74480532a9e3f31b69c36d215f4cffa4ed8adb29dbbb28f987d77b4c6d4f506b"
+    },
+    {
+      "bytes": 1190,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/0-c83bc9cb-d06a-40a0-8567-a50be8b0ab7a.txn",
+      "sha256": "af3a2f35acfdff5362c5f39b0a9e8b2d708ece0536355c2f1d06abd3d90fde8f"
+    },
+    {
+      "bytes": 146,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/1-81df6077-4b17-4761-8103-b46c4ca059ea.txn",
+      "sha256": "e0563d578f2afb91a235d30d231d820146b7aa2ee2531fe0e8132c2e9cb8c321"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/10-e8edef64-d08a-472f-ae69-449a2055c6e4.txn",
+      "sha256": "20515deea04ceb9a05881fa36e3d79e947e4661fde40a7d56bed1bf6b13d4d40"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/11-5e285bb9-7cf4-4caf-9af3-9a22d9bcbf9f.txn",
+      "sha256": "5e24ff7977d387981f5b55ea607891109e76be0ef19ae0a59d8ba08954e56b07"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/12-ca7ea1aa-fc06-401a-8aec-41e29af08067.txn",
+      "sha256": "844c4ebc2461598b8bae260fae07a5a1246413fc809a2f6574ccb95e09549ce3"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/13-2e02f096-d779-4bae-a536-69608d2ea40a.txn",
+      "sha256": "53ea64ae6d7b6bd58b1152a37cc734c99dc5f7809494ff79ded4e301ee0ef18b"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/14-3a9e5538-e505-4080-a594-66deb79862a6.txn",
+      "sha256": "17df336de73e8747d082d9f0854d76b135b3d5eb06ef7c753601addc1ee6b3a3"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/15-d8d058f3-4629-4c4e-8c40-1fa60660724a.txn",
+      "sha256": "187dc4158abef2cc8d1d9ad22a103d0c2400435cbaec77ea13944779d973d875"
+    },
+    {
+      "bytes": 139,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/16-94d532d0-32db-4fcb-b6b3-cad60096556c.txn",
+      "sha256": "ff78db77462227bf70137fe878b7aac451dbee3430ad9c2eab4662bf455f484e"
+    },
+    {
+      "bytes": 1116,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/17-ef369d2d-8e9e-422b-b5dc-4287e6b20150.txn",
+      "sha256": "038279119717513867e22a5735cb00312f603ea22a048caca2fe8aa4a3c633e7"
+    },
+    {
+      "bytes": 146,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/18-2182831c-5f44-4726-a6f5-25250a5b890f.txn",
+      "sha256": "d8315276437066d7cafb4e26405cf2ecc35fc8a27b5b7435c3d8caa6916af14f"
+    },
+    {
+      "bytes": 64,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/19-07271bb9-3e1f-4064-8278-83fcd96e677e.txn",
+      "sha256": "4d1310f151db347c6a2ed8000413909586c8532e6d6a0348ef25d54f093624c8"
+    },
+    {
+      "bytes": 64,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/2-abc71432-d92e-4643-9ea7-b1058888821e.txn",
+      "sha256": "f2caf722b8a4ca9e88684abf6aaea2c9fa58ead15200d7117d01c1acadb63d43"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/20-a50a1be2-95ab-44e1-bcb5-d39cd472d68f.txn",
+      "sha256": "fd08990fd2ed676311241124834554b2816d37d4a4cc14351d93def17caa7b6f"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/21-812a6e30-2f56-46e9-8284-b7ef66d7ce22.txn",
+      "sha256": "41dbc5b16d28f10d46f17c0f62b1d1dc3037823f979bafe30b8e8bae6162bdda"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/22-85accebc-a159-44b4-83f8-3b6fdc568aaa.txn",
+      "sha256": "1c2717a2e6f04fc0aa6b7d7b707a65253ef5bcf0c5a8aa2ebd8afe879ef55754"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/23-b92c8c66-01b3-4f95-9a6e-7f9e5b31c804.txn",
+      "sha256": "217547ab59f773f69a341ef21e3eb3080bab8a4b44d42245fd958ede65d75de1"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/24-7be3aa3a-2c12-450f-82df-3fb0ae4ed038.txn",
+      "sha256": "0363e09bbd0f4706c66049dee109f8e1c73444e0f416150757221167161c35c0"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/25-c78b26e7-7e19-496a-9da2-7af82f282b1e.txn",
+      "sha256": "ba4a86f36fb3a03342303aff3ef150cf545cb5b37acf7257dba7c1abf3ee5de2"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/26-bf2e3232-d883-4284-8162-9114a961ac4c.txn",
+      "sha256": "3f485adc7fe8260baa13702efd27f0a69f70ad52b81c83d088bd3d046d35c7cb"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/27-ef5b926f-a35a-40f0-9c78-f9bd56823318.txn",
+      "sha256": "caefa449e64fcaba6687ee7442ad5f07daa1686ac1a4be68b041c4fb1a255ffe"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/28-91f6377e-9496-4c75-9d72-12209bd3ff25.txn",
+      "sha256": "5addf07c8ef4608d891e679da551743b9df64febb146402853f35630c625de59"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/29-0e574b9d-4f7c-40a9-85a0-a62b98989497.txn",
+      "sha256": "e5bc0fb40795b4ee0d8a6a637608dceedfd11e884f9d350a08a099a95feec065"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/3-65ea4291-5912-4a66-aba2-a569717076dc.txn",
+      "sha256": "1707c62532994d5557649d6ac10a0a83bb937f55932011f3896eef92861f7286"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/30-5b5ee8fb-e36a-4aa3-9995-ddf6cfa528fd.txn",
+      "sha256": "229308f77dcee94b2ce65c0da4e7e813986dd68e015e1db3617e45ad36d5c5e6"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/31-da8d1375-3932-42f4-9eaa-15653f6f84cd.txn",
+      "sha256": "e328c5c920a0c764361324fd7da0cc3358859e73181b93684b86ad4e5c731d34"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/32-87ddb7a6-6c43-4c59-bc01-48906f5ed2c7.txn",
+      "sha256": "9e6999280351e7aae300bac23b5b04fe0c3f645ad31972ef4a9da156b3323850"
+    },
+    {
+      "bytes": 139,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/33-8e720681-f761-467d-838e-399d26175379.txn",
+      "sha256": "4ea7b9949c730ff7f2a1c50c3ed4e4d84ae041af2c8108dd053a3fc738ca26b4"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/4-81576eba-a94c-44c1-a191-7a329428423f.txn",
+      "sha256": "a98914b19d4a64a02fb53318b0e1f28f95d57c6d8625f5d256c1fd468c422793"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/5-37e20abd-c59d-4b33-96b2-54065c33d583.txn",
+      "sha256": "737653dc656ee953bfbe4a96982d1b407baee07e2805920b56e07a2d58ab40df"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/6-30e396a6-2cea-461d-aedd-b4bf5c66bebc.txn",
+      "sha256": "6f85ec732d993e3fe67a76671006e36833db5785a6efd3fa5ab93821a2ed045b"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/7-fd6bab56-7c23-49ba-8bc7-84fdb88ea247.txn",
+      "sha256": "70da0bb6dd61b18fda51fd9a93d8416c9485d5fbdb8b9965d93198605345eb95"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/8-3411850f-a603-433b-b7ee-9fb75e89014d.txn",
+      "sha256": "0840472d95cb8c233061b767bcf63423910fae36eeb6c6e1a2fa41c8d6da3263"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_transactions/9-b39c968d-c9c5-481b-996c-2f3f14e566e9.txn",
+      "sha256": "2211f8b8ef2920bb857af334b9bf6a0b273a0f6dcf7e42b666f340a79a7a9f62"
+    },
+    {
+      "bytes": 1265,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/1.manifest",
+      "sha256": "3c7fd97d62fa4930b013f33f325af5efd2156705abced7d812b633fc69d39660"
+    },
+    {
+      "bytes": 1971,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/10.manifest",
+      "sha256": "ab053f3fc26016f214b30ae6a16a77cb4c87cfb528f1c1b73ff0775674fff5fe"
+    },
+    {
+      "bytes": 2072,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/11.manifest",
+      "sha256": "5db781aaba7659f0aa51bc589a06d0f8f8d7c9ade9aa3e9811e0f26b9c5cff63"
+    },
+    {
+      "bytes": 2170,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/12.manifest",
+      "sha256": "f4e34f6b855cd88f62e4a5dab34982bb0176adaea4d3710d7764e2c97206b9ea"
+    },
+    {
+      "bytes": 2270,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/13.manifest",
+      "sha256": "dc6f10a2e45a2aff4b2ca6a401040d6711d812f760458607034debd8e42b839e"
+    },
+    {
+      "bytes": 2369,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/14.manifest",
+      "sha256": "aea95234a42fe369665d79883f74f3eebf4b4fcd7853fc26c0e40cdbbe46decc"
+    },
+    {
+      "bytes": 2468,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/15.manifest",
+      "sha256": "5b5023da9bf6d41338a426dff40a87315a35e9e627f65d6e2fd5b5588a15064c"
+    },
+    {
+      "bytes": 2567,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/16.manifest",
+      "sha256": "0c51ad72b6b6f02c52938647b9964bc4b30462169b109e6bd96690b8273c8b97"
+    },
+    {
+      "bytes": 2665,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/17.manifest",
+      "sha256": "990ec7bc6346f4769d7f37b360e0ebfa1071e464b22738913392e1814ddb6963"
+    },
+    {
+      "bytes": 1265,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/18.manifest",
+      "sha256": "6651794c6b1f5a6ba7698db83ad8887e760136c526977392254b90acc7d19f83"
+    },
+    {
+      "bytes": 1374,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/19.manifest",
+      "sha256": "68d018cdef327708f5a20a6f6cb8020ff72972d24ac33e4d72afb74a689430b7"
+    },
+    {
+      "bytes": 1374,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/2.manifest",
+      "sha256": "6a8672b013df39eb0c02ea673975069b6def3b26604c01fe932729a1ce7c16fb"
+    },
+    {
+      "bytes": 1279,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/20.manifest",
+      "sha256": "9b0cde3b07447b0e8e2a36ad80e7e33685da750cb6c31411fafca80487421741"
+    },
+    {
+      "bytes": 1379,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/21.manifest",
+      "sha256": "624912f00bffccba1bd8ba5b0155983110025ddabd2bf68b58272d29eb725c94"
+    },
+    {
+      "bytes": 1478,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/22.manifest",
+      "sha256": "5927be386bd112027c337789dce833208c5e845a11e7c99240d56c3b92df266f"
+    },
+    {
+      "bytes": 1576,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/23.manifest",
+      "sha256": "c97f02984bd9217704c59f9febbf3d0dedeb8597a48a85b81a8601f1c41dac40"
+    },
+    {
+      "bytes": 1676,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/24.manifest",
+      "sha256": "c7179e2ab9794911b34504fe3100be7c506ad7f651b20c762a876ca3cb87ce1d"
+    },
+    {
+      "bytes": 1775,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/25.manifest",
+      "sha256": "06a79e4da25ba38a3a8b64a54a1fc3d45160f33113161728d6976ceb2703a863"
+    },
+    {
+      "bytes": 1874,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/26.manifest",
+      "sha256": "d7b8dd20d058dac918f9ce636ee169df4af0aed5c915a0fbcfdd8337dbbcb694"
+    },
+    {
+      "bytes": 1973,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/27.manifest",
+      "sha256": "b957741dfeea29646280ffa7830d75b7b7a5e8c83c9694acf4aec2e180e0b159"
+    },
+    {
+      "bytes": 2071,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/28.manifest",
+      "sha256": "0a4ff381cbb8bf4e53de990e5cebe56e3714d960d423372039734ba2d3c07049"
+    },
+    {
+      "bytes": 2171,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/29.manifest",
+      "sha256": "32fa4066f29a9429964b887fdabcd6847d9373f96bc01209d581b62ece55a1c3"
+    },
+    {
+      "bytes": 1279,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/3.manifest",
+      "sha256": "3d1a772ee23de2035c2403337bcc692c54c3daacf046b9d09614aa977d5e2fed"
+    },
+    {
+      "bytes": 2270,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/30.manifest",
+      "sha256": "e5530a4d3533952f0649d76b43a872c5807e47ef7767b2fc087a0fc6e480885d"
+    },
+    {
+      "bytes": 2368,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/31.manifest",
+      "sha256": "3a26c85ecb1cfad604c450382149dbe8188c5b1c4c559f4aa951226b8dfdc321"
+    },
+    {
+      "bytes": 2468,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/32.manifest",
+      "sha256": "f29257da30e27a0fb47f7f1c90e6620f1335854343ad28b6368f03e26ebfd0e8"
+    },
+    {
+      "bytes": 2567,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/33.manifest",
+      "sha256": "ba2fba2b5f62e3032245e1203bed183599692fe010a58cf05753513b033c59be"
+    },
+    {
+      "bytes": 2665,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/34.manifest",
+      "sha256": "24b9d7f79e061b46e60f2f0b499b18dd935e0d90182daef4052d98e0b26b0d7a"
+    },
+    {
+      "bytes": 1378,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/4.manifest",
+      "sha256": "ad0a0c212abe0c5f3dbe0b3d1939ef51d5e321f7bd404fb8da58c154b458b97c"
+    },
+    {
+      "bytes": 1476,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/5.manifest",
+      "sha256": "1eca17554774f91bc7c91dad324bb3b236c77514cfeaca35961af2c4a84edab5"
+    },
+    {
+      "bytes": 1576,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/6.manifest",
+      "sha256": "b9c36f0223ca7e99dd6b117694d826698ffef8d2d212790aef1547080d0ac6dc"
+    },
+    {
+      "bytes": 1675,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/7.manifest",
+      "sha256": "9297e2f933a6ffb2cdc6f1c4b60ac1e2dd3943df2c22a98deed9e3dd56b709c9"
+    },
+    {
+      "bytes": 1774,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/8.manifest",
+      "sha256": "d0b45e3804995a8ad9364a948cc285f0fb26e9cdf33d787a1c7e549feda901cf"
+    },
+    {
+      "bytes": 1873,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/_versions/9.manifest",
+      "sha256": "fe0a89cc7804ac5ebddb60c8290b787d88767de80be82319fe9c92e7d41d34ef"
+    },
+    {
+      "bytes": 353160,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/0116f31c-cf9b-4247-bde2-29046e379e8f.lance",
+      "sha256": "fae21fea96e5c8a5344f60732565acad72ec9bcbb4ebaccd4f324580e0175856"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/02bdefac-78ad-4bf5-b26b-c68c454bb865.lance",
+      "sha256": "2aafc314bb5268a09947657d2adc5ad703644f25d1bc452ed961e8c6d6783570"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/0426c34f-115e-4246-a3c4-0488fed15f81.lance",
+      "sha256": "331761800cf3f75a85ab1c16c9e72f552e86484a10bac21d2e11407eff285093"
+    },
+    {
+      "bytes": 7987,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/0757dbe8-f488-468b-ae32-081269f0f52d.lance",
+      "sha256": "afb564a343c11451f82866c8e74bbc12ba6717ed6af20555a48efd3e63f00b6f"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/08db8426-9e05-4d0a-bcb8-d7b6b2232d39.lance",
+      "sha256": "bda8af0bb238bda84ca53e8f112fd3426d490fe24eb0f55abd43d7ea65eed3b9"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/172af30f-954b-43ec-b4e2-c30e6da2b132.lance",
+      "sha256": "e69c6cfc74730fe9f41ffb2cf5ae9dfad47928abd1a44a5fe0a4e36c914bbaee"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/29fae006-6745-41b5-a983-b0594e400a2c.lance",
+      "sha256": "99658af74761ed2c19992407472f8ca3672bba82f5c7cff8ac0024a4f8bc4eba"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/2b5219e9-4657-438e-9acb-8293b156211c.lance",
+      "sha256": "7520d5134567793b054da47717013d323ad99eee32df135838bd985b4ccf6444"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/39240d21-3df1-4a23-8d4f-804ce113c027.lance",
+      "sha256": "7b1a3722f5f16d25443b4ecd751283aeb8fb9f88fb8fbd2cc7201e6f6f14fd9f"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/3c718060-7286-4a70-96f9-1e7a16b2aec8.lance",
+      "sha256": "6ffc29f150f36df7316f77b8fea6edbb6d40dadd4228212ce91a795fa665dd9a"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/60079447-284d-4aa4-ad2e-2ef0446b9687.lance",
+      "sha256": "859481760ab146c2351d5979fb791477165855777faf0b7c451cae8f7b4aa7f9"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/7a527353-6de9-4579-81b3-f8cb54f20f54.lance",
+      "sha256": "97605158949fff8cea1dba4131c6053168aa54719ae8f095a60b145d43ceb4ed"
+    },
+    {
+      "bytes": 7987,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/8d24f52a-fa9b-40c4-ac3a-3809ed8e7dcc.lance",
+      "sha256": "afb564a343c11451f82866c8e74bbc12ba6717ed6af20555a48efd3e63f00b6f"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/90da6a16-79ea-451e-a4af-45e4c13b8b3c.lance",
+      "sha256": "4626f98aeb0e181a0d3358ce0884727d11357bb9a84d7fc22f07786aacef5e29"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/94efe51e-7ec2-46e0-af9c-5a1c2180464b.lance",
+      "sha256": "6b49a2ed80c40545f7e77760ec484793c2a4afd57ee0ddedea3c90b44473cdaf"
+    },
+    {
+      "bytes": 353160,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/9b6a1fd7-0be6-432a-83e1-3a1b8823e0da.lance",
+      "sha256": "11e8b3df9946d5eda32e1be7f5c3a50e49480791d94e9f1110d3a0f4b233b4c3"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/a77bcc55-410d-463e-95a6-9b29a865e3fb.lance",
+      "sha256": "f88071ff9f6033400e4474b99b01470ac09bf0a605a924bb546d06ebf7af2ba1"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/b6589b4b-db5c-479d-908c-b0eae00cef89.lance",
+      "sha256": "b21d7c291c8921b72fb92b9ddb190033c5cc56d43630f1500ea8684c20837387"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/bf59d722-c0c8-477f-a345-de9c2416c734.lance",
+      "sha256": "ecf5a7db0de508aa6fabc9a1d3a85e33c24aab12f92a3feab0b33063c88e4624"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/c681f8a9-eb11-43d8-8dc9-4a4cff8cba05.lance",
+      "sha256": "5d285d0c6ab4da0d5e3273d1e66f77ee2560e46cd94a932d3d895d83efe3d2c0"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/c701f3ca-ddd5-4614-87d0-da1ec0deed8f.lance",
+      "sha256": "475b37e8972243fafd4e4a8eb4e89b2c32d5c34dfd613b5c55141ae3f719d603"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/d892ced0-122e-4225-ab26-ee248445ebef.lance",
+      "sha256": "065a87d1457dd925b1f8f1e5fcde206b359a8e730d4725b91f6c276470c22dcf"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/dd46e228-f223-4f0a-ae93-e6f2615061ca.lance",
+      "sha256": "3d9892130b6a92c140f1ef29e12886e3b63b5f4b28f19438fa7bb11265d882f2"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/dea4c39b-26e6-4420-bbe2-ea3639b341d9.lance",
+      "sha256": "ee0b4e9694d1aed4e5ffbfa2a7344591cda6f7eeb770ef4b679d3b812c3a1b14"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/e099e73d-97be-4b26-a0e4-eef181414eaf.lance",
+      "sha256": "4e658db2fc26a3a98e8df3868f9e0100d3e4aed498bb2ca08a18c5df8f2a4580"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/e0fe9abc-9393-47ee-a30b-b4eeb3dd9757.lance",
+      "sha256": "841efb7b814be6f465fa303c18796a74ff7584ecca417ed5ab14a324244e9cb6"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/e140e314-0290-4cf2-9e95-f03c55acb9ed.lance",
+      "sha256": "532ac0089d6c9b09a8b2c7f80cdd4a7dd83fd00144086b3cfb10adba979e41a7"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/e65abcb9-ae73-4a5f-98e8-13a5d6b50613.lance",
+      "sha256": "ade6ef5aeb04c8ec773b67fa3133f4b7f14e0b949697b2188f702fd623e2db08"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/f5254072-f3b8-4f5c-9577-e612e503d3c9.lance",
+      "sha256": "8585bf5df35df201fc871e4aad357c3fa0878b12e672df9f8df3b91e86a2c5b6"
+    },
+    {
+      "bytes": 1284577,
+      "path": "indexes/graphrag/output/lancedb/entity_description.lance/data/f9b136c8-6e7d-421e-9358-c71141881925.lance",
+      "sha256": "636e063cef5c9481f104702923892c05d2efcf6037c4e5f24c00f8c7bfabf670"
+    },
+    {
+      "bytes": 3713,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_indices/4b6a8f2d-8729-450d-a6ff-0aa31550702a/auxiliary.idx",
+      "sha256": "1c3c4c981e765af3e2402c788ccf8591d25f65bf8db3a7faebb1d15285efda9c"
+    },
+    {
+      "bytes": 3410,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_indices/4b6a8f2d-8729-450d-a6ff-0aa31550702a/index.idx",
+      "sha256": "74480532a9e3f31b69c36d215f4cffa4ed8adb29dbbb28f987d77b4c6d4f506b"
+    },
+    {
+      "bytes": 3713,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_indices/8b7a6dea-e266-461a-8ae4-cbe37ef9552d/auxiliary.idx",
+      "sha256": "1c3c4c981e765af3e2402c788ccf8591d25f65bf8db3a7faebb1d15285efda9c"
+    },
+    {
+      "bytes": 3410,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_indices/8b7a6dea-e266-461a-8ae4-cbe37ef9552d/index.idx",
+      "sha256": "c6c90dca26af507a13b4c689ae3254d1e7f3ed1bd741d166f2fe61569274cbd8"
+    },
+    {
+      "bytes": 1190,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/0-58096cd8-6a96-4445-b7bd-ab779bd87d76.txn",
+      "sha256": "30e1b5b45a3c70f08f248ab47701991c2d97bbd516965819cabe417e0ff09320"
+    },
+    {
+      "bytes": 146,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/1-eed894d0-8399-4920-a967-6591bdf2a57e.txn",
+      "sha256": "2ba27612d9e403b618de37c07e14e1fb924a66bc560c48d98cb70fca7f22dca7"
+    },
+    {
+      "bytes": 64,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/2-02ef7a6d-a446-4a18-b312-7229a5ec81e8.txn",
+      "sha256": "41136833feb91dde9c3913c223f13f64c5ff58f79669b1bd2ece1c4f2cc1e5e1"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/3-4c591e18-35f8-4f3c-aac9-5df1e31a8d81.txn",
+      "sha256": "d557471e626c3da21365447dd82c860a9cff4b51eb4a7f572322706c3f5cf8f6"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/4-2ceba022-5120-4ddf-ac98-db6657f5a218.txn",
+      "sha256": "15a09c9a6f7d26d64ea8fdb5b19c41479c658223d6c8167d240b84eaa83e5d11"
+    },
+    {
+      "bytes": 1116,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/5-89f099f6-fbd4-4aa5-a194-e21f4c841420.txn",
+      "sha256": "c4119a2b3b126da4d5acb29e5de8dba2970a977cc7920cd2c3bb8bf65228db41"
+    },
+    {
+      "bytes": 146,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/6-d468cce8-62a2-48c8-84c7-20107871bc31.txn",
+      "sha256": "f5c77aa9353365f50678a17864423ec4825fa09ee8c138b4cb96f051db202b45"
+    },
+    {
+      "bytes": 64,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/7-5fbf0d63-711f-4f7c-bc6a-433ebcebfe52.txn",
+      "sha256": "9ad072e4b3f7a596e061aa8fd28000a6f71668cfc5385c11bdb7731cf8cd94e9"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/8-ff94fea5-47bf-4e71-b25b-e23e0605f9c5.txn",
+      "sha256": "ca3da91d9dc3ae0f59bf5e6be6dd95fa3ec5f650c606fd7e649d62392d4e8821"
+    },
+    {
+      "bytes": 140,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_transactions/9-b7935942-09b7-4179-b9a3-d395c543d88d.txn",
+      "sha256": "2bb913ba642e3b6cf9601085dc39898f3a1cc2fb72bc1b16b077c173f1ed82d0"
+    },
+    {
+      "bytes": 1265,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/1.manifest",
+      "sha256": "7f2cef3c096b805eb85e169cd30886abbcc97a15c530c1f28b8b3bbc6b358309"
+    },
+    {
+      "bytes": 1477,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/10.manifest",
+      "sha256": "2bcfcf0a8626281b883c33451b3950fecc84ceea5d8b404553ae993cfcc03670"
+    },
+    {
+      "bytes": 1374,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/2.manifest",
+      "sha256": "c8872bfe07efe873445887c080f4d80bd68108e674ae94c7c64cc17e0796c992"
+    },
+    {
+      "bytes": 1279,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/3.manifest",
+      "sha256": "0bdbf2bf7e336d02041b0e3f7917a2fcac316aca04b3d6e9804c04df62ee29c1"
+    },
+    {
+      "bytes": 1377,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/4.manifest",
+      "sha256": "baa4da896c273ca03e04b3be747f784e89fcc49ff9a68fc61b4cbe71ea358bcd"
+    },
+    {
+      "bytes": 1477,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/5.manifest",
+      "sha256": "ba7e103d88fe956e53ea88ec105c01279010a9b62d3ed443394b3b86e623571e"
+    },
+    {
+      "bytes": 1264,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/6.manifest",
+      "sha256": "f03ad8e14dd84cdd8b9fc452c5a1ff7335cabb04dc259a8ce6bf254a6e478007"
+    },
+    {
+      "bytes": 1373,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/7.manifest",
+      "sha256": "cccec63b3bd141b22119f39a3f90b1cc8d3838e5fa890929f183bf056fd1dd44"
+    },
+    {
+      "bytes": 1278,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/8.manifest",
+      "sha256": "cfacfbf7beb1bb2937a87e64e340189db9a5de864f01391de24e66521eb1761b"
+    },
+    {
+      "bytes": 1378,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/_versions/9.manifest",
+      "sha256": "fdfa96dd7e3e1c426e17def51112a89fb3cb380eeae3f20bf5e2b526a329dfa4"
+    },
+    {
+      "bytes": 1321379,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/data/27d1309c-9676-4955-82ad-30a2b5cf9bec.lance",
+      "sha256": "dd4172e6b7ed89a843b97075f1a995d5e5b6b086494b74464664c9e692cedc87"
+    },
+    {
+      "bytes": 936355,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/data/3878cbd3-030b-477c-bbb8-a227b15d80d1.lance",
+      "sha256": "c37fd7f517976dca21998d33eea7e8b5c462caac4e96f9bf372445a1f9204765"
+    },
+    {
+      "bytes": 7987,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/data/a643ee60-dd30-4451-a096-5c2afe09dbc1.lance",
+      "sha256": "afb564a343c11451f82866c8e74bbc12ba6717ed6af20555a48efd3e63f00b6f"
+    },
+    {
+      "bytes": 936355,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/data/ab2ff7a8-867b-4403-8847-ead8338d333b.lance",
+      "sha256": "d7e583e83775356bbd011a661a9052ab286cb24c9305275f7197dac7221f3bfe"
+    },
+    {
+      "bytes": 7987,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/data/aed41ae0-02a4-4421-9da3-7bb856098cb8.lance",
+      "sha256": "afb564a343c11451f82866c8e74bbc12ba6717ed6af20555a48efd3e63f00b6f"
+    },
+    {
+      "bytes": 1321379,
+      "path": "indexes/graphrag/output/lancedb/text_unit_text.lance/data/f8958238-6bed-4993-9b12-6b512aa6ca5d.lance",
+      "sha256": "1655864c29a83c2061691d35e0cba150b10c49de87f11974ec56f6a645785b71"
+    },
+    {
+      "bytes": 11143158,
+      "path": "indexes/graphrag/output/relationships.parquet",
+      "sha256": "a1660233902191f1f23168777317eab48cd46f884c9a02178f4dc1abd36cc875"
+    },
+    {
+      "bytes": 2384,
+      "path": "indexes/graphrag/output/stats.json",
+      "sha256": "f43aa8a72ca1fdfa4a08a8f0ab55bd5c9e44ab2c3d0e2b7b98a3c1ffd3af5f6d"
+    },
+    {
+      "bytes": 14239552,
+      "path": "indexes/graphrag/output/text_units.parquet",
+      "sha256": "e89b7321266ef81ed2582879cb72f263aff0f9f70b09874846b19b4bc0aea6ee"
+    },
+    {
+      "bytes": 2750,
+      "path": "indexes/graphrag/prompts/basic_search_system_prompt.txt",
+      "sha256": "b59c034e7a494a9a267a3ae8c1b70324f7dd4c49a110c6af018edbde730824d5"
+    },
+    {
+      "bytes": 5334,
+      "path": "indexes/graphrag/prompts/community_report_graph.txt",
+      "sha256": "3c6e78ef58af6e4904ef4d7055084cbd9207bab0f91c7aa762febe4e201d874c"
+    },
+    {
+      "bytes": 3496,
+      "path": "indexes/graphrag/prompts/community_report_text.txt",
+      "sha256": "b80da7134d9add510f3e6402ab8cf9d58d18484458073c726e9ce5b464684f5f"
+    },
+    {
+      "bytes": 2798,
+      "path": "indexes/graphrag/prompts/drift_reduce_prompt.txt",
+      "sha256": "792b906898bb4f2c72b0647aa81e20e57155d252fc55754c4a9f31543f33ef17"
+    },
+    {
+      "bytes": 3288,
+      "path": "indexes/graphrag/prompts/drift_search_system_prompt.txt",
+      "sha256": "5bf83e803286ba1618f48c2ede8327663de1b7eb5f9945cd2ab5d1956e7ad6d0"
+    },
+    {
+      "bytes": 3276,
+      "path": "indexes/graphrag/prompts/extract_claims.txt",
+      "sha256": "4b9b5f180ded498b08805c89c7facd344ada08f77b0360ef2538f60594dbf4b5"
+    },
+    {
+      "bytes": 2694,
+      "path": "indexes/graphrag/prompts/extract_graph.txt",
+      "sha256": "08e3d49458a108c280f4b95c3aec072d75993232cb7184d875d3045adc8d1d0c"
+    },
+    {
+      "bytes": 249,
+      "path": "indexes/graphrag/prompts/global_search_knowledge_system_prompt.txt",
+      "sha256": "b51eff360b2e08bcbd34d5eeff803b541e5178eaaa1c51da57d16fc36131822c"
+    },
+    {
+      "bytes": 3970,
+      "path": "indexes/graphrag/prompts/global_search_map_system_prompt.txt",
+      "sha256": "5b0c4a052245d1d2328422184f7bf5ebcd33f124dae8695953d7d68f4440da39"
+    },
+    {
+      "bytes": 3707,
+      "path": "indexes/graphrag/prompts/global_search_reduce_system_prompt.txt",
+      "sha256": "6bc9e3f23e5509c10d3332f0d19c6cd85ee2d4d7b94e3f60f8ed5f094e717185"
+    },
+    {
+      "bytes": 2551,
+      "path": "indexes/graphrag/prompts/local_search_system_prompt.txt",
+      "sha256": "52f26f5642a62127245f49ab2e8787a3f143cbb77f74123d834172591f9e9fd5"
+    },
+    {
+      "bytes": 786,
+      "path": "indexes/graphrag/prompts/question_gen_system_prompt.txt",
+      "sha256": "cc559f0243f6039c877636a08cc6f39c0e09baa27768a979e2f9ede3adb50e30"
+    },
+    {
+      "bytes": 733,
+      "path": "indexes/graphrag/prompts/summarize_descriptions.txt",
+      "sha256": "4f4e4e14a709fb3579197a79f0fab5b786462fbefb216105da89a692b7fb4018"
+    },
+    {
+      "bytes": 3698,
+      "path": "indexes/graphrag/settings.yaml",
+      "sha256": "cb91ab13ffb39614ab2f6a63700295f832efbe33858927344df6e23caf46f61b"
+    },
+    {
+      "bytes": 43400082,
+      "path": "indexes/paperqa/docs.pkl",
+      "sha256": "44d7bf5c9b7d7b96c2c2ce9798b64fcce266b000722f860bb07072b6750f8e4a"
+    },
+    {
+      "bytes": 413,
+      "path": "indexes/paperqa/docs.pkl.ready.json",
+      "sha256": "8863bcee88c5d5fcf53cc070745bff6d8969151cbcf9d112d16952bc3a3ffa76"
+    }
+  ],
+  "initializer": "scripts/initialize_indexes.py",
+  "schema_version": 1
+}

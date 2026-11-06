@@ -1,0 +1,58 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "F013",
+  "question": "Name two optional pavement-marking features explicitly labeled in Figure 3D-1 at the roundabout.",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Figure 3D-1 explicitly labels \"Optional white diagonal markings\" on the splitter-island approach area, and it also marks as \"Optional\" the yellow edge line placed around the inner (left-hand) edge of the circulatory roadway. (The YIELD word marking is likewise permissive per text, but the two clearly labeled optional features are the white diagonal markings and the yellow inner edge line.) Options (permitted): - \"A yellow edge line may be placed around the inner (left-hand) edge of the circulatory roadway (see Figure 3D-1)…\" - \"Channelizing lines … and chevron and diagonal markings … may be used on the approaches to and within the circulatory roadway of multi-lane roundabouts to separate traffic lanes, discourage lane changing, and/or compensate for off-tracking of larger trucks and vehicles.\" - \"YIELD (word) (see Figure 3D-1) and YIELD AHEAD (symbol or word) pavement markings may be used on approaches to roundabouts.\" Visual evidence: - [Image 1] Figure 3D-1 shows a callout reading \"Optional white diagonal markings\" pointing to the hatched white area near the eastern splitter island, and an \"Optional\" label with an arrow pointing to the yellow edge line around the inner edge of the circulatory roadway. - [Image 5] The full page view of Figure 3D-1 (p.596) confirms both labels: \"Optional white diagonal markings\" and \"Optional\" pointing to the yellow inner circulatory edge line (plus \"Optional\" callouts near the YIELD marking area). Citations: - Section 3D.03 Option §4 (p.605) - Section 3D.02 Option §5 (p.595) - Section 3D.05 Option §1 (p.605) - Section 3D.01 Support §4 (p.595) - Figure 3D-1 (p.596)",
+  "gold_answer": "Optional diagonal markings in the splitter island and an optional wide dotted extension of the circulatory roadway edge line.",
+  "correctness_score": 0.5,
+  "completeness_score": 0.5,
+  "faithfulness_score": 0.75,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 68.75,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.50, Comp=0.50, F=0.75, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "Optional diagonal markings in the splitter island and an optional wide dotted extension of the circulatory roadway edge line.",
+      "token_coverage": 0.769
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 3D.03",
+    "Section 3D.02",
+    "Section 3D.05",
+    "Section 3D.01",
+    "Figure 3D-1",
+    "p.596",
+    "p.605",
+    "p.595"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.974742952856788,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.25,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 68.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 3D.03, Section 3D.02, Section 3D.05, Section 3D.01, Figure 3D-1, p.596. Gold elements clearly reflected in the response: Optional diagonal markings in the splitter island and an optional wide dotted extension of the circulatory roadway edge line. Adjudication note: Identifies optional diagonal markings but substitutes the optional yellow edge line for the requested wide dotted extension. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.975 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.25."
+}

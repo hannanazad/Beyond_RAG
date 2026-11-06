@@ -1,0 +1,48 @@
+# --- credentials -----------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+service_account*.json
+
+# --- python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+.venv*/
+venv/
+
+# --- notebooks -------------------------------------------------------------
+.ipynb_checkpoints/
+
+# --- generated at runtime --------------------------------------------------
+runs/
+rebuilt_indexes/
+.downloads/
+ablation_results/
+qdrant_db/
+*.tar
+*.tar.zst
+
+# large downloaded index payloads (fetched from the release asset)
+comparison/indexes/graphrag/
+comparison/indexes/paperqa/
+comparison/indexes/gems-rag/qdrant_db/
+comparison/indexes/gems-rag/page_images/
+comparison/indexes/gems-rag/figures/
+comparison/.prebuilt-indexes.staging/
+comparison/.prebuilt-indexes.backup/
+comparison/.prebuilt_indexes_ready.json
+
+# --- os / editors ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

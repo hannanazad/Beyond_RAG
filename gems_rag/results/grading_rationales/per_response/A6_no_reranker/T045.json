@@ -1,0 +1,57 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T045",
+  "question": "What abilities should a qualified flagger be able to demonstrate?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided is insufficient to answer this question. The question asks about the abilities a qualified flagger should be able to demonstrate (typically a Guidance provision on flagger qualifications), but the supplied evidence contains only Standard provisions on flagger signaling procedures (paddle, flag, and flashlight methods) and AFAD operation requirements — none of which enumerate the personal abilities or qualifications a flagger should demonstrate.",
+  "gold_answer": "A flagger should communicate instructions clearly and courteously; move quickly to avoid danger; control paddles or flags to give clear guidance; understand and apply traffic-control practices under stress; and recognize dangerous situations and warn workers in time.",
+  "correctness_score": 0.2,
+  "completeness_score": 0.25,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.05,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 37.5,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.20, Comp=0.25, F=1.00, Cit=0.05, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "move quickly to avoid danger",
+      "token_coverage": 0.0
+    },
+    {
+      "text": "understand and apply traffic-control practices under stress",
+      "token_coverage": 0.0
+    },
+    {
+      "text": "and recognize dangerous situations and warn workers in time.",
+      "token_coverage": 0.0
+    }
+  ],
+  "citations_detected_in_answer": [],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 37.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response shows limited overlap with the required conclusion and does not supply the governing answer. Completeness rationale: The response omits or underdevelops these locked elements: move quickly to avoid danger | understand and apply traffic-control practices under stress | and recognize dangerous situations and warn workers in time. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

@@ -1,0 +1,58 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "TB021",
+  "question": "What A, B, and C advance-warning sign spacings does Table 6B-1 recommend for an expressway or freeway?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: For an expressway or freeway, Table 6B-1 recommends an A dimension of 1,000 feet (from the transition or point of restriction to the first sign), a B dimension of 1,500 feet (between the first and second signs), and a C dimension of 2,640 feet (between the second and third signs). These distances are recommended minimums, are intended for guidance only, and should be adjusted with engineering judgment for field conditions. Guidance (recommended): - \"Where highway conditions permit, warning signs should be placed in advance of the transition and activity areas at varying distances depending on roadway type, condition, and posted speed. Table 6B-1 contains information regarding the spacing of advance warning signs. Where a series of two or more advance warning signs is used, the closest sign to the transition and activity areas should be placed approximately 100 feet for low-speed urban streets to 1,000 feet or more for freeways and expressways.\" - \"Typical distances for placement of advance warning signs on freeways and expressways should be longer because drivers are conditioned to uninterrupted flow. Therefore, the advance warning sign placement should extend on these facilities as far as ½ mile or more.\" - \"The distances contained in Table 6B-1 are approximate, are intended for guidance purposes only, and should be applied with engineering judgment. These distances should be adjusted for field conditions, if necessary, by increasing or decreasing the recommended distances.\" - Per Table 6B-1: Expressway / Freeway — A = 1,000 feet, B = 1,500 feet, C = 2,640 feet, where \"The A dimension is the distance from the transition or point of restriction to the first sign. The B dimension is the distance between the first and second signs. The C dimension is the distance between the second and third signs.\" Visual evidence: [Image 2] shows Table 6B-1, \"Recommended Advance Warning Sign Minimum Spacing,\" with the Expressway / Freeway row listing 1,000 feet (A), 1,500 feet (B), and 2,640 feet (C), along with the footnote defining the A, B, and C dimensions. [Image 1] illustrates the component parts of a TTC zone (Advance Warning Area, Transition Area, Activity Area, Termination Area) within which the A, B, and C sign spacings are applied. [Image 8] (TA-37, a freeway double lane closure) shows the A, B, and C dimensions applied to a three-sign advance warning series on a freeway. Citations: - Table 6B-1 (p.773) - Section 6H.02 Guidance §1 (p.798) - Section 6B.04 Guidance §3 (p.771) - Section 6B.04 Guidance §7 (p.771) - Figure 6B-1 (p.772)",
+  "gold_answer": "A = 1,000 feet, B = 1,500 feet, and C = 2,640 feet.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "A = 1,000 feet, B = 1,500 feet, and C = 2,640 feet.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 6H.02",
+    "Section 6B.04",
+    "Table 6B-1",
+    "Figure 6B-1",
+    "p.773",
+    "p.798",
+    "p.771",
+    "p.772"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.3333333333333333,
+    "retrieved_visual_count": 3.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6H.02, Section 6B.04, Table 6B-1, Figure 6B-1, p.773, p.798. Gold elements clearly reflected in the response: A = 1,000 feet, B = 1,500 feet, and C = 2,640 feet. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.33."
+}

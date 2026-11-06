@@ -1,0 +1,9 @@
+{
+  "chunks": {
+    "bytes": 5598269,
+    "sha256": "1035540a107be1e6016a98f7543faadd53a187a2cca8bd528fcf7beb3d6f529d"
+  },
+  "documents": 5705,
+  "format": "one canonical MUTCD chunk per JSONL row",
+  "schema_version": 1
+}

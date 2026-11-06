@@ -1,0 +1,58 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "M013",
+  "question": "For a four-leg intersection evaluated under the one-year Crash Experience signal warrant, what crash thresholds apply and what two additional categories of conditions must also be satisfied?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Under the one-year evaluation of Warrant 7 (Crash Experience), the number of reported angle crashes and pedestrian crashes (all severities), or fatal-and-injury angle crashes and pedestrian crashes, within a 1-year period must equal or exceed the applicable threshold numbers in Table 4C-2. In addition to the crash-history condition, two other categories of conditions must be satisfied: (A) an adequate trial of alternatives with satisfactory observance and enforcement has failed to reduce crash frequency, and (C) a vehicular volume condition applying to each of any 8 hours of an average day. Note that the specific numeric threshold values from Table 4C-2 for a four-leg intersection are not contained in the evidence provided (only an isolated fragment reading \"2 or more\" appears, without sufficient context to attribute it to a specific cell of the table), so the exact four-leg numbers cannot be stated. Guidance (recommended): - \"The need for a traffic control signal should be considered if an engineering study finds that all of the following criteria are met: A. Adequate trial of alternatives with satisfactory observance and enforcement has failed to reduce the crash frequency; and B. At least one of the following conditions applies to the reported crash history...\" - For the one-year evaluation: \"1. The number of reported angle crashes and pedestrian crashes within a 1-year period equals or exceeds the threshold number in Table 4C-2 for total angle crashes and pedestrian crashes (all severities); or 2. The number of reported fatal-and-injury angle crashes and pedestrian crashes within a 1-year period equals or exceeds the threshold number in Table 4C-2 for total fatal-and-injury angle crashes and pedestrian crashes...\" - The third required category is a volume condition: \"C. For each of any 8 hours of an average day, the ve[hicular volume...]\" (the provision is truncated in the evidence, but it establishes an 8-hour vehicular volume requirement as an additional criterion). - The evidence fragment \"2 or more\" (Section 4C.08, p.662) appears to be a threshold value from the warrant's tables, but its context (which table, severity category, or intersection configuration) is not provided. Citations: - Section 4C.08 Guidance §2 (p.661) - Section 4C.08 Guidance §1 (p.662)",
+  "gold_answer": "The thresholds are at least 5 all-severity angle/pedestrian crashes or at least 3 fatal-and-injury angle/pedestrian crashes. In addition, an adequate trial of alternatives must have failed, and the applicable 80-percent vehicular-volume or pedestrian-volume condition must be met for the required hours.",
+  "correctness_score": 0.5,
+  "completeness_score": 0.5,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 75.0,
+  "grade_band": "Partial credit",
+  "official_grade": "C=0.50, Comp=0.50, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "The thresholds are at least 5 all-severity angle/pedestrian crashes or at least 3 fatal-and-injury angle/pedestrian crashes.",
+      "token_coverage": 0.818
+    },
+    {
+      "text": "In addition, an adequate trial of alternatives must have failed, and the applicable 80-percent vehicular-volume or pedestrian-volume condition must be met for the required hours.",
+      "token_coverage": 0.714
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4C.08",
+    "Table 4C-2",
+    "p.662",
+    "p.661"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.2,
+    "ndcg6": 0.4556051495874603,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 2.0
+  },
+  "detailed_rationale": "The response received 75.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4C.08, Table 4C-2, p.662, p.661. Gold elements clearly reflected in the response: The thresholds are at least 5 all-severity angle/pedestrian crashes or at least 3 fatal-and-injury angle/pedestrian crashes. | In addition, an adequate trial of alternatives must have failed, and the applicable 80-percent vehicular-volume or pedestrian-volume condition must be met for the required hours. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 5, which produced MRR=0.200. The six-chunk ordering produced nDCG@6=0.456 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 2 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

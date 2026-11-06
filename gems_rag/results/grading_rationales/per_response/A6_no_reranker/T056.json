@@ -1,0 +1,56 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T056",
+  "question": "Which specific manufacturers are approved by the MUTCD to supply retroreflective sign sheeting?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "out_of_scope",
+  "model_answer": "Direct Answer: The MUTCD does not approve, endorse, or name any specific manufacturers of retroreflective sign sheeting. None of the provided evidence — nor the MUTCD generally — lists approved suppliers; instead, the Manual sets performance-based requirements for when and how signs must be retroreflective (e.g., regulatory, warning, and guide signs must be retroreflective or illuminated). Because the evidence contains no manufacturer approvals, the question cannot be answered as asked. Standards (mandatory): - \"Regulatory, warning, and guide signs (see Section 2A.03), and object markers, shall be retroreflective or illuminated to show the same shape and similar color by both day and night, unless otherwise provided in this Manual for a particular sign or group of signs.\" — This is a performance requirement; no manufacturer is specified. - \"Letters, numerals, symbols, arrows, and borders of all guide signs shall be retroreflective. The background of all guide signs that are not independently illuminated shall be retroreflective.\" — Again, no supplier is named. Visual evidence: [Image 4] Table 2A-4 lists generic \"Means of Retroreflection\" (e.g., prismatic reflector \"buttons,\" materials with a smooth sealed outer surface over a light-reflecting microstructure) by material type, not by manufacturer, confirming that the MUTCD addresses retroreflection functionally rather than by brand. Citations: - Section 2A.21 Standard §3 (p.62) - Section 2E.10 Standard §1 (p.293) - Table 2A-4 (p.62)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2A.03",
+    "Section 2A.21",
+    "Section 2E.10",
+    "Table 2A-4",
+    "p.62",
+    "p.293"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.3333333333333333,
+    "ndcg6": 0.5,
+    "precision6": 0.1666666666666666,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2A.03, Section 2A.21, Section 2E.10, Table 2A-4, p.62, p.293. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 3, which produced MRR=0.333. The six-chunk ordering produced nDCG@6=0.500 and Context Precision@6=0.167. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

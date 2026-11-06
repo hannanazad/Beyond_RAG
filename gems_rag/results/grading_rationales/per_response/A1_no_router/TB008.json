@@ -1,0 +1,60 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "TB008",
+  "question": "What STOP-sign sizes does Table 2B-1 give for a conventional single-lane road, a conventional multi-lane road, and an oversized application?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The evidence provided is insufficient to answer this question. None of the attached text excerpts or images contains the STOP sign (R1-1) row of Table 2B-1 — the visible portions of Table 2B-1 in the page images cover only the R7-, R8-, R9-, and R10-series signs (parking, pedestrian, and signal-related signs), and the tabular text evidence covers guide signs (Table 2D-1), school area signs (Table 7B-1), and general information/service signs (Tables 2H-1 and 2I-1). I therefore cannot state the STOP-sign sizes for single-lane, multi-lane, or oversized applications without inventing values. Visual evidence: [Image 5] and [Image 8] show sheets of Table 2B-1 (Regulatory Sign and Plaque Sizes) but only for R7- through R10-series signs, not the STOP sign (R1-1). [Image 1] shows Table 2D-1 (guide signs), which does not include the STOP sign. [Image 2] shows Table 7B-1 (school area signs), which does not include the STOP sign. [Image 3] shows Table 2H-1 (general information signs), which does not include the STOP sign. [Image 4] shows Figure 2I-1 (general service signs), which does not include the STOP sign. [Image 6] shows Section 2B.01–2B.03 text referring to Table 2B-1 but does not reproduce the STOP-sign row. [Image 7] shows Table 2C-1 (warning signs), which does not include the STOP sign. Citations: - Page 112 - Page 108 - Page 113",
+  "gold_answer": "30 x 30 inches, 36 x 36 inches, and 48 x 48 inches, respectively.",
+  "correctness_score": 0.0,
+  "completeness_score": 0.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 25.0,
+  "grade_band": "Minimal credit",
+  "official_grade": "C=0.00, Comp=0.00, F=1.00, Cit=0.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "30 x 30 inches, 36 x 36 inches, and 48 x 48 inches, respectively.",
+      "token_coverage": 0.0
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2B.01–2B.03",
+    "Table 2B-1",
+    "Table 2D-1",
+    "Table 7B-1",
+    "Table 2H-1",
+    "Table 2C-1",
+    "Figure 2I-1",
+    "Page 112",
+    "Page 108",
+    "Page 113"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 0.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 25.0% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response does not provide the required conclusion or gives a conclusion that conflicts with the locked answer. Completeness rationale: The response omits or underdevelops these locked elements: 30 x 30 inches, 36 x 36 inches, and 48 x 48 inches, respectively. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response does not provide an accepted section, table, figure, or page location for the required answer. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Adjudication note: Abstains and omits all three STOP-sign sizes. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved retrieval package did not contain a locked-relevant text chunk, required page, or exact required visual entity. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

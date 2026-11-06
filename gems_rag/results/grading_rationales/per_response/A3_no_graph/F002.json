@@ -1,0 +1,59 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "F002",
+  "question": "In Figure 1B-2, if a proposed change is accepted for Federal rulemaking, what process follows before a Final Rule is published?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: According to Figure 1B-2, once a change is accepted for Federal rulemaking, FHWA first develops device provisions for inclusion in the next Notice of Proposed Amendments, then publishes that Notice in the Federal Register. This is followed by a docket comment period, FHWA's review of the comments received, and FHWA's preparation of the Final Rule, after which the Final Rule is published. (In parallel, FHWA may also decide whether to grant an interim approval for the device pending completion of rulemaking.) Standards (mandatory): - After the Final Rule is published, \"States or other Federal agencies that have their own MUTCDs or Supplements shall revise these MUTCDs or Supplements to be in substantial conformance with changes to the National MUTCD within 2 years of the effective date of the Final Rule for the changes [23 CFR 655.603(b)(3)].\" Visual evidence: [Image 1] Figure 1B-2 shows the \"YES\" branch from the \"Accepted for Federal rulemaking?\" decision flowing through: FHWA develops device provisions for inclusion in the next Notice of Proposed Amendments → FHWA publishes Notice of Proposed Amendments in Federal Register → Docket comment period → FHWA reviews comments → FHWA prepares Final Rule → FHWA publishes Final Rule, with a parallel \"Interim approval?\" decision branch leading to interim approval issuance and deployment while rulemaking proceeds; the flowchart also shows the post-publication requirement that State manuals be in substantial conformance within 2 years per 23 CFR 655.603(a). Support (informational): - Figure 1B-2 depicts this rulemaking sequence, including the parallel interim approval path in which \"FHWA issues Interim Approval with technical conditions for use, and posts on MUTCD website,\" jurisdictions apply for and receive interim approval, and deploy devices under interim approval conditions until the Final Rule is issued. - \"A diagram indicating the process for incorporating new traffic control devices into this Manual is shown in Figure 1B-2,\" and requests for change are evaluated for potential safety and operational benefits to justify inclusion in a future rulemaking. - \"The issuance by FHWA of an interim approval might result in the traffic control device or application being proposed for adoption in the next scheduled rulemaking process\"; if it is not proposed, a statement of the interim approval's status will be included in the Federal Register notice for the rulemaking. Citations: - Figure 1B-2 (p.9) - Section 1B.07 Support §3 (p.11) - Section 1B.06 Support §4 (p.9) - Section 1B.07 Support §4 (p.11) - Section 1B.02 Standard §2 (p.4)",
+  "gold_answer": "FHWA develops provisions for a Notice of Proposed Amendments, publishes the notice in the Federal Register, holds a docket comment period, reviews comments, prepares the Final Rule, and publishes it.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "FHWA develops provisions for a Notice of Proposed Amendments, publishes the notice in the Federal Register, holds a docket comment period, reviews comments, prepares the Final Rule, and publishes it.",
+      "token_coverage": 0.95
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1B.07",
+    "Section 1B.06",
+    "Section 1B.02",
+    "Figure 1B-2",
+    "p.9",
+    "p.11",
+    "p.4",
+    "23 CFR 655.603(b)",
+    "23 CFR 655.603(a)"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9438661545147248,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1B.07, Section 1B.06, Section 1B.02, Figure 1B-2, p.9, p.11. Gold elements clearly reflected in the response: FHWA develops provisions for a Notice of Proposed Amendments, publishes the notice in the Federal Register, holds a docket comment period, reviews comments, prepares the Final Rul… Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.944 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

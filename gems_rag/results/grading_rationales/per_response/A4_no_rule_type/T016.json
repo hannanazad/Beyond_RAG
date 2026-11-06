@@ -1,0 +1,68 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "T016",
+  "question": "How does the MUTCD classify regulatory, warning, and guide signs by function?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The MUTCD classifies signs by function into three principal categories: regulatory signs, which give notice of traffic laws or regulations; warning signs, which give notice of situations that might not be readily apparent; and guide signs, which convey route, destination, direction, distance, service, and similar geographical, recreational, or cultural information. This functional classification is a mandatory (Standard) definition, and it carries through the Manual—for example, when regulatory or warning messages are incorporated within guide signs, they must retain their functional color coding. Standards (mandatory): - \"Signs shall be defined by their function as follows: A. Regulatory signs give notice of traffic laws or regulations. B. Warning signs give notice of a situation that might not be readily apparent. C. Guide signs show route designations, destinations, directions, distances, services, points of interest, and other geographical, recreational, or cultural information.\" - \"When regulatory messages are incorporated within a guide sign, they shall be on a rectangular panel with a black legend on a white background. When warning messages are incorporated within a guide sign, they shall be on a rectangular panel with a black legend on a yellow background.\" - \"A combination of guide and regulatory signs shall be used in advance of and at the initial entry point and all intermediate entry points from general-purpose lanes or facilities to contiguous, barrier-separated, and buffer-separated preferential lanes where access between the preferential and general-purpose lanes is restricted to designated locations.\" Guidance (recommended): - \"Signs should be individually installed on separate posts or mountings except where: A. One sign supplements another...\" — i.e., signs of different functions are generally installed separately, with limited exceptions such as supplemental plaques. Support (informational): - Changeable message signs remain traffic control devices at all times, and their regulatory, warning, and guidance messages fall under the same MUTCD provisions as the corresponding conventional sign categories. - Examples of regulatory and warning signs applied together (with cross-references to guide signs in Section 2D.39) are shown for roundabouts and neighborhood traffic circles in Figures 2B-21 through 2B-24. Visual evidence: [Image 1] Figure 2A-2 illustrates mounting heights and lateral offsets for the functional sign classes, including a regulatory STOP sign (A), warning signs with advisory speed plaques (B, D), a route assembly (E), and guide signs on freeways and overhead structures (G, H). [Image 2] Figure 2A-3 shows typical placements of regulatory STOP and YIELD signs at various intersection configurations. [Image 3] Figure 2A-4 relates the chapters (2B, 2C, and following) that cover regulatory, warning, and guide signs. [Image 4] Table 2C-3 provides advance placement guidance specific to the warning sign category. [Image 5] shows the table of contents for Chapter 6 covering TTC zone regulatory (6G) and warning (6H) signs, reflecting the same functional classification in temporary traffic control. [Image 6] shows the table of contents listing Chapter 2B regulatory sign sections and Chapter 2C \"Warning Signs and Object Markers,\" demonstrating the Manual's organization by sign function. [Image 7] shows Table 2A-2, which assigns distinct legend/background color combinations to regulatory, warning, and guide sign types. [Image 8] shows Figure 2B-23, an example of regulatory and warning signs at a two-lane roundabout with cross-reference to guide signs in Section 2D.39. Citations: - Section 2A.03 Standard §1 (p.40) - Section 2A.13 Guidance §6 (p.57) - Section 2F.12 Standard §11 (p.392) - Section 2G.10 Standard §12 (p.422) - Section 2L.01 Support §3 (p.510) - Section 2B.51 Support §6 (p.123) - Figure 2A-2 (p.51) - Figure 2A-3 (p.52) - Figure 2A-4 (p.50) - Table 2C-3 (p.152) - Page 23 - Page 9 - Page 85 - Page 162",
+  "gold_answer": "Regulatory signs give notice of traffic laws or regulations. Warning signs give notice of a situation that might not be readily apparent. Guide signs show route designations, destinations, directions, distances, services, points of interest, or other geographical, recreational, or cultural information.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "Regulatory signs give notice of traffic laws or regulations.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "Warning signs give notice of a situation that might not be readily apparent.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "Guide signs show route designations, destinations, directions, distances, services, points of interest, or other geographical, recreational, or cultural information.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2D.39",
+    "Section 2A.03",
+    "Section 2A.13",
+    "Section 2F.12",
+    "Section 2G.10",
+    "Section 2L.01",
+    "Section 2B.51",
+    "Table 2C-3",
+    "Table 2A-2",
+    "Figure 2A-2"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2D.39, Section 2A.03, Section 2A.13, Section 2F.12, Section 2G.10, Section 2L.01. Gold elements clearly reflected in the response: Regulatory signs give notice of traffic laws or regulations. | Warning signs give notice of a situation that might not be readily apparent. | Guide signs show route designations, destinations, directions, distances, services, points of interest, or other geographical, recreational, or cultural information. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

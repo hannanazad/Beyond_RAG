@@ -1,0 +1,61 @@
+{
+  "condition_id": "A5_no_hierarchy",
+  "condition_name": "A5 No hierarchy prior",
+  "question_id": "T042",
+  "question": "How do RRFBs normally operate with respect to activation, synchronization, and flash rate?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: RRFBs must remain dark until actuated by a pedestrian, then flash for a predetermined time (or, with passive detection, until the pedestrian clears the crosswalk). All RRFB units serving a crosswalk must start and stop flashing simultaneously, and they must flash at a rapid rate of 75 flashing sequences per minute — a specific exception to normal beacon flash-rate rules. The duration of operation should be based on pedestrian clearance timing procedures. Standards (mandatory): - \"The RRFB shall be normally dark, shall initiate operation only upon pedestrian actuation, and shall cease operation at a predetermined time after the pedestrian actuation or, with passive detection, after the pedestrian clears the crosswalk.\" - \"All RRFB units associated with a given crosswalk (including those with an advance crossing sign, if used) shall, when activated, simultaneously commence operation of their rapid flashing indications and shall cease operation simultaneously.\" - \"When activated, the two yellow indications in each RRFB unit shall flash in a rapidly flashing sequence. As a specific exception to the requirements for the flash rate of beacons provided in Paragraph 3 of Section 4S.01, RRFBs shall use a much faster flash rate and shall provide 75 flashing sequences per minute.\" Guidance (recommended): - The minimum duration of a predetermined period of operation of the RRFBs following each actuation should be based on the procedures for the timing of pedestrian clearance times for pedestrian signals (see Section 4I.06). Options (permitted): - A pedestrian-activated and/or bicyclist-activated RRFB may be used to provide supplemental emphasis to pedestrian, school, and trail warning signs at marked crosswalks across uncontrolled approaches. - At intersections with two crosswalks on an uncontrolled approach, post-mounted RRFBs may be installed to face only one direction of travel at the first crosswalk that traffic encounters; when activated, the RRFBs on both approaches shall simultaneously commence and cease operation. Citations: - Section 4L.03 Standard §1 (p.738) - Section 4L.03 Standard §2 (p.738) - Section 4L.03 Standard §6 (p.738) - Section 4L.03 Guidance §3 (p.738) - Section 4L.01 Option §1 (p.736) - Section 4L.02 Option §11 (p.738)",
+  "gold_answer": "They are normally dark and operate only upon pedestrian actuation, stopping after the predetermined period or after a detected pedestrian clears. All RRFB units for the crosswalk begin and end together. When active, they use 75 rapid-flashing sequences per minute.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "They are normally dark and operate only upon pedestrian actuation, stopping after the predetermined period or after a detected pedestrian clears.",
+      "token_coverage": 0.8
+    },
+    {
+      "text": "When active, they use 75 rapid-flashing sequences per minute.",
+      "token_coverage": 0.75
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4S.01",
+    "Section 4I.06",
+    "Section 4L.03",
+    "Section 4L.01",
+    "Section 4L.02",
+    "p.738",
+    "p.736"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4S.01, Section 4I.06, Section 4L.03, Section 4L.01, Section 4L.02, p.738. Gold elements clearly reflected in the response: They are normally dark and operate only upon pedestrian actuation, stopping after the predetermined period or after a detected pedestrian clears. | When active, they use 75 rapid-flashing sequences per minute. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

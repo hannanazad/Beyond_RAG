@@ -1,0 +1,68 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T047",
+  "question": "Where must a School Speed Limit assembly be placed, what advance sign is required, and how is the downstream end normally marked?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: A School Speed Limit assembly (or S5-1 School Speed Limit When Flashing sign) must be placed at or as near as practicable to the point where the reduced school speed limit zone begins. A School (S1-1) sign is required in advance of the first School Speed Limit assembly or S5-1 sign in each approach direction, using the advance placement guidelines in Table 2C-3. The downstream end of the zone is normally marked with an END SCHOOL SPEED LIMIT (S5-3) sign, though an END SCHOOL ZONE (S5-2) sign may be used where the zones end at the same point. Standards (mandatory): - \"A School Speed Limit assembly (see Figure 7B-1) or a School Speed Limit When Flashing (S5-1) sign (see Figure 7B-1) shall be used to indicate the speed limit where a reduced school speed limit zone has been established based upon an engineering study or where a reduced school speed limit is specified for such areas by statute. The School Speed Limit assembly or School Speed Limit When Flashing sign shall be placed at or as near as practicable to the point where the reduced school speed limit zone begins (see Figures 7B-2 and 7B-4).\" - \"If a reduced school speed limit zone has been established, a School (S1-1) sign shall be installed in advance (see Table 2C-3 for advance placement guidelines) of the first School Speed Limit sign assembly or S5-1 sign that is encountered in each direction as traffic approaches the reduced school speed limit zone (see Figures 7B-2 and 7B-4).\" - \"Except as provided in Paragraph 4 of this Section, the downstream end of an authorized and posted reduced school speed limit zone shall be identified with an END SCHOOL SPEED LIMIT (S5-3) sign (see Figures 7B-1, 7B-2, and 7B-4).\" - \"The static School Speed Limit assembly shall consist of a top plaque (S4-3P) with the legend SCHOOL, a Speed Limit (R2-1) sign, and a bottom plaque (S4-1P, S4-2P, S4-4P, or S4-6P) indicating the specific periods of the day and/or days of the week that the special school speed limit is in effect (see Figure 7B-1).\" - \"The School Speed Limit assembly shall be either a static sign assembly, a blank-out sign, or a changeable message sign (see Chapter 2L).\" Options (permitted): - \"The downstream end of a designated school zone may be identified with an END SCHOOL ZONE (S5-2) sign (see Figures 7B-1 and 7B-2)\" — i.e., where the reduced school speed limit zone ends at the same point as the designated school zone, the S5-2 sign may serve as the terminal sign. Visual evidence: [Image 1] Figure 7B-1 illustrates the School Speed Limit assembly components (S4-3P SCHOOL plaque, R2-1 Speed Limit sign, and S4-1P/S4-2P/S4-4P/S4-6P bottom plaques), the S5-1 When Flashing sign, and the END SCHOOL SPEED LIMIT (S5-3) and END SCHOOL ZONE (S5-2) signs. [Image 2] Table 2C-3 provides the advance placement distances used to locate the School (S1-1) sign upstream of the assembly. [Image 3] Figure 7B-2 shows an example layout with the S1-1 sign in advance, the School Speed Limit assembly at the zone's beginning, and the S5-3 or S5-2 sign marking the downstream end. [Image 4] Figure 7B-4 shows the same placement pattern for a school zone with a school speed limit and higher fines only for speeding, including S5-3/S5-2 terminal signing. [Images 5–8] These full-page views reproduce the relevant Chapter 7B text and figure content confirming the placement, advance signing, and end-of-zone requirements. Citations: - Section 7B.05 Standard §1 (p.978) - Section 7B.05 Standard §2 (p.978) - Section 7B.05 Standard §3 (p.978) - Section 7B.05 Standard §7 (p.980) - Section 7B.05 Standard §6 (p.980) - Section 7B.02 Option §7 (p.976) - Figure 7B-1 (p.973) - Table 2C-3 (p.152) - Figure 7B-2 (p.975) - Figure 7B-4 (p.979)",
+  "gold_answer": "The assembly or S5-1 sign must be at or as near as practicable to the point where the reduced zone begins. A School (S1-1) sign must be placed in advance of the first school-speed-limit sign in each direction. The downstream end is normally marked with an END SCHOOL SPEED LIMIT (S5-3) sign, with an END SCHOOL ZONE (S5-2) allowed when the two zones end together.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The assembly or S5-1 sign must be at or as near as practicable to the point where the reduced zone begins.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "A School (S1-1) sign must be placed in advance of the first school-speed-limit sign in each direction.",
+      "token_coverage": 0.909
+    },
+    {
+      "text": "The downstream end is normally marked with an END SCHOOL SPEED LIMIT (S5-3) sign, with an END SCHOOL ZONE (S5-2) allowed when the two zones end together.",
+      "token_coverage": 0.857
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 7B.05",
+    "Section 7B.02",
+    "Table 2C-3",
+    "Figure 7B-1",
+    "Figure 7B-2",
+    "Figure 7B-4",
+    "p.978",
+    "p.980",
+    "p.976",
+    "p.973"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9896062251871524,
+    "precision6": 0.8333333333333334,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 7B.05, Section 7B.02, Table 2C-3, Figure 7B-1, Figure 7B-2, Figure 7B-4. Gold elements clearly reflected in the response: The assembly or S5-1 sign must be at or as near as practicable to the point where the reduced zone begins. | A School (S1-1) sign must be placed in advance of the first school-speed-limit sign in each direction. | The downstream end is normally marked with an END SCHOOL SPEED LIMIT (S5-3) sign, with an END SCHOOL ZONE (S5-2) allowed when the two zones end together. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.990 and Context Precision@6=0.833. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

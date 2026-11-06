@@ -1,0 +1,63 @@
+{
+  "condition_id": "A4_no_rule_type",
+  "condition_name": "A4 No rule-type term",
+  "question_id": "M015",
+  "question": "Using Section 4I.06 and Figure 4I-4, describe the pedestrian interval order, minimum buffer interval, and walking speed normally used for clearance timing.",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Per Figure 4I-4, the pedestrian intervals occur in this order: the Walk Interval (steady WALKING PERSON, 7 seconds minimum), then the Pedestrian Change Interval (flashing UPRAISED HAND, typically with a countdown display), then the Buffer Interval (steady UPRAISED HAND, 2 seconds minimum) before conflicting traffic is released. The buffer interval must always be provided and displayed, and the pedestrian clearance time is normally calculated using a walking speed of 3.5 feet per second, with slower speeds considered where slower pedestrians or wheelchair users routinely cross. Standards (mandatory): - \"The Buffer Interval, which shall always be provided and displayed, may be used to help satisfy the calculated pedestrian clearance time, or may begin after the calculated pedestrian clearance time has ended.\" (Figure 4I-4 footnote) - As shown on the page with Figure 4I-3: \"Following the pedestrian change interval, a buffer interval consisting of a steady UPRAISED HAND (symbolizing DONT WALK) signal indication shall be displayed for at least 2 seconds prior to the release of any conflicting vehicular movement. The sum of the time of the pedestrian change interval and the buffer interval shall not be less than the calculated pedestrian clearance time... The buffer interval shall not begin later than the beginning of the red clearance interval, if used.\" Guidance (recommended): - The pedestrian clearance time should be sufficient to allow a pedestrian who left the curb or edge of pavement at the end of the WALKING PERSON indication to travel at a walking speed of 3.5 feet per second to at least the far side of the traveled way or to a median of sufficient width for pedestrians to wait. - Where pedestrians who walk slower than 3.5 feet per second, or pedestrians who use wheelchairs, routinely use the crosswalk, a walking speed of less than 3.5 feet per second should be considered in determining the pedestrian clearance time. Options (permitted): - The additional time provided by an extended push button press to satisfy pedestrian clearance time needs may be added to either the walk interval or the pedestrian change interval. - The countdown display is optional for Pedestrian Change Intervals of 7 seconds or less (Figure 4I-4 footnote), and the Buffer Interval may be used to help satisfy the calculated pedestrian clearance time or may begin after the calculated pedestrian clearance time has ended. Visual evidence: - [Image 1] Figure 4I-4 shows the interval sequence — steady WALKING PERSON during the Walk Interval (7 seconds MIN.), flashing UPRAISED HAND with countdown during the Pedestrian Change Interval (spanning the calculated pedestrian clearance time), and steady UPRAISED HAND during the Buffer Interval (2 seconds MIN., with the \"zero\" point of the countdown at its start) — along with five possible relationships to the associated vehicular G/Y/R phase intervals. - [Image 2] The full page containing Figure 4I-4 also shows the Guidance that clearance time is based on a 3.5 feet per second walking speed and the Option that extended push button time may be added to the walk or pedestrian change interval. - [Image 3] This page's Standard paragraph 04 requires the pedestrian change interval (flashing UPRAISED HAND) to begin immediately after the WALKING PERSON indication, followed by a buffer interval of at least 2 seconds prior to release of any conflicting vehicular movement. - [Image 4] This page addresses leading pedestrian intervals and green intervals extending beyond the pedestrian clearance time, consistent with the last bar in Figure 4I-4. - [Image 5] This page concerns pedestrian hybrid beacon operation, noting flashing CIRCULAR RED may continue briefly after the pedestrian change interval to provide a buffer interval, paralleling the buffer concept in Figure 4I-4. Citations: - Section 4I.06 Support §6 (p.724) - Section 4I.06 Guidance §7 (p.724) - Section 4I.06 Option §9 (p.725) - Section 4I.06 Guidance §10 (p.725) - Figure 4I-4 (p.724) - Page 765 - Page 764 - Page 767 - Page 771",
+  "gold_answer": "The order is WALK, flashing DONT WALK pedestrian change interval, then steady DONT WALK buffer interval. The buffer interval is at least 2 seconds before conflicting traffic is released, and clearance is normally evaluated using 3.5 feet per second.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "The order is WALK, flashing DONT WALK pedestrian change interval, then steady DONT WALK buffer interval.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "The buffer interval is at least 2 seconds before conflicting traffic is released, and clearance is normally evaluated using 3.5 feet per second.",
+      "token_coverage": 0.941
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4I.06",
+    "Figure 4I-4",
+    "Figure 4I-3",
+    "p.724",
+    "p.725",
+    "Page 765",
+    "Page 764",
+    "Page 767",
+    "Page 771"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9267582364714126,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4I.06, Figure 4I-4, Figure 4I-3, p.724, p.725, Page 765. Gold elements clearly reflected in the response: The order is WALK, flashing DONT WALK pedestrian change interval, then steady DONT WALK buffer interval. | The buffer interval is at least 2 seconds before conflicting traffic is released, and clearance is normally evaluated using 3.5 feet per second. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.927 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

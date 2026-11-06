@@ -1,0 +1,58 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "T049",
+  "question": "According to the MUTCD, what exact percentage reduction in crashes is guaranteed by installing a STOP sign or all-way stop control?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "unsupported_precision",
+  "model_answer": "Direct Answer: The MUTCD does not state any percentage reduction in crashes — guaranteed or otherwise — from installing a STOP sign or all-way stop control, and the evidence provided contains no such figure. Instead, the MUTCD uses reported crash counts as *thresholds* (warrants) for considering stop control; it never promises a safety outcome. The question's premise is not supported by the MUTCD, and the evidence is insufficient to give any percentage. Guidance (recommended): - Minor-road stop control should be considered when, among other conditions, crash records show three or more reported crashes in 12 months (or six or more in 36 months at a four-leg intersection; five or more in 36 months at a three-leg intersection) that are \"susceptible to correction by installation of minor-road stop control\" — a threshold for consideration, not a guaranteed reduction. Options (permitted): - All-way stop control may be installed where an engineering study shows five or more reported crashes in 12 months (four-leg) or four or more (three-leg), or the corresponding 36-month counts, \"of a type susceptible to correction by the installation of all-way stop control\" — again, an eligibility criterion, not a promised percentage reduction. Citations: - Section 2B.11 Guidance §1 (p.78) - Section 2B.13 Option §1 (p.79)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.154
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2B.11",
+    "Section 2B.13",
+    "p.78",
+    "p.79"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.8927537907700456,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2B.11, Section 2B.13, p.78, p.79. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.893 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

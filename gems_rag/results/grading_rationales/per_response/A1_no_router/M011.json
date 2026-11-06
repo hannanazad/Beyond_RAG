@@ -1,0 +1,63 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "M011",
+  "question": "At a 55-mph curve, when must a no-passing zone be marked, and what happens if the next no-passing zone begins less than 400 feet later?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: On a roadway with center line markings, a no-passing zone must be marked at a horizontal or vertical curve whenever the passing sight distance falls below the minimum in Table 3B-1 — which for a 55-mph 85th-percentile speed or speed limit is 900 feet. If the next no-passing zone begins less than 400 feet downstream, the no-passing markings should be connected so the two zones become continuous. Standards (mandatory): - \"On roadways with center line markings, no-passing zone markings shall be used at horizontal or vertical curves where the passing sight distance is less than the minimum shown in Table 3B-1 for the 85th-percentile speed or the speed limit.\" - \"On two-way, two-lane or three-lane roadways where center line markings are installed, no-passing zones shall be established at vertical and horizontal curves and other locations where an engineering study indicates that passing must be prohibited because of inadequate sight distances or other special conditions.\" - \"No-passing zones shall be marked by either the one-direction no-passing zone pavement markings or the two-direction no-passing zone pavement markings described in Section 3B.01 and shown in Figures 3B-1 and 3B-3.\" Guidance (recommended): - \"Where the distance between successive no-passing zones is less than 400 feet, no-passing zone markings should connect the zones.\" Visual evidence: - [Image 1] Table 3B-1 shows that for a 55-mph 85th-percentile speed or speed limit, the minimum passing sight distance is 900 feet. - [Image 2] Figure 3B-4 illustrates how the no-passing zone limits are located: the zone begins at point \"a,\" where sight distance (measured between points 3.5 feet above the pavement) first becomes less than the Table 3B-1 minimum, and ends at point \"b,\" where sight distance again exceeds the minimum, for both vertical and horizontal curves. - [Image 3] shows the full page containing Figure 3B-4 with the profile and plan views of no-passing zones at curves. - [Image 4] shows the full page containing Section 3B.03 provisions and Table 3B-1. Citations: - Section 3B.03 Standard §4 (p.543) - Section 3B.03 Standard §3 (p.543) - Section 3B.03 Standard §1 (p.542) - Section 3B.03 Guidance §7 (p.543) - Table 3B-1 (p.543) - Figure 3B-4 (p.544) - Page 585 - Page 584",
+  "gold_answer": "The no-passing zone must be marked when available passing sight distance is less than 900 feet. If successive no-passing zones are separated by less than 400 feet, the markings should connect them.",
+  "correctness_score": 0.9,
+  "completeness_score": 0.8500000000000001,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=0.90, Comp=0.85, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "The no-passing zone must be marked when available passing sight distance is less than 900 feet.",
+      "token_coverage": 0.917
+    },
+    {
+      "text": "If successive no-passing zones are separated by less than 400 feet, the markings should connect them.",
+      "token_coverage": 0.909
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 3B.01",
+    "Section 3B.03",
+    "Table 3B-1",
+    "Figure 3B-4",
+    "p.543",
+    "p.542",
+    "p.544",
+    "Page 585",
+    "Page 584"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9558295932317544,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.5,
+    "retrieved_visual_count": 2.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response gives the main conclusion but loses precision on one or more required details. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 3B.01, Section 3B.03, Table 3B-1, Figure 3B-4, p.543, p.542. Gold elements clearly reflected in the response: The no-passing zone must be marked when available passing sight distance is less than 900 feet. | If successive no-passing zones are separated by less than 400 feet, the markings should connect them. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.956 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.50."
+}

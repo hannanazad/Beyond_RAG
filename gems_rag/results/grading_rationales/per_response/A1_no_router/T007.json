@@ -1,0 +1,64 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T007",
+  "question": "Does the MUTCD apply to roadways inside a shopping center that are open to public travel, and does it apply to the parking spaces and driving aisles within the parking area?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Yes — roadways within a shopping center that are open to public travel without full-time access restrictions are \"site roadways open to public travel,\" and the MUTCD applies to them by mandate. No — the MUTCD expressly does not apply to parking areas, including the driving aisles within those parking areas, regardless of public or private ownership. Standards (mandatory): - \"In accordance with 23 CFR 655.603(a), the MUTCD shall apply to all of the following types of facilities: ... B. Streets and roadways on sites that are off the public right-of-way that are open to public travel without full-time access restrictions. Examples include roadways within shopping centers, office parks, airports, sports arenas, other similar business and/or recreation facilities... The above-described examples of streets and roadways are referred to in this Manual as site roadways open to public travel.\" - \"The MUTCD shall not apply to the following types of facilities: ... C. Parking areas, including the driving aisles within those parking areas, that are either publicly or privately owned.\" Guidance (recommended): - Before requesting permission to experiment with a new device or application, an owner of a site roadway open to public travel should first check for any laws, regulations, and/or directives covering the application of the MUTCD that might apply. Support (informational): - The purpose of the MUTCD is to establish uniform national criteria for traffic control devices on all streets, highways, pedestrian and bicycle facilities, and site roadways open to public travel. - The applicability of the MUTCD to facilities open to public travel is independent of the type of ownership or jurisdiction (public or private) and the source of funding. - MUTCD crashworthiness provisions apply to all streets, highways, and site roadways open to public travel. Visual evidence: [Image 5] shows the full text of Section 1B.01, including the list of facilities where the MUTCD applies (item B naming shopping centers) and the exclusion of parking areas and their driving aisles. [Image 6] shows definition 247, \"Site Roadways Open to Public Travel,\" which explicitly states that site roadways open to public travel \"do not include parking areas..., including the driving aisles... within those parking areas.\" [Image 1] illustrates parking space markings for on-street (curbside) parking spaces along a roadway, which is within MUTCD scope, as distinct from off-street parking areas. [Image 4] similarly shows on-street back-in angle parking signing and markings along a public roadway. [Images 2 and 3] show Truck Parking Availability signs installed on the highway mainline directing drivers to parking facilities, not devices inside parking areas themselves. Citations: - Section 1B.01 Standard §2 (p.4) - Section 1B.01 Standard §3 (p.4) - Section 1B.05 Guidance §7 (p.7) - Section 1A.01 Support §1 (p.1) - Section 1A.01 Support §5 (p.1) - Section 6A.04 Support §1 (p.768) - Page 45 - Page 67 - Figure 3B-23 (p.582) - Figure 9B-3 (p.1057) - Figure 2I-9 (p.490) - Figure 2I-10 (p.491)",
+  "gold_answer": "It applies to the shopping-center site roadways that are open to public travel without full-time access restrictions. It does not apply to the parking area itself, including its driving aisles.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "GPT-5.6 differential audit of recovered A1 record",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.82,
+  "confidence_basis": "GPT-5.6 directly reviewed a repaired response against the locked gold elements.",
+  "covered_gold_elements": [
+    {
+      "text": "It applies to the shopping-center site roadways that are open to public travel without full-time access restrictions.",
+      "token_coverage": 0.909
+    },
+    {
+      "text": "It does not apply to the parking area itself, including its driving aisles.",
+      "token_coverage": 0.714
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1B.01",
+    "Section 1B.05",
+    "Section 1A.01",
+    "Section 6A.04",
+    "Figure 3B-23",
+    "Figure 9B-3",
+    "Figure 2I-9",
+    "Figure 2I-10",
+    "p.4",
+    "p.7"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.3333333333333333,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1B.01, Section 1B.05, Section 1A.01, Section 6A.04, Figure 3B-23, Figure 9B-3. Gold elements clearly reflected in the response: It applies to the shopping-center site roadways that are open to public travel without full-time access restrictions. | It does not apply to the parking area itself, including its driving aisles. Adjudication note: Correctly distinguishes covered site roadways from excluded parking areas and driving aisles. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.333. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

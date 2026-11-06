@@ -1,0 +1,68 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T029",
+  "question": "In the MUTCD treatment of changeable message signs, what is a unit of information and how many words should it contain at most?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: In the MUTCD's treatment of changeable message signs, a \"unit of information\" is illustrated as the answer to a single basic question a road user would ask about a situation — for example, \"What happened?\" (MAJOR CRASH), \"Where?\" (AT EXIT 12), \"Who is the advisory for?\" (drivers heading TO NEW YORK), and \"What is advised?\" (USE ROUTE 46), each counting as one information unit. The evidence provided does not contain the specific maximum number of words a unit of information should contain, so I cannot state that limit from this evidence; the evidence does, however, establish related limits on message structure (no more than two phases, no more than three lines per phase). Standards (mandatory): - \"Each message shall consist of no more than two phases. A phase shall consist of no more than three lines of text. Each phase shall be understood by itself, and the meaning of the entire message shall be the same, regardless of the sequence in which the phases are read. Each line of legend shall be centered on the sign.\" - \"Abbreviations displayed on CMS shall comply with the provisions of Section 1D.08.\" Guidance (recommended): - Page 516 (visible in [Image 5]) lists design principles for CMS messages, including that no more than three units of information should be displayed in a message phase, no more than four units in a message when traffic operating speeds are 35 mph or more, no more than five units when speeds are less than 35 mph, and that only one unit of information should appear on each line of the CMS. Visual evidence: - [Image 1] Table 2L-2 shows an example message broken into four information units, each unit answering one question (What happened? Where? Who is the advisory for? What is advised?) and each counting as 1 information unit, with a note showing how the four units form a two-phase message (MAJOR CRASH / AT EXIT 12 and USE ROUTE 46 / TO NEW YORK). - [Image 2] shows Section 2L.01 (Description of Changeable Message Signs) and 2L.02, providing general CMS provisions but no definition of a unit of information. - [Image 3] shows the table of contents listing Section 2L.05 \"Message Length and Units of Information\" at page 514. - [Image 4] shows Table 2A-2 on common uses of sign colors for CMS, which is not relevant to units of information. - [Image 5] shows Section 2L.05 guidance principles (items A–G) governing how many units of information should appear per phase, per message, and per line, and notes that Table 2L-2 provides an example of the number of units of information in a message. Citations: - Section 2L.05 Standard §4 (p.515) - Section 2L.05 Standard §1 (p.516) - Section 2L.05 Standard §6 (p.516) - Table 2L-2 (p.515) - Page 557",
+  "gold_answer": "A unit of information is one answer to one question that a driver can use to make a decision. It should contain no more than four words; total message length should be governed by the number of information units and the size of the CMS.",
+  "correctness_score": 0.5,
+  "completeness_score": 0.5,
+  "faithfulness_score": 1.0,
+  "citation_score": 0.75,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 68.75,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.50, Comp=0.50, F=1.00, Cit=0.75, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "It should contain no more than four words",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "A unit of information is one answer to one question that a driver can use to make a decision.",
+      "token_coverage": 0.7
+    },
+    {
+      "text": "total message length should be governed by the number of information units and the size of the CMS.",
+      "token_coverage": 0.667
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1D.08",
+    "Section 2L.01",
+    "Section 2L.05",
+    "Table 2L-2",
+    "Table 2A-2",
+    "Page 516",
+    "page 514",
+    "p.515",
+    "p.516",
+    "Page 557"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9674679834891692,
+    "precision6": 0.5,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 68.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The response provides some evidence localization, but the audit judged it incomplete, imprecise, or partly incorrect. The response cites: Section 1D.08, Section 2L.01, Section 2L.05, Table 2L-2, Table 2A-2, Page 516. Gold elements clearly reflected in the response: It should contain no more than four words | A unit of information is one answer to one question that a driver can use to make a decision. | total message length should be governed by the number of information units and the size of the CMS. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.967 and Context Precision@6=0.500. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

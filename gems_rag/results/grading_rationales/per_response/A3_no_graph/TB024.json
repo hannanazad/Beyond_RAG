@@ -1,0 +1,68 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "TB024",
+  "question": "What minimum off-roadway sizes does Table 9A-1 give for a STOP sign, a YIELD sign, and a Crossbuck sign on a bicycle facility?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Table 9A-1 (Bicycle Facility Sign and Plaque Minimum Sizes) gives an off-roadway minimum of 18 x 18 inches for the STOP (R1-1) sign, 18 x 18 x 18 inches for the YIELD (R1-2) sign, and 24 x 4.5 inches for the Grade Crossing (Crossbuck) (R15-1) sign. These minimums apply only to signs installed specifically for bicyclist applications on bicycle-only facilities and shared-use paths. Standards (mandatory): - \"The minimum sign and plaque sizes for signs specific to bicycle-only facilities and shared-use paths shall be those shown in Table 9A-1. These sizes shall be used only for signs and plaques installed specifically for bicyclist applications.\" - \"The minimum TTC sign and plaque sizes for shared-use paths shall conform to those shown in Table 9A-1.\" - Table 9A-1 entries (Off Roadway column): \"Stop R1-1 9B.01 18 x 18\"; \"Yield R1-2 9B.01 18 x 18 x 18\"; Grade Crossing (Crossbuck) R15-1 — 24 x 4.5. Visual evidence: [Image 4] shows Table 9A-1 (Sheet 1 of 3) listing Stop (R1-1) with an Off Roadway size of 18 x 18, Yield (R1-2) with 18 x 18 x 18, and Grade Crossing (Crossbuck) (R15-1) with an Off Roadway size of 24 x 4.5 (Roadway 48 x 9). [Image 2] shows Figure 9B-1 (Sheet 1 of 2) depicting the R1-1 STOP and R1-2 YIELD signs for bicycle facilities. [Image 3] shows Figure 9B-1 (Sheet 2 of 2) depicting the R15-1 RAILROAD CROSSING Crossbuck sign for bicycle facilities. Citations: - Section 9A.02 Standard §10 (p.1048) - Section 6N.04 Standard §19 (p.844) - Section 9A.03 Guidance §3 (p.1051) - Table 9A-1 (p.1036) - Page 1093",
+  "gold_answer": "STOP: 18 x 18 inches; YIELD: 18 x 18 x 18 inches; Crossbuck: 24 x 4.5 inches.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "18 x 18 inches",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "18 x 18 x 18 inches",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "24 x 4.5 inches.",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 9A.02",
+    "Section 6N.04",
+    "Section 9A.03",
+    "Table 9A-1",
+    "Figure 9B-1",
+    "p.1048",
+    "p.844",
+    "p.1051",
+    "p.1036",
+    "Page 1093"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.982892081956688,
+    "precision6": 0.6666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 9A.02, Section 6N.04, Section 9A.03, Table 9A-1, Figure 9B-1, p.1048. Gold elements clearly reflected in the response: 18 x 18 inches | 18 x 18 x 18 inches | 24 x 4.5 inches. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.983 and Context Precision@6=0.667. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

@@ -1,0 +1,57 @@
+{
+  "condition_id": "ORIGINAL_RAG_BASELINE",
+  "condition_name": "Original Claude Fable 5 GEMS-RAG baseline",
+  "question_id": "M013",
+  "question": "For a four-leg intersection evaluated under the one-year Crash Experience signal warrant, what crash thresholds apply and what two additional categories of conditions must also be satisfied?",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Under the one-year application of Warrant 7 (Crash Experience), a four-leg intersection meets the crash-history criterion if the reported angle crashes and pedestrian crashes within a 1-year period equal or exceed the threshold number in Table 4C-2 — either for total crashes of all severities or for total fatal-and-injury crashes (the specific numeric thresholds appear in Table 4C-2, which is not reproduced in the evidence provided). In addition to the crash thresholds, two other categories of conditions must be met: (A) an adequate trial of alternatives with satisfactory observance and enforcement has failed to reduce crash frequency, and (C) a traffic-volume condition applying to each of any 8 hours of an average day (the full text of this volume condition is truncated in the evidence supplied). Guidance (recommended): - The need for a traffic control signal should be considered if an engineering study finds that all of the following criteria are met: \"A. Adequate trial of alternatives with satisfactory observance and enforcement has failed to reduce the crash frequency.\" - Criterion B (crash history), of which at least one condition must apply; the two one-year conditions are: \"1. The number of reported angle crashes and pedestrian crashes within a 1-year period equals or exceeds the threshold number in Table 4C-2 for total angle crashes and pedestrian crashes (all severities); or 2. The number of reported fatal-and-injury angle crashes and pedestrian crashes within a 1-year period equals or exceeds the threshold number in Table 4C-2 for total fatal-and-injury angle crashes and pedestrian crashes.\" - Criterion C, which begins \"For each of any 8 hours of an average day, the ve…\" — a traffic-volume condition whose full wording is cut off in the evidence provided. Options (permitted): - If the posted or statutory speed limit or the 85th-percentile speed on the major street exceeds 40 mph, or if the intersection lies within the built-up area of an isolated community with a population of less than 10,000, the volumes in the 56 percent columns of Table 4C-1 may be used in place of the 80 percent columns, and Table 4C-4 (one-year period) may be used in place of Table 4C-2. - Agencies may calibrate HSM safety performance functions to their own crash data, or develop their own SPFs, and — when documented in the engineering study — may use agency-specific crash frequency values instead of the values in Tables 4C-2 through 4C-5. Support (informational): - The Crash Experience warrant is intended for locations where crash severity and frequency are the principal reasons to consider a signal; the table values were derived from HSM safety performance functions and represent the threshold at which a signalized intersection's safety performance outperforms a stop-controlled intersection under equivalent conditions. Note on evidence sufficiency: The actual numeric one-year crash thresholds for a four-leg intersection are contained in Table 4C-2 (or Table 4C-4 for the high-speed/small-community option), but the table values themselves are not included in the evidence, and the text of criterion C (the volume condition) is truncated. The complete details of those items therefore cannot be quoted here. Citations: - Section 4C.08 Guidance §2 (p.661) - Section 4C.08 Option §5 (p.662) - Section 4C.08 Option §6 (p.663) - Section 4C.08 Support §1 (p.661) - Section 4C.08 Support §7 (p.663)",
+  "gold_answer": "The thresholds are at least 5 all-severity angle/pedestrian crashes or at least 3 fatal-and-injury angle/pedestrian crashes. In addition, an adequate trial of alternatives must have failed, and the applicable 80-percent vehicular-volume or pedestrian-volume condition must be met for the required hours.",
+  "correctness_score": 0.5,
+  "completeness_score": 0.5,
+  "faithfulness_score": 0.9,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 72.5,
+  "grade_band": "Limited credit",
+  "official_grade": "C=0.50, Comp=0.50, F=0.90, Cit=1.00, Strict full credit=No",
+  "score_source": "Original RAG baseline item audit",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "The thresholds are at least 5 all-severity angle/pedestrian crashes or at least 3 fatal-and-injury angle/pedestrian crashes.",
+      "token_coverage": 0.909
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 4C.08",
+    "Table 4C-2",
+    "Table 4C-1",
+    "Table 4C-4",
+    "p.661",
+    "p.662",
+    "p.663"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.951231200062686,
+    "precision6": 0.8333333333333334,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 2.0
+  },
+  "detailed_rationale": "The response received 72.5% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response contains part of the correct conclusion, but it also omits or misstates a material requirement. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The faithfulness deduction follows the adjudicated issue described below. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4C.08, Table 4C-2, Table 4C-1, Table 4C-4, p.661, p.662. Gold elements clearly reflected in the response: The thresholds are at least 5 all-severity angle/pedestrian crashes or at least 3 fatal-and-injury angle/pedestrian crashes. Adjudication note: Identifies the additional condition categories but omits the 5/3 crash thresholds and 80-percent criterion. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.951 and Context Precision@6=0.833. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 2 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

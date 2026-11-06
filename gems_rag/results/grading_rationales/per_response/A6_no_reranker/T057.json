@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "T057",
+  "question": "What national default school-zone speed limit must every jurisdiction post, regardless of local law or engineering study?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": false,
+  "answerability_subtype": "false_presupposition",
+  "model_answer": "Direct Answer: The evidence does not support the premise of the question — the MUTCD does not establish any national default school-zone speed limit value that every jurisdiction must post. Instead, reduced school speed limit zones are established either on the basis of an engineering study or by statute, and signing requirements attach only where such a zone has actually been established. Standards (mandatory): - \"Speed zones (other than statutory speed limits) shall only be established on the basis of an engineering study that has been performed in accordance with traffic engineering practices. The engineering study shall consider the roadway context.\" - \"A School Speed Limit assembly (see Figure 7B-1) or a School Speed Limit When Flashing (S5-1) sign (see Figure 7B-1) shall be used to indicate the speed limit where a reduced school speed limit zone has been established based upon an engineering study or where a reduced school speed limit is specified for such areas by statute.\" - \"If a reduced school speed limit zone has been established, a School (S1-1) sign shall be installed in advance (see Table 2C-3 for advance placement guidelines) of the first School Speed Limit sign assembly or S5-1 sign that is encountered in each direction as traffic approaches the reduced school speed limit zone.\" Citations: - Section 2B.21 Standard §6 (p.84) - Section 7B.05 Standard §1 (p.978) - Section 7B.05 Standard §2 (p.978)",
+  "gold_answer": "The MUTCD does not specify this information. A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "A correct response should state that the requested value or requirement cannot be determined from the manual rather than inventing an answer.",
+      "token_coverage": 0.231
+    },
+    {
+      "text": "The MUTCD does not specify this information.",
+      "token_coverage": 0.333
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 2B.21",
+    "Section 7B.05",
+    "Table 2C-3",
+    "Figure 7B-1",
+    "p.84",
+    "p.978"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 0.5,
+    "ndcg6": 0.6653497124326151,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as unanswerable, and the audit accepted the response as handling the unsupported premise without fabricating a MUTCD rule. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2B.21, Section 7B.05, Table 2C-3, Figure 7B-1, p.84, p.978. Gold elements clearly reflected in the response: The automated gold comparison did not isolate a high-overlap clause. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 2, which produced MRR=0.500. The six-chunk ordering produced nDCG@6=0.665 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

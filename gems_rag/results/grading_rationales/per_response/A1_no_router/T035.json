@@ -1,0 +1,73 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T035",
+  "question": "Does satisfying a traffic signal warrant automatically require installation of a traffic control signal?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: No. The MUTCD explicitly states that satisfying one or more signal warrants does not by itself require installing a traffic control signal. Warrant satisfaction is only one factor in an engineering study, and agencies should consider alternatives to signalization even where warrants are met. Standards (mandatory): - \"The satisfaction of a traffic signal warrant or warrants shall not in itself require the installation of a traffic control signal.\" - Analogously for stop control: \"The satisfaction of an all-way stop control warrant or warrants shall not in itself require the installation of all-way stop control at an unsignalized intersection.\" Guidance (recommended): - \"Since road user delay and the frequency of some types of crashes are sometimes higher under traffic signal control than under STOP sign control, consideration should be given to providing alternatives to traffic control signals even if one or more of the signal warrants (see Chapter 4C) has been satisfied.\" - Where a signal is installed based on projected (estimated) traffic volumes, except when Warrant 8 is the basis, an engineering study should be done within 1 year of putting the signal into steady (stop-and-go) operation to determine if the signal is justified; if not justified, the signal should be taken out of steady operation or removed. Support (informational): - The safe and efficient movement of all road users is the primary consideration in the engineering study; satisfaction of a warrant is one relevant factor \"but it is not intended to be the only factor or even the overriding consideration.\" Agencies can also install a signal where no warrants are met, but only after an engineering study documents the rationale that a signal is the best solution. - The Crash Experience warrant illustrates that warrants define conditions for *considering* a signal (where crash severity and frequency are the principal reasons to consider installation), not for mandating one. Visual evidence: [Image 8] shows Section 4B.03, Alternatives to Traffic Control Signals, which lists alternative treatments (e.g., warning signs, roundabouts, pedestrian hybrid beacons, speed reduction measures, flashing beacons) that should be considered even when signal warrants are satisfied. Citations: - Section 4C.01 Standard §3 (p.651) - Section 2B.12 Standard §5 (p.79) - Section 4B.03 Guidance §1 (p.649) - Section 4C.01 Guidance §12 (p.652) - Section 4C.01 Support §20 (p.653) - Section 4C.08 Support §1 (p.661) - Page 690",
+  "gold_answer": "No. A warrant is a threshold that triggers analysis; it is not conclusive justification. Installation must be based on an engineering study considering safety, operation, alternatives, and the site. A signal can also be installed where no warrant is met if an engineering study documents why it is the best solution.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.8500000000000001,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 96.25,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.85, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.76,
+  "confidence_basis": "The official scores are retained, but the detailed wording below is a structured reconstruction rather than a new manual adjudication.",
+  "covered_gold_elements": [
+    {
+      "text": "A signal can also be installed where no warrant is met if an engineering study documents why it is the best solution.",
+      "token_coverage": 0.909
+    },
+    {
+      "text": "Installation must be based on an engineering study considering safety, operation, alternatives, and the site.",
+      "token_coverage": 0.778
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "it is not conclusive justification.",
+      "token_coverage": 0.0
+    },
+    {
+      "text": "A warrant is a threshold that triggers analysis",
+      "token_coverage": 0.25
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 4B.03",
+    "Section 4C.01",
+    "Section 2B.12",
+    "Section 4C.08",
+    "p.651",
+    "p.79",
+    "p.649",
+    "p.652",
+    "p.653",
+    "p.661"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.932521091954824,
+    "precision6": 0.5,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 96.2% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The response omits or underdevelops these locked elements: it is not conclusive justification. | A warrant is a threshold that triggers analysis Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 4B.03, Section 4C.01, Section 2B.12, Section 4C.08, p.651, p.79. Gold elements clearly reflected in the response: A signal can also be installed where no warrant is met if an engineering study documents why it is the best solution. | Installation must be based on an engineering study considering safety, operation, alternatives, and the site. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.933 and Context Precision@6=0.500. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

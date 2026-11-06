@@ -1,0 +1,68 @@
+{
+  "condition_id": "A1_no_router",
+  "condition_name": "A1 No question router",
+  "question_id": "T012",
+  "question": "What public-domain condition applies to a new traffic control device proposed for experimentation or interim approval?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: A traffic control device design or application must be in the public domain to be eligible for official experimentation or interim approval; express abandonment of all proprietary protections (patents, trademarks, copyrights) satisfies this requirement. In addition, experimentation requests must include a legally-binding statement from the experimenting agency, the manufacturer/developer, and the supplier certifying the device is unprotected and in the public domain, and acknowledging that establishing such protection later results in removal from the MUTCD or cancellation of the interim approval or experimentation authorization. Standards (mandatory): - \"A traffic control device design or application shall not be eligible for official experimentation (see Section 1B.05) or interim approval (see Section 1B.07) unless it is in the public domain. Express abandonment of any and all forms of proprietary protection, such as patents, trademarks, or copyrights, related to the design and application of the traffic control device shall satisfy the requirement for the traffic control device to be in the public domain.\" - \"A request for experimentation that involves a new traffic control device or a new application of an existing traffic control device shall include from the agency conducting the experiment, the manufacturer and/or developer of the device, and the supplier of the device, a legally-binding statement certifying that the traffic control device is not protected by a patent, trademark, or copyright in accordance with Section 1D.06, and that the traffic control device is in the public domain and can be used freely in traffic control device design and application without infringement or claim of trade secret misappropriation. The legally-binding statement shall also state that the agency conducting the experiment, the manufacturer and/or developer of the device, and the supplier of the device are aware that if patent, trademark, or copyright protection is established in the future for the device or application, such action will result in its removal from the MUTCD, cancellation of its interim approval, or cancellation of the authorization for experimentation.\" - The request for permission to experiment shall contain, among other elements, \"F. A legally-binding statement that the experimental device or application is in the public domain, in accordance with Paragraph 16 of this Section.\" Visual evidence: - [Image 1] Figure 1B-1 shows the process for requesting and conducting experimentations for new traffic control devices, beginning with the requesting jurisdiction's submission to FHWA and FHWA review/approval — the process to which the public-domain eligibility condition applies. - [Image 2] Figure 1B-2 shows the process for incorporating new traffic control devices into the MUTCD, including the interim approval pathway that is likewise conditioned on public-domain status. Citations: - Section 1D.06 Standard §2 (p.34) - Section 1B.05 Standard §16 (p.9) - Section 1B.05 Standard §10 (p.8) - Figure 1B-1 (p.7) - Figure 1B-2 (p.9)",
+  "gold_answer": "The traffic-control message, design, or application must be in the public domain and not protected by patent, trademark, or copyright. Legally binding statements are required from the relevant agency/developer/supplier for experimentation. Protection of internal components or manufacturing methods can still be allowed.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.75,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 93.75,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.75, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "GPT-5.6 differential audit of recovered A1 record",
+  "rationale_provenance": "explicit adjudication note",
+  "evaluation_confidence": 0.82,
+  "confidence_basis": "GPT-5.6 directly reviewed a repaired response against the locked gold elements.",
+  "covered_gold_elements": [
+    {
+      "text": "The traffic-control message, design, or application must be in the public domain and not protected by patent, trademark, or copyright.",
+      "token_coverage": 0.8
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "Protection of internal components or manufacturing methods can still be allowed.",
+      "token_coverage": 0.143
+    },
+    {
+      "text": "Legally binding statements are required from the relevant agency/developer/supplier for experimentation.",
+      "token_coverage": 0.444
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 1B.05",
+    "Section 1B.07",
+    "Section 1D.06",
+    "Figure 1B-1",
+    "Figure 1B-2",
+    "p.34",
+    "p.9",
+    "p.8",
+    "p.7"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 0.9896062251871524,
+    "precision6": 0.8333333333333334,
+    "routing": 0.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 93.8% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The response omits or underdevelops these locked elements: Protection of internal components or manufacturing methods can still be allowed. | Legally binding statements are required from the relevant agency/developer/supplier for experimentation. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1B.05, Section 1B.07, Section 1D.06, Figure 1B-1, Figure 1B-2, p.34. Gold elements clearly reflected in the response: The traffic-control message, design, or application must be in the public domain and not protected by patent, trademark, or copyright. Adjudication note: Omits the allowance for proprietary protection of internal components or manufacturing methods. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=0.990 and Context Precision@6=0.833. The visual-routing decision did not match the locked modality requirement for this question. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

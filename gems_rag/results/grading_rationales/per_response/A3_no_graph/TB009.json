@@ -1,0 +1,56 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "TB009",
+  "question": "What Speed Limit (R2-1) sign sizes are shown in Table 2B-1 for conventional single-lane, conventional multi-lane, expressway, and freeway applications?",
+  "primary_modality": "table",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Table 2B-1 (Sheet 1 of 6) lists the Speed Limit (R2-1) sign at 24 x 30 inches for single-lane conventional roads, 30 x 36 inches for multi-lane conventional roads, 36 x 48 inches for expressways, and 48 x 60 inches for freeways. The table also shows a Minimum size of 18 x 24 inches and an Oversized size of 30 x 36 inches. Dimensions are in inches, shown as width x height. Standards (mandatory): - \"The Speed Limit (R2-1) sign (see Figure 2B-3) shall display the limit established by law, ordinance, regulation, or as adopted by the authorized agency based on an engineering study. The speed limits displayed shall be in multiples of 5 mph.\" (This governs the sign's legend; the sizes themselves are shown in Table 2B-1.) Visual evidence: - [Image 5] shows Table 2B-1 (Regulatory Sign and Plaque Sizes, Sheet 1 of 6), where the Speed Limit (R2-1) row, Section 2B.21, lists Conventional Road Single Lane 24 x 30, Multi-Lane 30 x 36, Expressway 36 x 48, Freeway 48 x 60, Minimum 18 x 24, and Oversized 30 x 36. - [Image 1] shows Figure 2B-3, illustrating the R2-1 SPEED LIMIT sign design along with its related plaques (R2-2P, R2-3P, R2-4P, etc.). Citations: - Page 109 - Figure 2B-3 (p.86) - Section 2B.21 Standard §13 (p.85)",
+  "gold_answer": "24 x 30, 30 x 36, 36 x 48, and 48 x 60 inches, respectively.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "24 x 30, 30 x 36, 36 x 48, and 48 x 60 inches, respectively.",
+      "token_coverage": 0.944
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2B.21",
+    "Table 2B-1",
+    "Figure 2B-3",
+    "Page 109",
+    "p.86",
+    "p.85"
+  ],
+  "retrieval_metrics": {
+    "recall5": 0.0,
+    "mrr": 0.0,
+    "ndcg6": 0.0,
+    "precision6": 0.0,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 0.0,
+    "visual_recall": 0.0,
+    "visual_precision": 0.0,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2B.21, Table 2B-1, Figure 2B-3, Page 109, p.86, p.85. Gold elements clearly reflected in the response: 24 x 30, 30 x 36, 36 x 48, and 48 x 60 inches, respectively. Retrieval context: The top five text chunks did not include a chunk that matched the locked page, section, table, or figure evidence. No relevant text chunk appeared in the six logged ranks, so MRR was 0. The six-chunk ordering produced nDCG@6=0.000 and Context Precision@6=0.000. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=0.00, visual recall=0.00, and visual precision=0.00."
+}

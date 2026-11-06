@@ -1,0 +1,55 @@
+{
+  "condition_id": "A3_no_graph",
+  "condition_name": "A3 No graph-proximity term",
+  "question_id": "T005",
+  "question": "How do the MUTCD headings Standard, Guidance, Option, and Support differ, including the verbs typically associated with them?",
+  "primary_modality": "text",
+  "difficulty": "easy",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The MUTCD's four text headings signal different normative weight. A Standard is a required, mandatory, or specifically prohibitive practice (typically using \"shall\"), Guidance is a recommended practice from which deviations are allowed based on engineering judgment or study (typically using \"should\"), and an Option is a permissive practice carrying no requirement or recommendation, sometimes modifying a Standard or Guidance statement (the \"may\" verb is reserved for Options, since it is excluded from Standard and Guidance statements). Note: the provided evidence is cut off before the definition of Support, so its precise definition and typical verb cannot be quoted here. Standards (mandatory): - \"When used in this Manual, the text headings of Standard, Guidance, Option, and Support shall be defined as follows: A. Standard-a statement of required, mandatory, or specifically prohibitive practice regarding a traffic control device. ... All Standard statements are labeled, and the text appears in bold type. The verb 'shall' is typically used. The verbs 'should' and 'may' are not used in Standard statements. Standard statements are sometimes modified by Option statements.\" - \"B. Guidance-a statement of recommended practice in typical situations, with deviations allowed if engineering judgment or engineering study (see Section 1D.03) indicates the deviation to be appropriate. All Guidance statements are labeled, and the text appears in unbold italic type. The verb 'should' is typically used. The verbs 'shall' and 'may' are not used in Guidance statements. Guidance statements are sometimes modified by Option statements.\" - \"C. Option-a statement of practice that is a permissive condition and carries no requirement or recommendation. Option statements sometimes contain allowable modifications to a Standard or Guidance statement. All Option statements are labeled...\" - \"In limited, location-specific cases, the results of a documented engineering study (see Section 1D.03) might indicate a deviation from one or more requirements of a Standard provision to be appropriate.\" Guidance (recommended): - (None in the evidence — the definitions themselves are stated as a Standard.) Options (permitted): - (None in the evidence.) Citations: - Section 1C.01 Standard §1 (p.13) - Section 6P.01 Support §2 (p.857)",
+  "gold_answer": "A Standard is mandatory or prohibitive and typically uses 'shall.' Guidance is recommended practice with justified deviations allowed and typically uses 'should.' An Option is permissive and typically uses 'may.' Support is informational and conveys no mandate, recommendation, permission, prohibition, or enforceable condition.",
+  "correctness_score": 1.0,
+  "completeness_score": 0.8500000000000001,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": false,
+  "descriptive_mean_percent": 96.25,
+  "grade_band": "Strong partial credit",
+  "official_grade": "C=1.00, Comp=0.85, F=1.00, Cit=1.00, Strict full credit=No",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "original-RAG adjudication note reused because the question and four official scores match",
+  "evaluation_confidence": 0.9,
+  "confidence_basis": "The item has an explicit adjudication note tied to the official dimension scores.",
+  "covered_gold_elements": [
+    {
+      "text": "A Standard is mandatory or prohibitive and typically uses 'shall.' Guidance is recommended practice with justified deviations allowed and typically uses 'should.' An Option is permissive and typically uses 'may.' Support is informational and conveys no mandate, recommendation, permission, prohibition, or enforceable condition.",
+      "token_coverage": 0.615
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1D.03",
+    "Section 1C.01",
+    "Section 6P.01",
+    "p.13",
+    "p.857"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.1666666666666666,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received 96.2% as the descriptive mean of the four official item scores. The official rubric did not award strict full credit because at least one dimension scored below 1.00. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit found incomplete coverage even though the automated clause comparison did not isolate a single missing sentence. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1D.03, Section 1C.01, Section 6P.01, p.13, p.857. Gold elements clearly reflected in the response: A Standard is mandatory or prohibitive and typically uses 'shall.' Guidance is recommended practice with justified deviations allowed and typically uses 'should.' An Option is per… Adjudication note: Correct Standard, Guidance, and Option distinctions; the full Support definition is not stated. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.167. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

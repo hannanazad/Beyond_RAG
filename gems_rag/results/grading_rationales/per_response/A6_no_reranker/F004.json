@@ -1,0 +1,60 @@
+{
+  "condition_id": "A6_no_reranker",
+  "condition_name": "A6 No reranker",
+  "question_id": "F004",
+  "question": "In Figure 2A-2, what minimum mounting height and lateral offset are shown for a basic roadside sign in a rural area without a wider shoulder?",
+  "primary_modality": "figure",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Panel A of Figure 2A-2 (\"Roadside sign in rural area\") shows a minimum mounting height of 5 feet, measured vertically from the bottom of the sign to the elevation of the near edge of the traveled way, and a minimum lateral offset of 12 feet from the edge of the traveled way. The 6-foot offset (Panel B) applies only where a shoulder wider than 6 feet exists, so without such a shoulder the 12-foot dimension governs. Standards (mandatory): - \"In rural areas, the minimum height, measured vertically from the bottom of the sign to the elevation of the near edge of the pavement, of signs installed at the side of the road shall be 5 feet (see Figure 2A-2).\" Guidance (recommended): - The figure note text accompanying Section 2A.13 explains that lateral offset is a minimum of 6 feet measured from the edge of the shoulder, or 12 feet measured from the edge of the traveled way, with Section 2A.16 providing reduced lateral offset distances where offsets are limited. Visual evidence: - [Image 1] Figure 2A-2, Panel A shows a rural roadside STOP sign with \"12 ft MIN.\" lateral offset from the edge of the traveled way and \"5 ft MIN.\" mounting height, while Panel B shows the alternative \"6 ft MIN.\" offset that applies only where the shoulder is wider than 6 feet. - [Image 2] The full-page view of Figure 2A-2 confirms the same Panel A dimensions (12 ft MIN. offset, 5 ft MIN. height) for a roadside sign in a rural area. - [Image 5] Figure 2A-3's note reiterates that lateral offset is a minimum of 6 feet measured from the edge of the shoulder, or 12 feet measured from the edge of the traveled way. Citations: - Section 2A.15 Standard §4 (p.58) - Section 2A.13 Guidance §6 (p.57) - Figure 2A-2 (p.51) - Page 92 - Page 93",
+  "gold_answer": "A 5-foot minimum mounting height and a 12-foot minimum lateral offset from the edge of the traveled way.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "A 5-foot minimum mounting height and a 12-foot minimum lateral offset from the edge of the traveled way.",
+      "token_coverage": 0.846
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 2A.13",
+    "Section 2A.16",
+    "Section 2A.15",
+    "Figure 2A-2",
+    "Figure 2A-3",
+    "p.58",
+    "p.57",
+    "p.51",
+    "Page 92",
+    "Page 93"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 1.0,
+    "retrieved_visual_count": 1.0,
+    "required_visual_count": 1.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 2A.13, Section 2A.16, Section 2A.15, Figure 2A-2, Figure 2A-3, p.58. Gold elements clearly reflected in the response: A 5-foot minimum mounting height and a 12-foot minimum lateral offset from the edge of the traveled way. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 1 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=1.00."
+}

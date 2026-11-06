@@ -1,0 +1,64 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "T009",
+  "question": "When a non-compliant traffic control device is replaced because it is damaged, missing, or no longer serviceable, what is the general rule and the limited replacement-in-kind exception?",
+  "primary_modality": "text",
+  "difficulty": "medium",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: The general rule is that a non-compliant traffic control device being replaced or refurbished because it is damaged, missing, or no longer serviceable must be replaced with a compliant device. The limited exception permits replacement in kind, based on engineering judgment, when a single compliant device within a series of non-compliant devices would confuse road users and/or the replacement schedule for the whole series will achieve timely MUTCD compliance. Standards (mandatory): - \"A non-compliant traffic control device that is being replaced or refurbished because it is damaged, missing, or no longer serviceable (see definition in Section 1C.02) for any reason shall be replaced with a compliant device, except as provided for in Paragraph 13 of this Section.\" - \"Unless a particular device is no longer serviceable (see definition in Section 1C.02), non-compliant devices on existing highways and bikeways shall be brought into compliance with the current edition of the National MUTCD as part of the systematic upgrading of substandard traffic control devices (and installation of new required traffic control devices) required pursuant to the Highway Safety Program, 23 U.S.C. §402(a).\" - \"Channelizing devices that are no longer serviceable (see definition in Section 1C.02) shall be replaced.\" Guidance (recommended): - Agencies should establish maintenance policies that incorporate effective practices to identify and then fix or replace in a timely manner any traffic control device that is reaching the end of its useful life, or that is damaged or otherwise no longer serviceable. - Functional maintenance of traffic control devices should be used to determine if certain devices need to be changed to meet current traffic conditions. Options (permitted): - A non-compliant traffic control device may be replaced in kind when engineering judgment indicates it is more appropriate because: (A) one compliant device in the midst of a series of adjacent non-compliant devices would be confusing to road users, and/or (B) the schedule for replacement of the whole series of non-compliant devices will result in achieving timely compliance with the MUTCD. Citations: - Section 1B.03 Standard §12 (p.6) - Section 1B.03 Option §13 (p.6) - Section 1B.03 Standard §5 (p.5) - Section 6K.01 Standard §15 (p.815) - Section 5A.04 Guidance §6 (p.762) - Section 1D.10 Guidance §1 (p.38)",
+  "gold_answer": "The replacement must generally be a compliant device. A non-compliant device may be replaced in kind only when engineering judgment finds that a lone compliant device among adjacent non-compliant devices would confuse users and/or the planned replacement schedule for the whole series will achieve timely compliance.",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "A non-compliant device may be replaced in kind only when engineering judgment finds that a lone compliant device among adjacent non-compliant devices would confuse users and/or the planned replacement schedule for the whole series will achieve timely compliance.",
+      "token_coverage": 0.8
+    },
+    {
+      "text": "The replacement must generally be a compliant device.",
+      "token_coverage": 0.75
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [],
+  "citations_detected_in_answer": [
+    "Section 1C.02",
+    "Section 1B.03",
+    "Section 6K.01",
+    "Section 5A.04",
+    "Section 1D.10",
+    "p.6",
+    "p.5",
+    "p.815",
+    "p.762",
+    "p.38"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.5,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 1.0,
+    "page_hit3": 1.0,
+    "page_hit4": 1.0,
+    "exact_visual_hit": null,
+    "visual_recall": null,
+    "visual_precision": null,
+    "retrieved_visual_count": 0.0,
+    "required_visual_count": 0.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 1C.02, Section 1B.03, Section 6K.01, Section 5A.04, Section 1D.10, p.6. Gold elements clearly reflected in the response: A non-compliant device may be replaced in kind only when engineering judgment finds that a lone compliant device among adjacent non-compliant devices would confuse users and/or th… | The replacement must generally be a compliant device. Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.500. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer."
+}

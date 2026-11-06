@@ -1,0 +1,72 @@
+{
+  "condition_id": "A2_no_vlm_filter",
+  "condition_name": "A2 No VLM figure filter",
+  "question_id": "M019",
+  "question": "For a 12-foot lateral offset and a 35-mph speed, calculate L using Table 6B-4. Then state the minimum merging, shifting, and shoulder taper lengths from Table 6B-3.",
+  "primary_modality": "mixed",
+  "difficulty": "hard",
+  "answerable": true,
+  "answerability_subtype": "",
+  "model_answer": "Direct Answer: Because 35 mph is \"40 mph or less,\" Table 6B-4 gives L = WS²/60 = (12 × 35²)/60 = (12 × 1,225)/60 = **245 feet**. Using Table 6B-3, the minimum taper lengths are: merging taper at least L = **245 ft**; shifting taper at least 0.5 L = **122.5 ft (≈123 ft)**; and shoulder taper at least 0.33 L ≈ **81 ft (≈82 ft)**. Guidance (recommended): - \"The appropriate taper length (L) should be determined using the criteria shown in Tables 6B-3 and 6B-4.\" - \"A shifting taper should have a length of approximately ½ L (see Tables 6B-3 and 6B-4).\" - \"If used, shoulder tapers should have a length of approximately ¹⁄3 L (see Tables 6B-3 and 6B-4). If a shoulder is used as a travel lane, either through practice or during a TTC activity, a normal merging or shifting taper should be used.\" - For speeds less than 45 mph, \"the formula L = WS2/60 should be used to compute the taper length,\" where W is the width of the offset in feet and S is the speed in mph. Support (explanatory): - \"Tapers are created by using a series of channelizing devices and/or pavement markings to move traffic out of or into the normal path. Types of tapers are shown in Figure 6B-2.\" Table 6B-3 lists: Merging Taper — at least L; Shifting Taper — at least 0.5 L. Visual evidence: - [Image 1] Figure 6B-2 illustrates the merging taper at length L, the shifting tapers at ½ L, and the shoulder taper at ⅓ L, with a note to see Table 6B-4 for calculating L. - [Image 2] Table 6B-4 shows that for speeds of \"40 mph or less,\" L = WS²/60, where L = taper length in feet, W = width of offset in feet, and S = speed in mph. - [Image 3] Table 6B-3 lists taper length criteria: Merging Taper \"at least L,\" Shifting Taper \"at least 0.5 L,\" Shoulder Taper \"at least 0.33 L,\" with a note to use Table 6B-4 to calculate L. - [Image 5] The full page view of Figure 6B-2 confirms the L, ½ L, and ⅓ L relationships for merging, shifting, and shoulder tapers respectively. Citations: - Section 6B.08 Guidance §4 (p.775) - Section 6B.08 Guidance §8 (p.776) - Section 6B.08 Guidance §10 (p.776) - Section 6B.08 Support §2 (p.775) - Section 3B.13 Guidance §2 (p.568) - Table 6B-4 (p.775) - Table 6B-3 (p.775) - Figure 6B-2 (p.774)",
+  "gold_answer": "For 40 mph or less, L = W*S²/60 = 12*35²/60 = 245 feet. Minimum merging taper: 245 feet; shifting taper: 122.5 feet; shoulder taper: about 80.9 feet (0.33L, commonly rounded appropriately in design).",
+  "correctness_score": 1.0,
+  "completeness_score": 1.0,
+  "faithfulness_score": 1.0,
+  "citation_score": 1.0,
+  "strict_full_credit": true,
+  "descriptive_mean_percent": 100.0,
+  "grade_band": "Full credit",
+  "official_grade": "C=1.00, Comp=1.00, F=1.00, Cit=1.00, Strict full credit=Yes",
+  "score_source": "Prior adjudication retained because answer is byte-identical",
+  "rationale_provenance": "structured reconstruction from the locked scores, answer, gold answer, and retrieval trace",
+  "evaluation_confidence": 0.88,
+  "confidence_basis": "All four official dimensions equal 1.00, and the rationale reconstructs the accepted coverage from the answer and gold answer.",
+  "covered_gold_elements": [
+    {
+      "text": "For 40 mph or less, L = W*S²/60 = 12*35²/60 = 245 feet.",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "Minimum merging taper",
+      "token_coverage": 1.0
+    },
+    {
+      "text": "245 feet",
+      "token_coverage": 1.0
+    }
+  ],
+  "missing_or_underdeveloped_gold_elements": [
+    {
+      "text": "shoulder taper: about 80.9 feet (0.33L, commonly rounded appropriately in design).",
+      "token_coverage": 0.25
+    }
+  ],
+  "citations_detected_in_answer": [
+    "Section 6B.08",
+    "Section 3B.13",
+    "Table 6B-4",
+    "Table 6B-3",
+    "Figure 6B-2",
+    "p.775",
+    "p.776",
+    "p.568",
+    "p.774"
+  ],
+  "retrieval_metrics": {
+    "recall5": 1.0,
+    "mrr": 1.0,
+    "ndcg6": 1.0,
+    "precision6": 0.8333333333333334,
+    "routing": 1.0,
+    "evidence_sufficiency": 1.0,
+    "page_hit1": 0.0,
+    "page_hit3": 0.0,
+    "page_hit4": 0.0,
+    "exact_visual_hit": 1.0,
+    "visual_recall": 1.0,
+    "visual_precision": 0.5,
+    "retrieved_visual_count": 4.0,
+    "required_visual_count": 2.0
+  },
+  "detailed_rationale": "The response received full credit because the audit accepted the substantive answer, coverage of required elements, grounding, and evidence localization without a deduction. The locked benchmark marks the question as answerable, so the response needed to state and support the required MUTCD answer. Correctness rationale: The response states the locked conclusion, rule, value, or interpretation correctly. Completeness rationale: The audit accepted the response as covering all required answer elements. Faithfulness rationale: The response stays within the locked evidence and does not receive a deduction for unsupported technical claims. Citation rationale: The audit accepted the evidence localization as correct and sufficient. The response identifies: Section 6B.08, Section 3B.13, Table 6B-4, Table 6B-3, Figure 6B-2, p.775. Gold elements clearly reflected in the response: For 40 mph or less, L = W*S²/60 = 12*35²/60 = 245 feet. | Minimum merging taper | 245 feet Retrieval context: The retriever placed at least one locked-relevant text chunk within the top five. The first relevant text chunk appeared at rank 1, which produced MRR=1.000. The six-chunk ordering produced nDCG@6=1.000 and Context Precision@6=0.833. The visual-routing decision matched the locked modality requirement. The saved text, page, or visual package contained enough locked evidence to support an answer. The question required 2 locked visual entity or entities. Exact visual hit=1.00, visual recall=1.00, and visual precision=0.50."
+}

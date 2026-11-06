@@ -1,0 +1,398 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import asyncio
+import importlib
+import json
+import os
+import pickle
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from comparison_support.endpoint import probe_openai_endpoint
+from comparison_support.index_completion import (
+    completion_marker_matches,
+    file_identity,
+    publish_completion_marker,
+    read_completion_marker,
+)
+
+DEFAULT_REPO = ROOT / "third_party" / "paperqa"
+DEFAULT_CHUNKS = ROOT / "indexes" / "corpus" / "chunks.jsonl"
+DEFAULT_INDEX = ROOT / "indexes" / "paperqa" / "docs.pkl"
+DEFAULT_NATIVE_INDEX = ROOT / "indexes" / "paperqa" / "docs-native-pdf.pkl"
+DEFAULT_PDF = ROOT / "indexes" / "gems-rag" / "mutcd11theditionr1hl.pdf"
+INDEX_SENTINEL_SUFFIX = ".ready.json"
+
+
+def main() -> int:
+    args = _parse_args()
+    try:
+        return asyncio.run(_main(args))
+    except KeyboardInterrupt:
+        return 130
+
+
+async def _main(args: argparse.Namespace) -> int:
+    _add_repo(args.repo)
+    if args.command == "check":
+        report = _dependency_report(args)
+        print(json.dumps(report, indent=2))
+        return 0 if report["runnable"] else 2
+    if args.command == "query" or (args.command == "index" and not args.defer_embedding):
+        _ensure_api_key(args)
+
+    try:
+        from paperqa import Docs, Settings
+        from paperqa.types import Doc, Text
+    except Exception as exc:
+        print(
+            json.dumps(
+                {
+                    "error": "import_failed",
+                    "detail": repr(exc),
+                    "notes": "Install the cloned PaperQA package and its optional parser/vector dependencies before indexing.",
+                }
+            ),
+            file=sys.stderr,
+        )
+        return 2
+
+    if args.command == "index":
+        args.index.parent.mkdir(parents=True, exist_ok=True)
+        sentinel_path = _index_sentinel(args.index)
+        sentinel_path.unlink(missing_ok=True)
+        docs = Docs()
+        settings = Settings(
+            parsing={"defer_embedding": args.defer_embedding},
+            embedding=_litellm_model(args.embedding, args.base_url),
+        )
+        if args.ingestion_mode == "native_pdf":
+            await docs.aadd(
+                args.pdf,
+                citation="Federal Highway Administration, MUTCD 11th Edition with Revision 1 Incorporated",
+                docname="MUTCD 11th Edition Revision 1",
+                settings=settings,
+            )
+            source_count = 1
+        else:
+            doc = Doc(docname="MUTCD 11th Edition Revision 1", dockey="mutcd11e", citation="MUTCD 11th Edition Revision 1")
+            texts = []
+            for row in _read_jsonl(args.chunks):
+                metadata = row.get("metadata", {})
+                texts.append(
+                    Text(
+                        text=row["text"],
+                        name=row["doc_id"],
+                        doc=doc,
+                        section_id=metadata.get("section_id"),
+                        content_type=metadata.get("content_type"),
+                        ordinal=metadata.get("ordinal"),
+                        page_printed=metadata.get("page_printed"),
+                        title=row.get("title"),
+                    )
+                )
+            await docs.aadd_texts(texts=texts, doc=doc, settings=settings)
+            source_count = len(texts)
+        _write_pickle_atomic(args.index, docs)
+        publish_completion_marker(
+            sentinel_path,
+            _index_identity(args),
+            sources=source_count,
+            index=file_identity(args.index),
+        )
+        print(json.dumps({"indexed": True, "ingestion_mode": args.ingestion_mode, "sources": source_count, "index": str(args.index)}))
+        return 0
+
+    if args.command == "query":
+        with args.index.open("rb") as handle:
+            docs = pickle.load(handle)
+        settings = Settings(
+            embedding=_litellm_model(args.embedding, args.base_url),
+            llm=_litellm_model(args.llm, args.base_url),
+            summary_llm=_litellm_model(args.summary_llm, args.base_url),
+        )
+        _apply_query_budget(settings, args)
+        session = await _query_docs(
+            docs,
+            args.question,
+            settings=settings,
+            context_only=args.context_only,
+        )
+        contexts = [_paperqa_context_to_record(ctx) for ctx in getattr(session, "contexts", [])[: args.top_k]]
+        print(
+            json.dumps(
+                {
+                    "method": "paperqa",
+                    "question": args.question,
+                    "top_k": args.top_k,
+                    "context_only": args.context_only,
+                    "answer": getattr(session, "answer", None) or getattr(session, "raw_answer", None),
+                    "contexts": contexts,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+    raise AssertionError(args.command)
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Index or query PaperQA over exported MRAG chunks.")
+    parser.add_argument("--repo", type=Path, default=DEFAULT_REPO)
+    parser.add_argument("--index", type=Path)
+    parser.add_argument("--api-key-env", default="OPENAI_API_KEY")
+    parser.add_argument("--allow-missing-api-key", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--base-url", default=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"), help="OpenAI API base URL.")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    check = sub.add_parser("check", help="Report whether the local environment can run the PaperQA adapter.")
+    _add_ingestion_args(check)
+    check.add_argument("--chunks", type=Path, default=DEFAULT_CHUNKS)
+    check.add_argument("--embedding", default="text-embedding-3-small")
+
+    index = sub.add_parser("index", help="Create an ignored PaperQA Docs pickle from exported chunks.")
+    _add_ingestion_args(index)
+    index.add_argument("--chunks", type=Path, default=DEFAULT_CHUNKS)
+    index.add_argument("--embedding", default="text-embedding-3-small")
+    index.add_argument("--defer-embedding", action="store_true", help="Do not embed at index time; embeddings are computed during query.")
+
+    query = sub.add_parser("query", help="Query an existing PaperQA Docs pickle.")
+    _add_ingestion_args(query)
+    query.add_argument("--question", required=True)
+    query.add_argument("--top-k", type=int, default=10)
+    query.add_argument("--embedding", default="text-embedding-3-small")
+    query.add_argument("--llm", default="gpt-4o-mini")
+    query.add_argument("--summary-llm", default="gpt-4o-mini")
+    query.add_argument(
+        "--context-only",
+        action="store_true",
+        help=(
+            "Gather and return PaperQA evidence without generating PaperQA's "
+            "answer. Intended for injected-context evaluations."
+        ),
+    )
+    args = parser.parse_args()
+    if args.index is None:
+        args.index = DEFAULT_NATIVE_INDEX if args.ingestion_mode == "native_pdf" else DEFAULT_INDEX
+    return args
+
+
+def _add_ingestion_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--ingestion-mode", choices=["shared_corpus", "native_pdf"], default="shared_corpus")
+    parser.add_argument("--pdf", type=Path, default=DEFAULT_PDF)
+
+
+def _add_repo(repo: Path) -> None:
+    if not repo.exists():
+        raise SystemExit(f"PaperQA repo not found: {repo}")
+    sys.path.insert(0, str(repo / "src"))
+
+
+def _dependency_report(args: argparse.Namespace) -> dict[str, Any]:
+    modules = ["paperqa", "paperqa.types"]
+    import_errors = _import_errors(modules)
+    api_key = os.getenv(args.api_key_env)
+    api_key_present = bool(api_key)
+    credential_available = api_key_present or bool(args.allow_missing_api_key)
+    endpoint = probe_openai_endpoint(
+        getattr(args, "base_url", None),
+        api_key=api_key or ("placeholder" if args.allow_missing_api_key else None),
+    )
+    endpoint_usable = endpoint["usable"] if endpoint["checked"] else True
+    api_key_usable = credential_available and endpoint_usable
+    chunks = getattr(args, "chunks", DEFAULT_CHUNKS)
+    pdf = getattr(args, "pdf", DEFAULT_PDF)
+    ingestion_mode = getattr(args, "ingestion_mode", "shared_corpus")
+    source = pdf if ingestion_mode == "native_pdf" else chunks
+    environment_ready = args.repo.exists() and not import_errors
+    sentinel_path = _index_sentinel(args.index)
+    sentinel = read_completion_marker(sentinel_path)
+    sentinel_matches_input = completion_marker_matches(
+        sentinel_path,
+        _index_identity(args, source=source, ingestion_mode=ingestion_mode),
+    )
+    sentinel_matches_index = bool(sentinel and sentinel.get("index") == file_identity(args.index))
+    index_ready = args.index.is_file() and sentinel_matches_input and sentinel_matches_index
+    return {
+        "runnable": environment_ready and api_key_usable and index_ready,
+        "environment_ready": environment_ready,
+        "repo": str(args.repo),
+        "repo_found": args.repo.exists(),
+        "package_source_found": (args.repo / "src" / "paperqa").exists(),
+        "index": str(args.index),
+        "index_found": args.index.exists(),
+        "index_ready": index_ready,
+        "sentinel": str(sentinel_path),
+        "sentinel_found": sentinel_path.is_file(),
+        "sentinel_matches_input": sentinel_matches_input,
+        "sentinel_matches_index": sentinel_matches_index,
+        "chunks": str(chunks),
+        "chunks_found": chunks.exists(),
+        "pdf": str(pdf),
+        "pdf_found": pdf.exists(),
+        "ingestion_mode": ingestion_mode,
+        "source_found": source.exists(),
+        "api_key_env": args.api_key_env,
+        "api_key_present": api_key_present,
+        "allow_missing_api_key": bool(args.allow_missing_api_key),
+        "credential_available": credential_available,
+        "api_key_usable": api_key_usable,
+        "base_url": args.base_url,
+        "endpoint": endpoint,
+        "endpoint_reachable": endpoint["reachable"],
+        "endpoint_usable": endpoint["usable"],
+        "model_service_ready": api_key_usable,
+        "missing_or_failed_imports": import_errors,
+        "notes": "The default PaperQA query settings use OpenAI-compatible embedding and LLM model names; configure the API key or override settings before querying.",
+    }
+
+
+def _index_sentinel(index: Path) -> Path:
+    return Path(f"{index}{INDEX_SENTINEL_SUFFIX}")
+
+
+def _index_identity(
+    args: argparse.Namespace,
+    *,
+    source: Path | None = None,
+    ingestion_mode: str | None = None,
+) -> dict[str, Any]:
+    mode = ingestion_mode or getattr(args, "ingestion_mode", "shared_corpus")
+    source_path = source or (
+        getattr(args, "pdf", DEFAULT_PDF)
+        if mode == "native_pdf"
+        else getattr(args, "chunks", DEFAULT_CHUNKS)
+    )
+    return {
+        "source": file_identity(source_path),
+        "ingestion_mode": mode,
+        "embedding": getattr(args, "embedding", "text-embedding-3-small"),
+    }
+
+
+def _write_pickle_atomic(path: Path, value: Any) -> None:
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile("wb", dir=path.parent, delete=False) as handle:
+            temporary = Path(handle.name)
+            pickle.dump(value, handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
+def _ensure_api_key(args: argparse.Namespace) -> None:
+    base_url = getattr(args, "base_url", None)
+    if base_url:
+        os.environ["OPENAI_BASE_URL"] = base_url
+    api_key = os.getenv(args.api_key_env)
+    if not api_key and args.allow_missing_api_key:
+        api_key = "placeholder"
+        os.environ[args.api_key_env] = api_key
+    if not api_key:
+        raise SystemExit(f"missing API key env var: {args.api_key_env}")
+    os.environ["OPENAI_API_KEY"] = api_key
+
+
+def _litellm_model(model: str, base_url: str | None) -> str:
+    """Route arbitrary model IDs through LiteLLM's OpenAI-compatible provider."""
+    if not base_url:
+        return model
+    if model.startswith(("openai/", "azure/")):
+        return model
+    return f"openai/{model}"
+
+
+def _apply_query_budget(settings: Any, args: argparse.Namespace) -> Any:
+    settings.answer.evidence_k = args.top_k
+    settings.answer.answer_max_sources = args.top_k
+    return settings
+
+
+async def _query_docs(
+    docs: Any,
+    question: str,
+    *,
+    settings: Any,
+    context_only: bool,
+) -> Any:
+    if context_only:
+        return await docs.aget_evidence(question, settings=settings)
+    return await docs.aquery(question, settings=settings)
+
+
+def _paperqa_context_to_record(context: Any) -> dict[str, Any]:
+    source = getattr(context, "text", None)
+    summary = str(getattr(context, "context", "") or "")
+    source_text = str(getattr(source, "text", "") or "")
+    text = summary or source_text or str(context)
+    if summary and source_text and source_text not in summary:
+        text = f"{summary}\n\nSource excerpt:\n{source_text}"
+
+    metadata: dict[str, Any] = {}
+    source_name = getattr(source, "name", None)
+    if source_name:
+        metadata["source_name"] = source_name
+    for key in ["section_id", "content_type", "ordinal", "page_printed", "title"]:
+        value = _object_field(source, key)
+        if value is not None:
+            metadata[key] = value
+    doc = getattr(source, "doc", None)
+    for key in ["docname", "dockey", "citation"]:
+        value = _object_field(doc, key)
+        if value is not None:
+            metadata[key] = value
+
+    return {
+        "name": getattr(context, "id", None) or source_name or "paperqa_context",
+        "kind": "chunk",
+        "text": text,
+        "score": getattr(context, "score", None),
+        "metadata": metadata,
+    }
+
+
+def _object_field(obj: Any, key: str) -> Any:
+    if obj is None:
+        return None
+    value = getattr(obj, key, None)
+    if value is not None:
+        return value
+    model_extra = getattr(obj, "model_extra", None) or getattr(obj, "__pydantic_extra__", None) or {}
+    if isinstance(model_extra, dict):
+        return model_extra.get(key)
+    return None
+
+
+def _import_errors(module_names: list[str]) -> dict[str, str]:
+    errors: dict[str, str] = {}
+    for name in module_names:
+        try:
+            importlib.import_module(name)
+        except Exception as exc:
+            errors[name] = repr(exc)
+    return errors
+
+
+def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    rows = []
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                rows.append(json.loads(line))
+    return rows
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
