@@ -60,3 +60,39 @@ The launcher checks both. It also refuses to start while another compare40 or VI
 Both runs carry on where they stopped.
 
 System 3 is run separately, from a checkout of `525d3ba`.
+
+## System 2 with Qwen3.8-27B as the answer model (10 Nov)
+
+The same as system 2: the same evidence, GEMS-RAG's answer prompt and up to 4 images. The prompt text and the image files are the same as Sonnet 5.5 and Fable 5 got (the same SHA-256 of the prompt). Only the answer model changes: Qwen3.8-27B, the model that writes VINE's plans, on FASTER's own A100s. No API is called.
+
+Two small differences come from GEMS-RAG's own code for each kind of server, not from this test:
+- the order in the message: for Claude it puts the images first; for an OpenAI-style server, the text first;
+- the image size the model sees: Anthropic shrinks large images; vLLM uses Qwen's own image processor.
+
+- `run_qwen_rag.py` (in the job) does the following:
+  - It uses the parser's model files: the same model and revision, read from `hprc/vine_hprc.py`. It stops if they have no vision part.
+  - It starts one vLLM server per GPU, with the parser's flags and environment, except that **vision is ON**. The parser uses `--language-model-only`, which leaves the vision part out. Here the server takes up to 4 images and no video.
+  - It asks each server what colour a small red picture is. A server that cannot see it is not used.
+  - It shares the questions among the servers, one at a time. Each question is one run of `run_vine_rag.py --local-server`.
+- `qwen_local.py` holds the request settings. They are the parser's settings with this model:
+  - thinking on, effort `xhigh` (the model's own default);
+  - the model card's sampling;
+  - seed 42.
+
+  The output limit is all the room the window leaves after the prompt, so the limit never cuts the thinking short. Claude's limit (16,000, then 32,000) was never reached; its longest answer used 2,748 tokens. A reply cut off at the window is not asked again, since the same seed gives the same reply.
+- **The window:** the server asks for 131,072 tokens at 0.95 of the GPU's memory. vLLM says how much fits, and the server starts again with that, as long as it is at least 49,152. If memory runs out at start, it uses 0.90. Every question gets the smallest window of the servers, so the room to think does not depend on which server takes it.
+- `qwen_rag_job.slurm` and `run_qwen_rag.sh` submit the job.
+
+```
+cd $SCRATCH/Beyond_RAG_repo
+bash compare40/run_qwen_rag.sh ACCOUNT smoke      # 2 questions, 1 GPU (optional; up to 2 hours)
+bash compare40/run_qwen_rag.sh ACCOUNT full       # all 40 questions, 4 GPUs (a third word: 1-6 GPUs)
+```
+
+**Outputs** (in `$SCRATCH/Beyond_RAG/compare40_runs/vine_rag/`):
+- `answers_qwen_v1.jsonl`: one line per question. Each line includes `local_server.calls`: the prompt's tokens, the limit sent, the tokens out, the finish reason and the time.
+- `reasoning_qwen_v1_s*.jsonl`: the model's thinking.
+- `qwen_rag_qwen_v1_manifest.json`: the server commands, windows, the picture test and the settings.
+- `server_logs_qwen_v1/`: the server logs.
+
+The same command again answers only the questions that have no answer yet.

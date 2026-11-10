@@ -34,6 +34,13 @@ answer: the evidence ids, the images, the prompt's SHA-256, the usage and the ti
 Run again, it skips an answer already made from the same prompt and makes it again if
 the prompt changed (a new line; the last line of a (model, question) is the one to use).
 A missing image file stops the run (as in run_gems_rag.py).
+
+--local-server URL --local-max-len N: the answer model is served by our own vLLM server
+(Qwen3.8-27B on FASTER; run_qwen_rag.py starts the servers and passes these). The prompt
+and images are the same; the settings are in compare40/qwen_local.py. Each record then
+also has "local_server" (every call: tokens, limit, finish reason, time), and the model's
+reasoning text goes to reasoning_<tag>.jsonl next to the answers. Without these two
+options nothing changes.
 """
 from __future__ import annotations
 
@@ -72,7 +79,10 @@ def main() -> int:
     ap.add_argument("--out", default="", help="default $SCRATCH/Beyond_RAG/compare40_runs/vine_rag")
     ap.add_argument("--tag", default="v1")
     ap.add_argument("--only", default="", help="comma-separated question ids (a smoke test)")
+    ap.add_argument("--local-server", default="", help="our own vLLM server, e.g. http://127.0.0.1:20000/v1")
+    ap.add_argument("--local-max-len", type=int, default=0, help="that server's window (--max-model-len)")
     args = ap.parse_args()
+    assert bool(args.local_server) == bool(args.local_max_len), "--local-server needs --local-max-len"
 
     scratch = Path(os.environ["SCRATCH"])
     vine_data = scratch / "Beyond_RAG"
@@ -106,6 +116,16 @@ def main() -> int:
         f"imported the wrong mrag: {mrag.__file__} (must be the GEMS-RAG copy in {GEMS})"
     from mrag.config import CFG  # noqa: E402
     from mrag.vlm import VLM  # noqa: E402
+    local = None
+    if args.local_server:
+        sys.path.insert(0, str(HERE))
+        import qwen_local  # noqa: E402
+        from mrag.config import VLM_PROVIDERS, provider_of_model  # noqa: E402
+        for m in args.models.split(","):
+            if m.strip():
+                qwen_local.use_local_server(CFG, VLM_PROVIDERS, provider_of_model, m.strip(), args.local_server)
+        reasoning_file = out_dir / f"reasoning_{args.tag}.jsonl"
+        print(f"answer model on our own server: {args.local_server} (window {args.local_max_len:,} tokens)")
 
     class VineEvidenceVLM(VLM):
         """GEMS-RAG's VLM. Only the question's own evidence is printed differently (see the top)."""
@@ -193,6 +213,9 @@ def main() -> int:
         for model in models:
             resolved = str(CFG.set_vlm_model(model))
             vlm = VineEvidenceVLM(CFG.vlm_model, CFG.vlm_model_fallback).load()
+            if args.local_server:
+                local = qwen_local.LocalServer(args.local_server, args.local_max_len)
+                vlm._api_clients["dashscope"] = local      # GEMS-RAG's client for this provider
             print(f"\n=== {model} -> {resolved} ===")
             for i, qid in enumerate(ids, 1):
                 question = questions[qid]
@@ -214,6 +237,7 @@ def main() -> int:
                        "prompt_style": CFG.prompt_style_answer, "max_new_tokens": CFG.max_new_tokens,
                        "started_at": now()}
                 answer, err, t0 = "", None, time.time()
+                mark, rmark = (len(local.calls), len(local.reasoning)) if local else (0, 0)
                 for attempt in range(1, 4):                 # GEMS-RAG's runner: 3 tries, 8 s back-off
                     try:
                         vlm.last_api_debug = {}
@@ -224,12 +248,24 @@ def main() -> int:
                         break
                     except Exception as e:                  # noqa: BLE001
                         err = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+                        if local and not local.transient(e):
+                            break                           # our server, same seed: the same reply again
                         if attempt < 3:
                             time.sleep(8.0 * 2 ** (attempt - 1))
                 rec.update({"status": "ok" if err is None else "error", "attempts": attempt,
                             "answer": answer if err is None else "", "error": err,
                             "api_debug": json.loads(json.dumps(vlm.last_api_debug or {}, default=str)),
                             "latency_s": round(time.time() - t0, 1), "completed_at": now()})
+                if local:
+                    rec["local_server"] = {"note": "api_debug.requested_max_tokens and GEMS-RAG's error text give "
+                                                   "GEMS-RAG's own number (480); the limit sent is calls[].max_tokens",
+                                           "url": args.local_server, "window": args.local_max_len,
+                                           "settings": qwen_local.settings(),
+                                           "calls": json.loads(json.dumps(local.calls[mark:], default=str))}
+                    with reasoning_file.open("a", encoding="utf-8") as rw:
+                        rw.write(json.dumps({"model_id": resolved, "question_id": qid, "prompt_sha256": sha,
+                                             "status": rec["status"], "completed_at": rec["completed_at"],
+                                             "reasoning": local.reasoning[rmark:]}, ensure_ascii=False) + "\n")
                 w.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 w.flush()
                 n_err += err is not None
