@@ -357,11 +357,32 @@ def compose(query: str, net: Network, trace: ExecutionTrace) -> Answer:
                               "operations_run": trace.operations_run})
 
 
+def _other_checks(net: Network, trace: ExecutionTrace,
+                  support: Sequence[Certificate]) -> List[Certificate]:
+    """Every check (an operation without a merge) that was executed but is not
+    in Pi_q, in the network's order."""
+    in_support = {id(c) for c in support}
+    out: List[Certificate] = []
+    for op in net.operations:
+        if op.merge is not None:
+            continue
+        cert = trace.store.latest(op.produces)
+        if cert is not None and id(cert) not in in_support:
+            out.append(cert)
+    return out
+
+
 def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
     """The prompt for Eq 6. It states the decision; it does not ask for one."""
     f = _facts(net, trace)
     terminal: Optional[Certificate] = f["terminal"]
     status = (terminal.status if terminal else Status.UNKNOWN).value
+    # A failure the network itself set aside (an exception that applies, or an
+    # alternative met another way) is marked, so that reporting every check
+    # does not report it as a failure (10 Nov 2026).
+    excused = _excused(net, trace)
+    state_of = {op.id: op.produces for op in net.operations}
+    failing = {c.obligation_id for c in f["found_false"]}     # never both "set aside" and a reason it fails
 
     lines: List[str] = []
     for cert in f["support"]:
@@ -373,34 +394,44 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
                      f"  confidence: {cert.confidence:.2f}\n"
                      f"  evidence: {ids}"
                      + (f"\n  facts from the question it used: {', '.join(facts)}"
-                        if facts else ""))
+                        if facts else "")
+                     + ("\n  set aside: an exception or an alternative that holds covers it"
+                        if cert.status is Status.FALSE and state_of.get(cert.obligation_id) in excused
+                        and cert.obligation_id not in failing else ""))
 
     if status == "UNKNOWN":
         guidance = (
             "No decision was established. Say plainly that the question cannot "
             "be answered from the available evidence, name the checks that were "
             "left unresolved, and do not offer a likely answer or a guess. An "
-            "abstention that reads like a cautious yes is wrong.")
+            "abstention that reads like a cautious yes is wrong. Then report "
+            "the other checks listed as what was found, each with its heading; "
+            "they do not decide the question.")
     elif status == Status.NOT_APPLICABLE.value:
         guidance = (
             "The decision above has already been established by executing a "
             "verification network: the provisions checked do not apply to the "
             "situation described. Say so plainly and name the established "
             "results that decided it. Do not say that the situation meets or "
-            "breaks the provisions, and do not add reasoning of your own.")
+            "breaks the provisions, and do not add reasoning of your own. Then "
+            "report the other checks listed as what was found, each with its "
+            "heading; they do not change the decision.")
     else:
         guidance = (
             "The decision above has already been established by executing a "
             "verification network. Do not re-decide it, do not soften it, and "
             "do not add reasoning of your own. Write the answer a reader needs, "
             "using only the claims, reasons and evidence listed: the decision "
-            "first; if it does not hold, which checks were found not true and "
-            "what the manual requires there, as their reasons state; the parts "
-            "that do hold; and any Guidance not followed, named as a "
-            "recommendation rather than a requirement. Each claim listed is "
-            "written as the statement that was checked, so a claim found not "
-            "true must be reported as not true. Plain prose, no headings, at "
-            "most 200 words.")
+            "first; then every check listed, none left out: each Standard and "
+            "whether it is met (for one not met, what the manual requires there, "
+            "as its reason states); each Guidance and whether it is followed, "
+            "named as a recommendation rather than a requirement; each Option "
+            "and what it allows here, named as a permission; and each check "
+            "found not to apply. A check marked \"set aside\" is reported as "
+            "covered by the exception or alternative, not as a failure. Each "
+            "claim listed is written as the statement that was checked, so a "
+            "claim found not true must be reported as not true. Plain prose, no "
+            "headings. There is no length limit: leave nothing out.")
 
     def reason(cert: Certificate) -> str:
         r = str(cert.provenance.get("reason") or "").strip()
@@ -435,6 +466,22 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
     if f["deciding"]:
         parts += ["", "DECIDED BY (established results)\n"
                   + "\n".join(f"- {c}" for c in f["deciding"])]
+    # Checks that were made but that the decision does not rest on (no merge,
+    # "requires" or guard leads from the terminal to them). They are listed
+    # apart, so the answer reports every check without saying the decision
+    # rests on them (10 Nov 2026: nothing the plan checked is dropped).
+    other = _other_checks(net, trace, f["support"])
+    if other:
+        parts += ["", "OTHER CHECKS MADE (the decision does not rest on them)\n"
+                  + "\n".join(f"- [{c.status.value}] {c.claim}  [{c.normative_authority.value}]"
+                               + f"\n  evidence: {', '.join(e.id for e in c.evidence if e.type != 'given') or 'no evidence'}"
+                               + reason(c) for c in other)]
+    not_run = [op for op in net.operations
+               if op.merge is None and op.id in trace.skipped and trace.store.latest(op.produces) is None]
+    if not_run:
+        parts += ["", "PLANNED CHECKS THAT DID NOT RUN (report them as not checked)\n"
+                  + "\n".join(f"- {op.claim}  [{op.normative_authority.value}]  ({trace.skipped[op.id]})"
+                               for op in not_run)]
     parts += ["", guidance, "",
               "Cite evidence by the ids shown. Cite nothing else."]
     return "\n".join(parts)

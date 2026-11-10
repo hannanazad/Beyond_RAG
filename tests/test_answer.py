@@ -126,7 +126,10 @@ prompt = build_answer_prompt(QUERY, NET, trace)
 assert QUERY in prompt and "DECISION\nTRUE" in prompt
 assert "Do not re-decide it" in prompt
 assert "MUTCD11e_2C07_Standard_01" in prompt
-assert "MUTCD11e_2C07_Option_05" not in prompt        # not in Pi_q
+# not in Pi_q: since 10 Nov 2026 it is still shown (nothing the plan checked is
+# dropped), but only under OTHER CHECKS, never as support for the decision
+sup, _, rest = prompt.partition("OTHER CHECKS MADE (the decision does not rest on them)")
+assert "MUTCD11e_2C07_Option_05" not in sup and "MUTCD11e_2C07_Option_05" in rest
 assert "Cite nothing else" in prompt
 print("7. the prompt supplies the decision and the evidence, and forbids "
       "re-deciding")

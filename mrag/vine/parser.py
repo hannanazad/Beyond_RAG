@@ -151,14 +151,16 @@ Step 1. The terminal proposition. Work out from the question what decision is
 asked for: whether a design, action or condition satisfies the provisions that
 apply, or what the provisions require, recommend or allow in the situation
 described. If the question asks for several things, each is its own requirement,
-and a merge combines them. The terminal is what the question asks for and
-nothing more: a provision about some other matter gets no obligation.
+and a merge combines them.
 
-Step 2. Atomic obligations. Break the provisions that bear on the question
-into obligations. One obligation is one thing that can be checked on its own.
-A provision that states two conditions gives two obligations. Many of the
-provisions shown will not matter for this question: they were retrieved by
-search and by following the manual's references. Leave those out.
+Step 2. Atomic obligations. Find every provision shown that bears on the
+question: every Standard, Guidance and Option that a traffic engineer would
+take into account to answer it, including the ones the case meets and the
+ones that only recommend or allow something. Break each of them into
+obligations. One obligation is one thing that can be checked on its own. A
+provision that states two conditions gives two obligations. Do not leave out
+any provision that bears on the question. Leave out only provisions that have
+nothing to do with it.
 
 Step 3. Structure.
   - A mandatory prerequisite is a dependency: list it in "requires".
@@ -600,7 +602,7 @@ def build_parser_prompt(query: str, chunks: Sequence[Dict[str, Any]],
                 "Rules:\n" + "\n".join(f"- {r}" for r in repair["rules"]),
                 "Fix what is listed and keep the rest. Return the whole corrected "
                 "JSON object.",
-                "Your previous plan:\n" + json.dumps(repair["spec"], indent=1)[:20000],
+                "Your previous plan:\n" + json.dumps(repair["spec"], indent=1)[:60000],
             ]
     return "\n".join(parts)
 
