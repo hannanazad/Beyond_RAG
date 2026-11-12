@@ -122,8 +122,10 @@ s2 = spec_of([ob("o1", "For sign 1, the height is at least 6 feet."),
                "inputs": ["o3", "o2", "o1"]}], terminal="m1", facts=FACTS2b,
              asked=[{"id": "a1", "ask": "Are the signs allowed", "answered_by": ["m1"]}])
 p2 = coverage_problems(s2)
-check([p.split(":")[0] for p in p2] == ["o3"] and 'for Sign 1' in p2[0],
-      "the label as the hint writes it ('for sign 1', in lower case) clears the problem")
+check([p.split(":")[0] for p in p2] == ["o2", "o3"] and "one claim per sign" in p2[0]
+      and 'for Sign 1' in p2[1],
+      "the label as the hint writes it ('for sign 1', in lower case) clears the problem; "
+      "a claim about Signs 1 and 2 at once is sent back: one claim per case (12 Nov 2026)")
 s1 = spec_of([ob("o1", "The blue panel is at least 6 feet above the lane.")],
              facts=["Design A puts a blue panel 7 feet above the lane."], asked=ASK1)
 check(coverage_problems(s1) == [], "one labelled case only: nothing to tell apart")
@@ -139,10 +141,19 @@ KQ = [{"chunk_id": "Z1", "section_id": "9Z.01", "content_type": "Standard", "ord
       {"chunk_id": "Z4", "section_id": "9Z.01", "content_type": "Standard", "ordinal": 4,
        "text": "A blue panel shall be square."}]
 names = {"Z1": ["Z3", "Z2", "Y9"], "Z4": []}
+
+
+def coverage_b(spec, chunks, exc):
+    """Rule B alone: these plans do not list "provisions", so rule E (tested
+    in test_changes_104.py) is left out here."""
+    return [p for p in coverage_problems(spec, chunks, exc)
+            if not p.startswith(("provisions", '"provisions"'))]
+
+
 shown = named_exceptions_shown(KQ, lambda c: names.get(c["chunk_id"], []))
 check(shown == {"Z1": ["Z3"]}, "only exceptions that were shown, and only Standard/Guidance/Option ones")
 base_only = spec_of([ob("o1", "The blue panel faces east.")], asked=ASK1)
-pb = coverage_problems(base_only, KQ, shown)
+pb = coverage_b(base_only, KQ, shown)
 check(kinds(pb) == ["B"] and "'Z3'" in pb[0] and pb[0].startswith("o1:"), "the rule alone: flagged, naming Z3")
 with_exc = spec_of([ob("o1", "The blue panel faces east."),
                     ob("o2", "The park exception covers the blue panel.", "exception", "Z3",
@@ -150,17 +161,17 @@ with_exc = spec_of([ob("o1", "The blue panel faces east."),
                    [{"id": "m1", "claim": "the panel may face as it does", "kind": "exception",
                      "inputs": ["o1", "o2"]}], terminal="m1",
                    asked=[{"id": "a1", "ask": "Is the panel allowed", "answered_by": ["m1"]}])
-check(coverage_problems(with_exc, KQ, shown) == [], "the exception checked in an exception merge: no problem")
+check(coverage_b(with_exc, KQ, shown) == [], "the exception checked in an exception merge: no problem")
 loose = spec_of([ob("o1", "The blue panel faces east."),
                  ob("o2", "The park exception covers the blue panel.", "exception", "Z3",
                     authority="OPTION")], asked=ASK1)
-check(kinds(coverage_problems(loose, KQ, shown)) == ["B"],
+check(kinds(coverage_b(loose, KQ, shown)) == ["B"],
       "an exception check the terminal does not depend on does not count")
 other = spec_of([ob("o1", "The blue panel is square.", src="Z4")], asked=ASK1)
-check(coverage_problems(other, KQ, shown) == [], "a rule that names no exception: nothing to add")
-check(coverage_problems(base_only, KQ, None) == [], "without the graph, rule B is skipped")
+check(coverage_b(other, KQ, shown) == [], "a rule that names no exception: nothing to add")
+check(coverage_b(base_only, KQ, None) == [], "without the graph, rule B is skipped")
 scope_only = spec_of([ob("o1", "Section 9Z.01 applies to the blue panel.", "applicability")], asked=ASK1)
-check(coverage_problems(scope_only, KQ, shown) == [],
+check(coverage_b(scope_only, KQ, shown) == [],
       "an applicability check is not the rule an exception relaxes: not flagged")
 
 # from the graph, as the checkers read it: the clause and the EXCEPTS links
@@ -259,6 +270,15 @@ def plan(obligations, merges=(), terminal="o1", asked=True):
          "obligations": obligations, "merges": list(merges)}
     if asked:
         d["asked"] = [{"id": "a1", "ask": "Is it allowed", "answered_by": [terminal]}]
+    # rule E (12 Nov 2026) is satisfied here, so this section tests rules B and C:
+    # each Standard, Guidance and Option shown is checked by its obligations or not related
+    d["provisions"] = []
+    for c in KQ:
+        if c["content_type"] not in ("Standard", "Guidance", "Option"):
+            continue
+        ids = [o["id"] for o in obligations if o.get("source_chunk") == c["chunk_id"]]
+        d["provisions"].append({"id": c["chunk_id"], "checked_by": ids} if ids
+                               else {"id": c["chunk_id"], "not_related": "not about this panel's facing"})
     return json.dumps(d)
 
 

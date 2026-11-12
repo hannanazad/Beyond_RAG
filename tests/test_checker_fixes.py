@@ -192,7 +192,9 @@ def plan(base_type):
                        "merges": [{"id": "m1", "claim": "panel P is acceptable",
                                    "kind": "exception", "inputs": ["o1", "o2"]}],
                        "asked": [{"id": "a1", "ask": "is the panel acceptable",
-                                  "answered_by": ["m1"]}]})
+                                  "answered_by": ["m1"]}],
+                       "provisions": [{"id": "Z1", "checked_by": ["o1"]},
+                                      {"id": "Z2", "checked_by": ["o2"]}]})
 
 
 replies = iter([plan("applicability"), plan("classification")])

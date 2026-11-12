@@ -96,6 +96,12 @@ class Operation:
     # first: the plan already says where this obligation's evidence is.
     source_chunk: str = ""
     mandatory: bool = True
+    # A merge that only joins the separate parts of a question (the terminal,
+    # when the question asks two or more things) is read at face value: no
+    # input is relaxed by its heading (execute._non_blocking). A FALSE
+    # Guidance or Option answer to one part must not become TRUE because the
+    # bundle of parts is labelled Standard (12 Nov 2026).
+    face_value: bool = False
 
 
 @dataclass
@@ -106,6 +112,10 @@ class Network:
     operations: List[Operation] = field(default_factory=list)  # Oq
     terminal: str = ""                                      # the decision state
     initial: CertificateStore = field(default_factory=CertificateStore)
+    # The parts of the question (the parser's "asked"), each with the STATES
+    # whose results answer it. Never executed; the answer is written part by
+    # part from them (answer.build_answer_prompt, 12 Nov 2026).
+    asked: List[Dict[str, Any]] = field(default_factory=list)
 
     # ---- structure -------------------------------------------------------
     def op(self, op_id: str) -> Optional[Operation]:

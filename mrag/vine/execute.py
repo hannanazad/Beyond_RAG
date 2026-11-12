@@ -69,7 +69,15 @@ Verifier = Callable[[Operation, CertificateStore], Certificate]
 # --------------------------------------------------------------------------- #
 # Typed merges (S3.2)
 # --------------------------------------------------------------------------- #
-def _non_blocking(cert: Certificate, merge_authority: Authority = Authority.STANDARD) -> Status:
+def reading_authority(op: Operation) -> Optional[Authority]:
+    """The heading a merge's inputs are read against: the merge's own, or None
+    for a merge read at face value (the bundle that only joins the parts of
+    the question; compile.instantiate sets `face_value`). With None no input
+    is relaxed by `_non_blocking` (12 Nov 2026)."""
+    return None if getattr(op, "face_value", False) else op.normative_authority
+
+
+def _non_blocking(cert: Certificate, merge_authority: Optional[Authority] = Authority.STANDARD) -> Status:
     """How one input counts where a FALSE would otherwise BLOCK the merge, in a
     merge whose own heading is `merge_authority`.
 
@@ -110,6 +118,12 @@ def _non_blocking(cert: Certificate, merge_authority: Authority = Authority.STAN
     merge-level treatment, so the adjusted statuses are recorded in the merged
     certificate's provenance ("blocking_adjusted").
     """
+    if merge_authority is None:
+        # face value: a merge that only joins the separate parts of a
+        # question. Each part's answer counts as it is: a Guidance that is not
+        # followed or an Option that is not available is a FALSE answer to its
+        # part, and the bundle "every part holds" is then not TRUE (12 Nov 2026).
+        return cert.status
     if (cert.status is Status.FALSE and cert.normative_authority is not Authority.STANDARD
             and stronger(merge_authority, cert.normative_authority)):
         return Status.TRUE
@@ -138,7 +152,7 @@ def _applies(cert: Certificate) -> bool:
 
 def _merge_once(kind: MergeType, inputs: Sequence[Certificate],
                 threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None,
-                authority: Authority = Authority.STANDARD) -> Status:
+                authority: Optional[Authority] = Authority.STANDARD) -> Status:
     """A typed merge (S3.2) over inputs taken as they are. Inputs that do not
     apply are left out: a branch that is not relevant neither satisfies a rule
     nor breaks it."""
@@ -178,7 +192,7 @@ _MAX_UNCERTAIN_MERGE_INPUTS = 10
 
 def merge_outcomes(kind: MergeType, inputs: Sequence[Certificate],
                    threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None,
-                   authority: Authority = Authority.STANDARD) -> set:
+                   authority: Optional[Authority] = Authority.STANDARD) -> set:
     """Every result the merge could have had, had it been known whether each
     input of unknown applicability applies. Such an input is UNKNOWN if it
     applies (and three-valued logic already covers TRUE and FALSE), or
@@ -198,7 +212,7 @@ def merge_outcomes(kind: MergeType, inputs: Sequence[Certificate],
 
 def merge_statuses(kind: MergeType, inputs: Sequence[Certificate],
                    threshold_fn: Optional[Callable[[Sequence[Certificate]], Status]] = None,
-                   authority: Authority = Authority.STANDARD) -> Status:
+                   authority: Optional[Authority] = Authority.STANDARD) -> Status:
     """The merge's result: definite only if it is the same however every
     input of unknown applicability turns out (S3.2), else UNKNOWN. `authority`
     is the merge's own heading (see `_non_blocking`)."""
@@ -207,7 +221,7 @@ def merge_statuses(kind: MergeType, inputs: Sequence[Certificate],
 
 
 def _failed_inputs(kind: MergeType, inputs: Sequence[Certificate],
-                   authority: Authority = Authority.STANDARD) -> List[Certificate]:
+                   authority: Optional[Authority] = Authority.STANDARD) -> List[Certificate]:
     """The inputs that make a merge come out FALSE, read the way the merge
     reads them (see `_merge_once`)."""
     if kind is MergeType.EXCEPTION:
@@ -563,7 +577,8 @@ def _run_merge(op: Operation, store: CertificateStore,
                            verifier="merge", obligation_id=op.id,
                            provenance={"merge": op.merge.value, "missing": missing})
     fn = (threshold_fns or {}).get(op.id)
-    outcomes = merge_outcomes(op.merge, inputs, threshold_fn=fn, authority=op.normative_authority)
+    read_as = reading_authority(op)
+    outcomes = merge_outcomes(op.merge, inputs, threshold_fn=fn, authority=read_as)
     status = next(iter(outcomes)) if len(outcomes) == 1 else Status.UNKNOWN
 
     # The decision rests on the inputs that apply. Those that do not are
@@ -588,8 +603,9 @@ def _run_merge(op: Operation, store: CertificateStore,
         provenance={
             "merge": op.merge.value,
             "inputs": {s: c.status.value for s, c in zip(op.merge_inputs, inputs)},
-            "blocking_adjusted": {s: _non_blocking(c, op.normative_authority).value
+            "blocking_adjusted": {s: _non_blocking(c, read_as).value
                                   for s, c in zip(op.merge_inputs, inputs)},
+            **({"read_at_face_value": True} if read_as is None else {}),
             "non_conformance": [s for s, c in zip(op.merge_inputs, inputs)
                                 if c.non_conformance()],
             "not_applicable": [s for s, c in zip(op.merge_inputs, inputs)

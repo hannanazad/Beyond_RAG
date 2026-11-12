@@ -500,7 +500,7 @@ def _stage_parse(R: Run) -> int:
         "commit": R.commit, "model": MODEL_ID, "revision": REVISION, "vllm": VLLM_VERSION,
         "server_command": live[0]["cmd"], "servers": len(asks), "gpu": names, "seed": SEED,
         "sampling": vc.QWEN_THINKING, "reasoning_effort": EFFORT, "max_tokens": max_tokens,
-        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "fix6 (17 Oct: asked items, cases, named exceptions)",
+        "max_model_len": max_len, "max_attempts": 3, "fallback": False, "instructions": "changes_104 (12 Nov: every provision accounted for, one case per claim, claims about the case)",
         "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
         "retrieval_settings": R.settings, "machine": "FASTER", "slurm_job": R.job,
         "one_request_at_a_time": True, "engine": engine, "model_path_used": str(model_path),
@@ -587,7 +587,7 @@ def stage_execute(R: Run) -> int:
     from mrag.vine.run import build_verifiers
     from mrag.vine.execute import execute
     from mrag.vine.answer import answer as write_answer
-    from mrag.vine.model_verifiers import READING_RULES, LOOKUP_RULES
+    from mrag.vine.model_verifiers import READING_RULES, LOOKUP_RULES, MAX_REASKS, _contract
 
     records = vr.load_json(R.plans_file, {})
     no_plan = [q for q in R.questions if q not in records]
@@ -639,6 +639,9 @@ def stage_execute(R: Run) -> int:
                 "model_options": model_options, "hand_over": True, "kq_file": R.kq_file.name,
                 "checker_tools": tools_digest(TOOL_SPECS),
                 "checker_rules_sha256": hashlib.sha256((READING_RULES + LOOKUP_RULES).encode()).hexdigest(),
+                # the reply form too (12 Nov 2026: the "case" field, the re-ask of an unreadable reply)
+                "checker_contract_sha256": hashlib.sha256(_contract(True).encode()).hexdigest(),
+                "unreadable_reply_reasks": MAX_REASKS,
                 # Eq 6 (S3.4): the checker model writes the answer from the
                 # certificates, after the decision is fixed; the composed text
                 # is kept in answer.provenance.template_text

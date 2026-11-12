@@ -135,15 +135,16 @@ def certificates_for_retrieval(store: CertificateStore) -> List[Dict[str, Any]]:
 # 2. The prompt
 # --------------------------------------------------------------------------- #
 _CONTRACT = """Reply with one JSON object and nothing else. No preamble, no
-explanation outside the JSON, no markdown fence.
+explanation outside the JSON, no second object, no markdown fence. Close every
+string with a double quote.
 
-{"status": "TRUE" | "FALSE" | "UNKNOWN",
+{{CASE}"status": "TRUE" | "FALSE" | "UNKNOWN",
  "evidence": ["<id>", ...],
  "basis": "<id>",
  "confidence": <number between 0 and 1>,
  "reason": "<one or two sentences>"}
 
-status
+{CASE_TEXT}status
   TRUE     the manual text you have read establishes the claim
   FALSE    it refutes the claim
   UNKNOWN  it does not settle the claim
@@ -153,8 +154,8 @@ different situation. UNKNOWN is a correct answer and is preferred to a guess.
 Do not reason from general knowledge of traffic engineering; decide only from
 the manual text {WHERE}.
 
-Facts about the case come only from GIVEN IN THE QUESTION and ALREADY
-ESTABLISHED. What the manual requires, recommends or allows comes only from
+Facts about the case come only from GIVEN IN THE QUESTION and the EARLIER
+RESULTS. What the manual requires, recommends or allows comes only from
 the manual text.
 
 evidence
@@ -175,8 +176,15 @@ _WHERE_STATIC = "shown under EVIDENCE"
 _WHERE_LOOKUPS = "shown under EVIDENCE or returned by a lookup"
 
 READING_RULES = """HOW TO READ THE CLAIM
-- The claim is about the case described in GIVEN IN THE QUESTION and ALREADY
-  ESTABLISHED. Judge that case, not the rule in general.
+- The claim is about the case described in GIVEN IN THE QUESTION and the
+  EARLIER RESULTS. Judge that case, not the rule in general. A claim worded
+  like a rule ("X is not used for Y", "X is at least Z") still says what the
+  case does: TRUE when the case is so, FALSE when the facts show it is not.
+  It never asks whether the manual has such a rule.
+- Judge only what the claim says. When the claim compares something in the
+  case with a value (a size, a count, a distance, a time), that comparison
+  decides it. Whether the value applies to this case, or whether some other
+  condition is met, is another claim: do not let it decide this one.
 - "The manual requires / recommends / allows / prohibits X" (for this case):
   TRUE when a provision says so for a case like this one. FALSE when the
   manual says otherwise for this case: a different value, a prohibition, or an
@@ -272,8 +280,21 @@ def is_scope_claim(op: Operation) -> bool:
     return getattr(t, "value", t) == "applicability"
 
 
+_CASE_FIELD = ('"case": "<what GIVEN IN THE QUESTION and the EARLIER RESULTS say about the '
+               'thing this claim is about, before any judgment>",\n ')
+_CASE_TEXT = ('case\n'
+              '  write it first: what the facts say about the thing the claim is about.\n'
+              '  Then decide the status from those facts and the manual.\n\n')
+
+
 def _contract(lookups: bool, scope: bool = False) -> str:
+    """The reply form. A claim about scope puts its own "scope" field first
+    (_SCOPE); every other claim puts a "case" field first: what the facts say,
+    written before the judgment, so a claim worded like a rule is read as a
+    statement about the case (SAMPLE029, 12 Nov 2026)."""
     text = _CONTRACT.replace("{WHERE}", _WHERE_LOOKUPS if lookups else _WHERE_STATIC)
+    text = (text.replace("{CASE}", "").replace("{CASE_TEXT}", "") if scope
+            else text.replace("{CASE}", _CASE_FIELD).replace("{CASE_TEXT}", _CASE_TEXT))
     return f"{text}\n\n{_SCOPE}" if scope else text
 
 
@@ -343,6 +364,7 @@ def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
         f"- {c.claim} => "
         + ("DOES NOT APPLY HERE" if c.status is Status.NOT_APPLICABLE
            else c.status.value)
+        + (f"  (confidence {c.confidence:.2f})" if c.confidence else "")
         for c in established
         if c.status is not Status.UNKNOWN) or "(nothing yet)"
     parts = [
@@ -354,7 +376,9 @@ def build_prompt(op: Operation, chunks: Sequence[Dict[str, Any]],
         "GIVEN IN THE QUESTION (facts of the case, copied from the question; "
         "they say nothing about what the manual requires)\n" + given_block,
         "",
-        f"ALREADY ESTABLISHED\n{known}",
+        "EARLIER RESULTS (what other checks found; each can be wrong: if one conflicts "
+        "with the manual text or with GIVEN IN THE QUESTION, follow those and say so in "
+        f"your reason)\n{known}",
         "",
         READING_RULES,
         "",
@@ -391,6 +415,7 @@ class Reply:
     problem: str = ""
     basis: str = ""              # the supplied id the answer rests on most
     scope: str = ""              # for a claim that a provision applies: its subject and conditions
+    case: str = ""               # what the facts say about the thing the claim is about
 
 
 def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
@@ -435,8 +460,10 @@ def parse_model_reply(raw: str, allowed: Sequence[str]) -> Reply:
         basis = ""
     scope = data.get("scope")
     scope = (json.dumps(scope) if isinstance(scope, (dict, list)) else str(scope or "")).strip()
+    case = data.get("case")
+    case = (json.dumps(case) if isinstance(case, (dict, list)) else str(case or "")).strip()
     return Reply(status, kept, confidence, str(data.get("reason", "")).strip(),
-                 dropped, basis=basis, scope=scope[:2000])
+                 dropped, basis=basis, scope=scope[:2000], case=case[:2000])
 
 
 # --------------------------------------------------------------------------- #
@@ -493,6 +520,36 @@ def _merge_by_id(first: Sequence[Dict[str, Any]], then: Sequence[Dict[str, Any]]
 
 
 _GATE_MOST = 16          # exception pieces handed over after an answer, at most
+
+
+# A reply the code cannot read is UNKNOWN, never FALSE (rule 1). But a model
+# that answered in a broken form (a missing quote mark, two JSON objects, a
+# note after the object) did answer, so it is asked again, at most twice,
+# before its answer is given up (SAMPLE019 and SAMPLE030, 12 Nov 2026).
+UNREADABLE_PROBLEMS = ("the reply contained no JSON object", "malformed JSON",
+                       "the JSON was not an object", "status ")
+MAX_REASKS = 2
+REASK_NOTE = ("Your reply could not be read ({problem}). Reply again with exactly one JSON "
+              "object in the form asked for, holding your final answer, and nothing else: "
+              "no text before or after it, no second object, no markdown fence. Close every "
+              "string with a double quote.")
+
+
+def unreadable(reply: "Reply") -> bool:
+    return bool(reply.problem) and reply.problem.startswith(UNREADABLE_PROBLEMS)
+
+
+def reask_if_unreadable(text: str, allowed: Sequence[str], record: Dict[str, Any],
+                        limit: int = MAX_REASKS) -> Optional[str]:
+    """The follow-up message when `text` cannot be read, or None. `record`
+    keeps every unreadable reply and why, for the certificate."""
+    reply = parse_model_reply(text, allowed)
+    if not unreadable(reply) or int(record.get("count", 0)) >= limit:
+        return None
+    record["count"] = int(record.get("count", 0)) + 1
+    record.setdefault("replies", []).append({"problem": reply.problem,
+                                             "raw_reply": (text or "")[:2000]})
+    return REASK_NOTE.format(problem=reply.problem)
 
 
 def _exception_gate(view: ManualView, looks: Lookups, allowed_now: Callable[[], List[str]],
@@ -662,6 +719,7 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
 
         transcript: Dict[str, Any] = {}
         gate_record: Dict[str, Any] = {}
+        reask: Dict[str, Any] = {}
         try:
             if looks is not None:
                 looks.show(chunks)
@@ -669,15 +727,26 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
                 def allowed_now() -> List[str]:
                     return list(dict.fromkeys(list(allowed) + list(looks.shown)))
 
+                gate = _exception_gate(view, looks, allowed_now, given_ids, gate_record)
+
+                def after_answer(text: str) -> Optional[str]:
+                    # first: can the reply be read at all; then the exception gate
+                    return reask_if_unreadable(text, allowed_now(), reask) or gate(text)
+
                 raw, transcript = converse(
                     prompt, images, looks.specs(), looks.run, max_lookups=int(max_lookups),
-                    after_answer=_exception_gate(view, looks, allowed_now, given_ids,
-                                                 gate_record))
+                    after_answer=after_answer)
                 allowed = allowed_now()
                 seen_chunks = list(looks.shown.values())
                 chunks = _merge_by_id(chunks, seen_chunks, "chunk_id")
             else:
                 raw = ask(prompt, images)
+                while True:
+                    more = reask_if_unreadable(raw, allowed, reask)
+                    if not more:
+                        break
+                    raw = ask(f"{prompt}\n\nYOUR EARLIER REPLY\n{(raw or '')[:4000]}\n\n{more}",
+                              images)
         except Exception as e:                                # noqa: BLE001
             # S3.2: a crashed tool has established nothing.
             return _abstain(op, kind, f"the model call failed: {e!r}")
@@ -719,6 +788,10 @@ def _make(kind: str, ask: Ask, retriever=None, query: str = "",
             provenance["basis"] = reply.basis
         if reply.scope:
             provenance["scope"] = reply.scope
+        if reply.case:
+            provenance["case"] = reply.case
+        if reask.get("count"):
+            provenance["asked_again_unreadable"] = reask
         if given_ids:
             provenance["given_facts_shown"] = given_ids
         handed = set(gate_record.get("handed_over_exceptions") or [])

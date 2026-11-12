@@ -50,6 +50,8 @@ GOOD = {
     # what the question asks, and the step that answers it (17 Oct 2026)
     "asked": [{"id": "a1", "ask": "Which horizontal alignment sign is required on this curve",
                "answered_by": ["m1"]}],
+    # every Standard, Guidance and Option shown, accounted for (rule E, 12 Nov 2026)
+    "provisions": [{"id": "c1", "checked_by": ["o1", "o3"]}, {"id": "c2", "checked_by": ["o2"]}],
 }
 
 

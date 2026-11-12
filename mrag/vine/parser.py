@@ -101,13 +101,14 @@ parser's. The report always says which was used.
 """
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
-from .compile import (CompileError, NetworkSpec, compile_section, instantiate,
+from .compile import (CompileError, NetworkSpec, Obligation, compile_section, instantiate,
                       repair_request)
 from .network import MergeType, ObligationType
 
@@ -160,7 +161,11 @@ ones that only recommend or allow something. Break each of them into
 obligations. One obligation is one thing that can be checked on its own. A
 provision that states two conditions gives two obligations. Do not leave out
 any provision that bears on the question. Leave out only provisions that have
-nothing to do with it.
+nothing to do with it. When a provision bears on the question but you cannot
+break it into clean checks, make it one obligation of type "classification"
+whose claim says that the case meets it, in the provision's own words
+("The case meets <section> paragraph <n>: <what the provision says>"), so the
+checker reads the provision as it is.
 
 Step 3. Structure.
   - A mandatory prerequisite is a dependency: list it in "requires".
@@ -191,7 +196,23 @@ decide which checker runs.
 Step 5. What is asked. List each thing the question asks in "asked", and
 name the obligations or merges whose results answer it. Every part of the
 question has at least one check: a part with no check is a part the answer
-cannot cover.
+cannot cover. Each part is answered as it is asked:
+  - When a part asks whether something is permitted, acceptable or allowed,
+    check it against every provision shown that could require or forbid
+    something about it, Standards included, and not only against the
+    provision that permits it. Not prohibited does not mean allowed
+    (Section 1B.03).
+  - When a part asks you to interpret, explain or identify something, one
+    obligation states that reading and whether it fits the facts of the case.
+
+Step 6. Account for every provision. In "provisions", list every Standard,
+Guidance and Option shown above, once each, by the id shown for it in square
+brackets (without the brackets):
+either "checked_by", the ids of the obligations that rest on it (as their
+source_chunk, or through an evidence_hint naming its section and paragraph),
+or "not_related", a few words on why it has nothing to do with this question.
+A provision that bears on the question is never "not_related": it gets an
+obligation (Step 2).
 
 THE JSON OBJECT
 
@@ -221,6 +242,10 @@ THE JSON OBJECT
       "inputs": ["<ids being combined>"],
       "authority": "<STANDARD | GUIDANCE | OPTION>",
       "guard": null}}
+  ],
+  "provisions": [
+    {{"id": "<id of a Standard, Guidance or Option shown>", "checked_by": ["<obligation ids>"]}},
+    {{"id": "<id of another one>", "not_related": "<why it has nothing to do with this question>"}}
   ]
 }}
 
@@ -259,9 +284,19 @@ claim
   provision holds; say where it is, in evidence_hint.
   - When the facts describe more than one case, design, alternative or item
     of the same kind, each told apart by a label, every claim names the one
-    it is about, or says that it holds for each of them. The checker sees
-    all the facts and never the id, so a claim that names none is judged
-    over all of them.
+    it is about. One case per claim: never one claim about two or more of
+    them; write a claim for each. The checker sees all the facts and never
+    the id, so a claim that names none is judged over all of them, and a
+    claim about two is judged on whichever fails.
+  - Write a claim about the case as a statement of what the case is or does,
+    measured against the provision ("In this case, <the thing> <is or does
+    what>, which <section> paragraph <n> requires" or "The case meets
+    <section> paragraph <n>: <what it requires>"). Never write a claim that
+    reads like the rule itself ("X is not used for Y"): the checker may read
+    it as a question about the manual instead of the case.
+  - A claim states one thing. Do not join a reason to it ("because ..."):
+    when a reason must hold, make it an obligation of its own and list it in
+    "requires".
   - When a claim restates a fact, use the fact's own words. Do not widen or
     narrow it with qualifiers the fact does not have: the checker can then
     no longer match it with the fact.
@@ -373,7 +408,9 @@ RULES (a plan that breaks one is sent back to you)
 - Every thing the question asks is an item of "asked", answered by at least
   one obligation or merge that the terminal depends on.
 - When the facts describe several labelled cases of one kind, every claim
-  names the one it is about, or says that it holds for each.
+  names the one it is about, and only that one.
+- Every Standard, Guidance and Option shown is in "provisions" once, either
+  "checked_by" obligations that rest on it or "not_related" with a reason.
 - When a provision a check rests on names an exception that is shown above,
   that exception is checked too, in an exception merge with the rule first.
 - An exception obligation is never an input of a conjunction.
@@ -403,7 +440,12 @@ GROUNDING_RULES = [
     "every thing the question asks is an item of \"asked\", and each item names "
     "in \"answered_by\" obligations or merges that the terminal depends on",
     "when the facts describe several labelled cases of one kind, every claim "
-    "names the one it is about, or says that it holds for each",
+    "names the one it is about, and only that one: one claim per case",
+    "every Standard, Guidance and Option shown is listed once in \"provisions\": "
+    "\"checked_by\" the obligations that rest on it (source_chunk, or an "
+    "evidence_hint naming its section and paragraph), or \"not_related\" with why "
+    "it has nothing to do with the question; one that bears on the question gets "
+    "an obligation",
     "when the provision a check rests on names an exception that is shown, "
     "that exception is checked too: an exception obligation from it, in an "
     "exception merge whose first input is the rule",
@@ -1154,6 +1196,12 @@ def coverage_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]] = (),
             if o.type == ObligationType.DEFINITIONAL.value:
                 continue
             named = {x for v in case_labels(o.claim).values() for x in v}
+            both = sorted(named & set(labels))
+            if len(both) >= 2:
+                out.append(f"{o.id}: the claim is about {', '.join(f'{kind} {x}' for x in both)} "
+                           f"at once; write one claim per {head}, each naming only the one "
+                           f"it is about, so each is checked on its own")
+                continue
             if (named & set(labels) or _names_label(o.claim, head, labels)
                     or _FOR_EACH.search(o.claim)
                     or re.search(rf"\ball\b(?:\s+\w+){{0,3}}?\s+(?i:{re.escape(head)})", o.claim)):
@@ -1213,6 +1261,11 @@ def coverage_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]] = (),
                            f"does not depend on them, so their results are not part of the "
                            f"answer; merge them into what the terminal depends on")
 
+    # E. Every Standard, Guidance and Option shown is accounted for: checked
+    #    by an obligation that rests on it, or said not to be related, with
+    #    why. Nothing is left out without a word (12 Nov 2026).
+    out += provision_problems(spec, chunks)
+
     # D. A conjunction needs every input to hold; "an exception covers this
     #    case" is not something the case must meet.
     for m in spec.merges:
@@ -1227,6 +1280,151 @@ def coverage_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]] = (),
                            f"is met. Put the rule it relaxes first and {i!r} after it, in an "
                            f"exception merge")
     return out
+
+
+def _normative_shown(chunks: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """The Standards, Guidance and Options shown to the parser, once each."""
+    seen, out = set(), []
+    for c in chunks:
+        cid = str(c.get("chunk_id") or "")
+        if cid and cid not in seen and str(c.get("content_type") or "") in NORMATIVE:
+            seen.add(cid)
+            out.append(c)
+    return out
+
+
+def _paragraph_of(c: Optional[Dict[str, Any]]) -> Tuple[str, str]:
+    if not c:
+        return "", ""
+    return str(c.get("section_id") or ""), str(c.get("ordinal") or "")
+
+
+def rests_on(o, chunk: Dict[str, Any], by_id: Dict[str, Dict[str, Any]]) -> bool:
+    """Whether obligation `o` rests on the provision `chunk`: its source_chunk
+    is that provision (or another item of the same paragraph), or one of its
+    evidence hints names that section and paragraph."""
+    cid = str(chunk.get("chunk_id") or "")
+    if o.source_chunk == cid:
+        return True
+    sec, para = _paragraph_of(chunk)
+    if not sec or not para:
+        return False
+    if _paragraph_of(by_id.get(o.source_chunk)) == (sec, para):
+        return True
+    for h in o.evidence_hint or []:
+        if (str(h.get("type") or "") == "section" and str(h.get("id") or "").strip() == sec
+                and str(h.get("paragraph") or "").strip() == para):
+            return True
+    return False
+
+
+def unaccounted_provisions(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]]) -> List[str]:
+    """The Standards, Guidance and Options shown that no obligation rests on
+    and that "provisions" does not call unrelated, with a reason. These are
+    the ones the code adds a check for after the last attempt."""
+    normative = _normative_shown(chunks)
+    by_id = {str(c.get("chunk_id")): c for c in chunks if c.get("chunk_id")}
+    entries = {str(p.get("id") or "").strip().strip("[]").strip(): p for p in spec.provisions}
+    out = []
+    for c in normative:
+        cid = str(c["chunk_id"])
+        if any(rests_on(o, c, by_id) for o in spec.obligations):
+            continue
+        p = entries.get(cid) or {}
+        if str(p.get("not_related") or "").strip() and not p.get("checked_by"):
+            continue
+        out.append(cid)
+    return out
+
+
+def provision_problems(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]]) -> List[str]:
+    """Rule E: "provisions" lists every Standard, Guidance and Option shown,
+    once, either checked by obligations that rest on it or not related, with
+    why."""
+    normative = _normative_shown(chunks)
+    if not normative:
+        return []
+    ids_shown = {str(c["chunk_id"]) for c in normative}
+    by_id = {str(c.get("chunk_id")): c for c in chunks if c.get("chunk_id")}
+    obligations = {o.id: o for o in spec.obligations}
+    out: List[str] = []
+    seen: Dict[str, int] = {}
+    for p in spec.provisions:
+        pid = str(p.get("id") or "").strip().strip("[]").strip()
+        seen[pid] = seen.get(pid, 0) + 1
+        if pid not in ids_shown:
+            out.append(f"provisions: {pid!r} is not a Standard, Guidance or Option shown above")
+            continue
+        ids = p.get("checked_by") or []
+        ids = [ids] if isinstance(ids, str) else [str(x) for x in ids if str(x).strip()]
+        if ids:
+            unknown = [i for i in ids if i not in obligations]
+            if unknown:
+                out.append(f"provisions {pid!r}: checked_by names {unknown}, which are not "
+                           f"obligations of this plan")
+            elif not any(rests_on(obligations[i], by_id[pid], by_id) for i in ids):
+                out.append(f"provisions {pid!r}: none of {ids} rests on it; give an obligation "
+                           f"source_chunk {pid!r} (or an evidence_hint with its section and "
+                           f"paragraph), or say why it is not related")
+        elif not str(p.get("not_related") or "").strip():
+            out.append(f"provisions {pid!r}: give \"checked_by\" or \"not_related\" with a reason")
+    twice = [x for x, n in seen.items() if n > 1 and x in ids_shown]
+    if twice:
+        out.append(f"provisions lists {twice[:10]} more than once; list each once")
+    missing = [x for x in (str(c["chunk_id"]) for c in normative)
+               if x not in seen]
+    if missing:
+        out.append(f"\"provisions\" leaves out {len(missing)} of the {len(ids_shown)} Standards, "
+                   f"Guidance and Options shown: {missing[:40]}"
+                   + (f" and {len(missing) - 40} more" if len(missing) > 40 else "")
+                   + ". List each once: \"checked_by\" with the obligations that rest on it, or "
+                     "\"not_related\" with why it has nothing to do with this question. One that "
+                     "bears on the question gets an obligation.")
+    return out
+
+
+def add_checks_for_unaccounted(spec: NetworkSpec, chunks: Sequence[Dict[str, Any]]) -> List[str]:
+    """After the last attempt: every Standard, Guidance and Option shown that
+    the plan still neither checks nor calls unrelated gets a plain check, in
+    the provision's own words, for the language-model checker. So no
+    provision shown is left out without a word (12 Nov 2026). Such a check
+    joins no merge: the answer reports it among the other checks. Returns the
+    ids added."""
+    missing = unaccounted_provisions(spec, chunks)
+    if not missing:
+        return []
+    by_id = {str(c.get("chunk_id")): c for c in chunks if c.get("chunk_id")}
+    taken = ({o.id for o in spec.obligations} | {m.id for m in spec.merges}
+             | {f.id for f in spec.facts} | {a.id for a in spec.asked})
+    entries = {str(p.get("id") or "").strip().strip("[]").strip(): p for p in spec.provisions}
+    added: List[str] = []
+    k = 0
+    for cid in missing:
+        c = by_id[cid]
+        k += 1
+        while f"prov{k}" in taken:
+            k += 1
+        oid = f"prov{k}"
+        taken.add(oid)
+        sec, para = _paragraph_of(c)
+        kind = str(c.get("content_type") or "Standard")
+        lead = str(c.get("lead_in") or "").strip()
+        text = " ".join(x for x in (lead, str(c.get("text") or "").strip()) if x)[:1500]
+        claim = (f"The case is consistent with {sec} paragraph {para} ({kind}): either this "
+                 f"provision does not cover the case, or the case meets what it requires, "
+                 f"recommends or allows. It says: \"{text}\"")
+        spec.obligations.append(Obligation.from_dict({
+            "id": oid, "claim": claim, "type": ObligationType.CLASSIFICATION.value,
+            "authority": kind.upper(), "requires": [], "guard": None,
+            "evidence_hint": [{"type": "section", "id": sec, "paragraph": para}] if sec and para else [],
+            "source_chunk": cid}))
+        entry = {"id": cid, "checked_by": [oid], "added_by_code": True}
+        if cid in entries:
+            entry["parser_said"] = {k2: v for k2, v in entries[cid].items() if k2 != "id"}
+            spec.provisions = [p for p in spec.provisions if str(p.get("id") or "").strip().strip("[]").strip() != cid]
+        spec.provisions.append(entry)
+        added.append(oid)
+    return added
 
 
 # --------------------------------------------------------------------------- #
@@ -1336,6 +1534,22 @@ def make_semantic_parser(ask: Callable[[str, List[str]], str],
             report.notes.append(f"used the plan of attempt {attempt}: its structure and its "
                                 f"references to the manual are valid; {len(open_)} coverage "
                                 f"problem(s) were not cleared by repair")
+            # No provision shown is left out: each one the plan still does not
+            # account for gets a plain check in its own words (rule E).
+            trial = copy.deepcopy(spec)
+            added = add_checks_for_unaccounted(trial, chunks)
+            if added:
+                try:
+                    _net, built = instantiate(trial)
+                except (CompileError, ValueError, KeyError) as e:
+                    built = [repr(e)]
+                if built:
+                    report.notes.append(f"the {len(added)} check(s) for unaccounted provisions "
+                                        f"could not be added: {built}")
+                else:
+                    spec = trial
+                    report.notes.append(f"added {len(added)} check(s) for provisions the plan "
+                                        f"did not account for: {added}")
             return spec, report
 
         if fall_back_to_baseline and section_id:

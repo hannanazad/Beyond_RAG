@@ -294,6 +294,10 @@ class NetworkSpec:
     source: str = ""                       # how this spec was produced
     facts: List[GivenFact] = field(default_factory=list)   # for Γ0q
     asked: List[AskedItem] = field(default_factory=list)   # coverage record, never executed
+    # The parser's account of every Standard, Guidance and Option it was shown:
+    # {"id": <provision id>, "checked_by": [ids]} or {"id": ..., "not_related":
+    # "<why>"} (parser rule E, 12 Nov 2026). A record; never executed.
+    provisions: List[Dict[str, Any]] = field(default_factory=list)
 
     # ---- structural checks on the IR itself --------------------------------
     def problems(self) -> List[str]:
@@ -398,6 +402,8 @@ class NetworkSpec:
             # likewise: a spec without it reads, and hashes, as before
             out["asked"] = [{"id": a.id, "ask": a.ask, "answered_by": list(a.answered_by)}
                             for a in self.asked]
+        if self.provisions:
+            out["provisions"] = [dict(p) for p in self.provisions]
         return out
 
     def to_json(self) -> str:
@@ -413,13 +419,17 @@ class NetworkSpec:
             asked = []                     # reported by the parser's coverage check
         asked_items = [a for a in (AskedItem.from_any(x, k) for k, x in enumerate(asked, 1))
                        if a is not None]
+        provisions = d.get("provisions") or []
+        if not isinstance(provisions, list):
+            provisions = []                # reported by the parser's coverage check (rule E)
+        provisions = [p for p in provisions if isinstance(p, dict)]
         return NetworkSpec(
             query=str(d.get("query", "")), terminal=str(d.get("terminal", "")),
             obligations=[Obligation.from_dict(o) for o in (d.get("obligations") or [])],
             merges=[MergeSpec.from_dict(m) for m in (d.get("merges") or [])],
             source=str(d.get("source", "")),
             facts=[GivenFact.from_any(f, k) for k, f in enumerate(facts, 1)],
-            asked=asked_items)
+            asked=asked_items, provisions=provisions)
 
     @staticmethod
     def from_json(text: str) -> "NetworkSpec":
@@ -712,6 +722,19 @@ def instantiate(spec: NetworkSpec) -> Tuple[Network, List[str]]:
             normative_authority=Authority.SUPPORT, confidence=1.0,
             verifier="given", obligation_id=f.id,
             provenance={"given": "stated in the question"}))
+
+    # The parts of the question, with the states that answer each. When the
+    # question asks two or more things and the terminal is not itself the
+    # answer to one of them, the terminal only joins the parts: it is read at
+    # face value, so no part's FALSE is relaxed by the bundle's heading
+    # (12 Nov 2026; see execute._non_blocking).
+    net.asked = [{"id": a.id, "ask": a.ask,
+                  "answered_by": [_state_of(x) for x in a.answered_by]}
+                 for a in spec.asked]
+    if len(spec.asked) >= 2 and not any(spec.terminal in a.answered_by for a in spec.asked):
+        for op in operations:
+            if op.id == spec.terminal and op.merge is not None:
+                op.face_value = True
 
     net.states = states
     net.operations = operations

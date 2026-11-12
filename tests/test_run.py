@@ -43,6 +43,7 @@ GOOD_SPEC = {
                 "kind": "conjunction", "inputs": ["o1", "o2"]}],
     "asked": [{"id": "a1", "ask": "Which horizontal alignment sign is required here",
                "answered_by": ["m1"]}],
+    "provisions": [{"id": "c1", "checked_by": ["o1"]}, {"id": "c2", "checked_by": ["o2"]}],
 }
 
 

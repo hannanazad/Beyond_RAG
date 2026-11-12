@@ -44,11 +44,11 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Sequence, Set
 
 from .certificate import Authority, Certificate, Status
-from .execute import ExecutionTrace, _failed_inputs
+from .execute import ExecutionTrace, _failed_inputs, reading_authority
 from .network import MergeType, Network
 
 __all__ = ["Answer", "supporting_certificates", "build_answer_prompt",
-           "compose", "answer"]
+           "compose", "answer", "parts_of_question", "why_open"]
 
 
 # --------------------------------------------------------------------------- #
@@ -168,7 +168,7 @@ def _found_false(net: Network, trace: ExecutionTrace) -> List[Certificate]:
         inputs = [trace.store.latest(s) for s in op.merge_inputs]
         if any(c is None for c in inputs):
             return
-        failed = {id(c) for c in _failed_inputs(op.merge, inputs, op.normative_authority)}
+        failed = {id(c) for c in _failed_inputs(op.merge, inputs, reading_authority(op))}
         if op.merge is MergeType.EXCEPTION:
             failed |= {id(c) for c in inputs[1:] if c.status is Status.FALSE}
         if not failed:          # a threshold merge: every input that failed
@@ -372,6 +372,66 @@ def _other_checks(net: Network, trace: ExecutionTrace,
     return out
 
 
+_UNREADABLE = ("the reply contained no JSON object", "malformed JSON", "the JSON was not an object",
+               "status ")
+
+
+def why_open(cert: Optional[Certificate], op_id: str, trace: ExecutionTrace) -> str:
+    """Why a check or merge was left UNKNOWN, in words the answer can use.
+    Without this the answer writer saw only an empty reason and wrote "no
+    evidence was found", which was not what happened (SAMPLE030, 12 Nov 2026)."""
+    if op_id in trace.skipped:
+        return f"it was not run ({trace.skipped[op_id]})"
+    if op_id in trace.undecided:
+        return str(trace.undecided[op_id])
+    if cert is None:
+        return "it was not run"
+    prov = cert.provenance or {}
+    problem = str(prov.get("problem") or "")
+    if problem.startswith(_UNREADABLE):
+        return "the checker's reply could not be read, even when it was asked again"
+    if prov.get("conversation_stopped"):
+        return f"the checker's conversation stopped ({prov['conversation_stopped']})"
+    if prov.get("downgraded"):
+        return str(prov["downgraded"])
+    if cert.verifier == "merge":
+        open_inputs = [s for s, v in (prov.get("inputs") or {}).items() if v == Status.UNKNOWN.value]
+        if open_inputs:
+            return "it depends on results that were left open: " + ", ".join(
+                x[2:] if x.startswith("s_") else x for x in open_inputs)
+    if prov.get("missing"):
+        return "results it needs were never produced"
+    reason = str(prov.get("reason") or "").strip()
+    return reason[:300] if reason else "the evidence shown did not settle it"
+
+
+def parts_of_question(net: Network, trace: ExecutionTrace) -> List[Dict[str, Any]]:
+    """Each part of the question (the parser's "asked") with the results that
+    answer it, as they came out. The answer is written part by part from
+    these, so one part left open, or one part found not true, does not decide
+    the others (12 Nov 2026)."""
+    producer = {op.produces: op for op in net.operations}
+    out: List[Dict[str, Any]] = []
+    for a in getattr(net, "asked", None) or []:
+        results = []
+        for state in a.get("answered_by") or []:
+            op = producer.get(state)
+            cert = trace.store.latest(state)
+            op_id = op.id if op is not None else state
+            item: Dict[str, Any] = {
+                "id": op_id,
+                "status": cert.status.value if cert is not None else "NOT RUN",
+                "authority": (cert.normative_authority.value if cert is not None
+                              else (op.normative_authority.value if op is not None else "")),
+                "claim": cert.claim if cert is not None else (op.claim if op is not None else state),
+            }
+            if cert is None or cert.status is Status.UNKNOWN:
+                item["why_open"] = why_open(cert, op_id, trace)
+            results.append(item)
+        out.append({"id": a.get("id", ""), "ask": a.get("ask", ""), "results": results})
+    return out
+
+
 def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
     """The prompt for Eq 6. It states the decision; it does not ask for one."""
     f = _facts(net, trace)
@@ -397,7 +457,9 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
                         if facts else "")
                      + ("\n  set aside: an exception or an alternative that holds covers it"
                         if cert.status is Status.FALSE and state_of.get(cert.obligation_id) in excused
-                        and cert.obligation_id not in failing else ""))
+                        and cert.obligation_id not in failing else "")
+                     + (f"\n  not decided: {why_open(cert, cert.obligation_id, trace)}"
+                        if cert.status is Status.UNKNOWN else ""))
 
     if status == "UNKNOWN":
         guidance = (
@@ -433,18 +495,51 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
             "claim found not true must be reported as not true. Plain prose, no "
             "headings. There is no length limit: leave nothing out.")
 
+    question_parts = parts_of_question(net, trace)
+    by_parts = len(question_parts) >= 2
+    if by_parts:
+        # The question asks two or more things. Each is answered from its own
+        # results; the terminal only joins them (read at face value), so it is
+        # shown as that and is not the answer to any one part (12 Nov 2026).
+        guidance = (
+            "The results above have already been established by executing a "
+            "verification network. Answer the question part by part, in the "
+            "order listed under PARTS OF THE QUESTION, each part from its own "
+            "results. Do not re-decide them, do not soften them, and do not add "
+            "reasoning of your own. Each claim is the statement that was "
+            "checked: a claim found FALSE is reported as not true. A part whose "
+            "result is UNKNOWN cannot be decided from the evidence: say so for "
+            "that part, with the reason shown, and do not offer a likely answer; "
+            "it does not stop the other parts from being answered. Do not open "
+            "with one overall yes or no unless the question asks for one, and "
+            "then take it from the part that asks it. After the parts, report "
+            "every other check listed, none left out: each Standard and whether "
+            "it is met (for one not met, what the manual requires there, as its "
+            "reason states); each Guidance and whether it is followed, named as "
+            "a recommendation rather than a requirement; each Option and what it "
+            "allows here, named as a permission; and each check found not to "
+            "apply. A check marked \"set aside\" is reported as covered by the "
+            "exception or alternative, not as a failure. Plain prose, no "
+            "headings. There is no length limit: leave nothing out.")
+
     def reason(cert: Certificate) -> str:
         r = str(cert.provenance.get("reason") or "").strip()
         return f"\n  the checker's reason: {r[:600]}" if r else ""
 
-    parts = [
-        f"QUESTION\n{query}",
-        "",
-        f"DECISION\n{status}"
-        + (f" — {terminal.claim}" if terminal else ""),
-        "",
-        "SUPPORTING CERTIFICATES\n" + ("\n".join(lines) or "(none)"),
-    ]
+    parts = [f"QUESTION\n{query}", ""]
+    if by_parts:
+        block = []
+        for k, part in enumerate(question_parts, 1):
+            block.append(f"{k}. {part['ask']}")
+            for r in part["results"]:
+                block.append(f"   - [{r['status']}] {r['claim']}  [{r['authority']}]"
+                             + (f"\n     not decided: {r['why_open']}" if r.get("why_open") else ""))
+        parts += ["PARTS OF THE QUESTION (answer each from its own results)\n" + "\n".join(block), "",
+                  "ALL PARTS TOGETHER (TRUE only when every part holds; this is not the "
+                  f"answer to any one part)\n{status}" + (f" — {terminal.claim}" if terminal else "")]
+    else:
+        parts += [f"DECISION\n{status}" + (f" — {terminal.claim}" if terminal else "")]
+    parts += ["", "SUPPORTING CERTIFICATES\n" + ("\n".join(lines) or "(none)")]
     if f["found_false"]:
         parts += ["", "WHY IT DOES NOT HOLD (each of these was found NOT true)\n"
                   + "\n".join(f"- {c.claim}  [{c.normative_authority.value}]" + reason(c)
@@ -498,6 +593,13 @@ def answer(query: str, net: Network, trace: ExecutionTrace,
     decision into no answer at all.
     """
     base = compose(query, net, trace)
+    question_parts = parts_of_question(net, trace)
+    if question_parts:
+        base.provenance["parts"] = [
+            {"id": p["id"], "ask": p["ask"],
+             "results": [{k: r[k] for k in ("id", "status", "authority", "why_open") if k in r}
+                         for r in p["results"]]}
+            for p in question_parts]
     if verbalize is None:
         return base
 

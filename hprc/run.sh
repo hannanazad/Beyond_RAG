@@ -89,7 +89,7 @@ if [ -n "$REPEAT" ]; then
     if [ -d "$MRAG_BASE_DIR/parser_runs_faster/repeat_$REPEAT" ]; then
         echo "  note: repeat_$REPEAT already exists -- the job carries on in it. For a new test, use a new NAME."
     fi
-    submit parse "$NGPU" "$CPUS" "$MEM" 04:00:00 >/dev/null
+    submit parse "$NGPU" "$CPUS" "$MEM" 24:00:00 >/dev/null
     echo
     echo "watch it   : squeue -u $USER"
     echo "read a log : tail -n 20 \$(ls -t $LOG/vine_parse_*.log | head -1)"
@@ -103,8 +103,8 @@ for st in retrieval parse execute; do
     [ "$started" = 1 ] || continue
     case "$st" in
         retrieval) submit retrieval 1 8 64 03:00:00 >/dev/null ;;
-        parse)     submit parse "$NGPU" "$CPUS" "$MEM" 04:00:00 >/dev/null ;;
-        execute)   submit execute 1 8 64 03:00:00 >/dev/null ;;
+        parse)     submit parse "$NGPU" "$CPUS" "$MEM" 24:00:00 >/dev/null ;;
+        execute)   submit execute 1 8 64 10:00:00 >/dev/null ;;
     esac
 done
 echo
