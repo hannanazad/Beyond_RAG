@@ -17,6 +17,14 @@
 #                4 GPUs (hprc/repeat_probe.py, with hprc/pin_tuning); the result
 #                is at the end of its log, and in parser_runs_faster/probe_NAME/
 #
+#   VINE_QUESTIONS=FILE bash hprc/run.sh ACCOUNT GPUS pages PAGES_FILE N [FROM]
+#   pages        the pages run: the evidence is everything VINE's store holds on the
+#                top N pages of each question in PAGES_FILE (VisRAG's retrieval.jsonl),
+#                instead of VINE's own retrieval; the questions of FILE only, in a run
+#                folder of its own. FROM: retrieval (default), parse or execute.
+#                The execute stage stops before any checker call if the plans hold
+#                more than VINE_MAX_CHECKS checks (default 2000, about $52).
+#
 #   retrieval : 1 A100, the retrieval check on 154 DEV cases (the gate) + Kq
 #   parse     : GPUS A100s, one parser server on each, the plans
 #   execute   : 1 A100, the checkers (Anthropic API) + the answers
@@ -29,6 +37,21 @@ NGPU="${2:-8}"
 FIRST="${3:-retrieval}"
 REPEAT=""
 PROBE=""
+PAGES_FILE=""
+PAGES=""
+if [ "$FIRST" = pages ]; then
+    PAGES_USAGE="usage: VINE_QUESTIONS=FILE bash hprc/run.sh ACCOUNT GPUS pages PAGES_FILE N [retrieval|parse|execute]"
+    PAGES_FILE="${4:-}"
+    PAGES="${5:-}"
+    FIRST="${6:-retrieval}"
+    [ -n "$PAGES_FILE" ] && [ -f "$PAGES_FILE" ] || { echo "the pages file is missing: '$PAGES_FILE'"; echo "$PAGES_USAGE"; exit 1; }
+    PAGES_FILE="$(cd "$(dirname "$PAGES_FILE")" && pwd)/$(basename "$PAGES_FILE")"
+    [[ "$PAGES" =~ ^[1-9][0-9]?$ ]] || { echo "N (pages per question) must be 1 to 99"; echo "$PAGES_USAGE"; exit 1; }
+    [ -n "${VINE_QUESTIONS:-}" ] && [ -f "${VINE_QUESTIONS:-}" ] || { echo "set VINE_QUESTIONS to the questions file first"; echo "$PAGES_USAGE"; exit 1; }
+    VINE_QUESTIONS="$(cd "$(dirname "$VINE_QUESTIONS")" && pwd)/$(basename "$VINE_QUESTIONS")"
+    [[ "${VINE_MAX_CHECKS:-2000}" =~ ^[0-9]+$ ]] || { echo "VINE_MAX_CHECKS must be a whole number"; exit 1; }
+    case "$FIRST" in retrieval|parse|execute) ;; *) echo "FROM must be retrieval, parse or execute"; echo "$PAGES_USAGE"; exit 1 ;; esac
+fi
 if [ "$FIRST" = probe ]; then
     PROBE="${4:-}"
     [[ "$PROBE" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "usage: bash hprc/run.sh ACCOUNT 4 probe NAME   (NAME: letters, digits, - and _ only)"; exit 1; }
@@ -56,7 +79,9 @@ cd "$REPO"
 LOG="$VINE_HOME/logs"; mkdir -p "$LOG"
 # VINE_REPEAT is always set (empty for a normal run), so a value left in this
 # shell can never turn a normal run into a repeat run
-EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
+# (the pages run's settings too: empty for any other run)
+EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_PAGES_FILE=$PAGES_FILE,VINE_PAGES=$PAGES"
+EXPORT="$EXPORT,VINE_MAX_CHECKS=${VINE_MAX_CHECKS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
 dep=()
 submit() {   # stage gpus cpus mem time
     local id
@@ -97,6 +122,7 @@ if [ -n "$REPEAT" ]; then
     exit 0
 fi
 echo "submitting (account $ACCT, $NGPU GPUs for the parser), from the $FIRST stage:"
+[ -z "$PAGES_FILE" ] || echo "  pages run: the top $PAGES pages of each question in $PAGES_FILE"
 started=0
 for st in retrieval parse execute; do
     [ "$st" = "$FIRST" ] && started=1

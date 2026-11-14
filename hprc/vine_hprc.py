@@ -25,6 +25,13 @@ hprc/compare_plans.py NAME compares them with the plans of the first run.
 
 The probe (VINE_PROBE=NAME, the probe stage only, 4 GPUs): why the parser's reply
 changes from one server start to the next; see hprc/repeat_probe.py.
+
+The pages run (VINE_PAGES_FILE=retrieval.jsonl, VINE_PAGES=N, with VINE_QUESTIONS):
+the evidence is everything VINE's store holds on the N pages another retriever
+chose for each question (VisRAG, compare40/visrag_retrieve.py), instead of Kq.
+Nothing else changes: the same parser, checkers and answer writer. Only the
+questions of VINE_QUESTIONS (the pages file has no DEV cases), in a run folder
+of its own (e2e_pagesN_...). See mrag/vine/page_evidence.py.
 """
 from __future__ import annotations
 
@@ -112,6 +119,17 @@ class Run:
         qfile = os.environ.get("VINE_QUESTIONS", "").strip()
         self.repeat = os.environ.get("VINE_REPEAT", "").strip()
         self.probe = os.environ.get("VINE_PROBE", "").strip()
+        # the pages run: the evidence is the pages another retriever chose (page_evidence.py)
+        self.pages_file = os.environ.get("VINE_PAGES_FILE", "").strip()
+        self.pages = None
+        if self.pages_file:
+            k = os.environ.get("VINE_PAGES", "").strip()
+            assert re.fullmatch(r"[1-9][0-9]?", k), f"VINE_PAGES={k!r}: give the pages per question, 1 to 99"
+            self.pages = int(k)
+            assert qfile, "a pages run answers the questions of VINE_QUESTIONS -- set it"
+            assert not self.repeat and not self.probe, "a pages run is not a repeat run or a probe -- unset them"
+            assert Path(self.pages_file).is_file(), f"VINE_PAGES_FILE={self.pages_file}: no such file"
+            self.dev = []                         # the pages file holds the run's questions only
         if self.probe:
             assert re.fullmatch(r"[A-Za-z0-9_-]{1,40}", self.probe), \
                 f"VINE_PROBE={self.probe!r}: use letters, digits, - and _ only"
@@ -141,9 +159,26 @@ class Run:
         # the folder of the runs before the tuning pin (11-12 Oct), where the probe's prompts are
         self.unpinned_run_name = f"e2e_r{self.retr_commit}_s{self.store_tag}_p{self.instructions_sha[:8]}"
         self.run_dir = self.runs / f"{self.unpinned_run_name}_k{PIN_SHA}"
+        self.settings = {k: getattr(CFG, k) for k in SETTING_NAMES}
+        if self.pages:
+            from mrag.vine.page_evidence import file_sha256
+            sha = file_sha256(self.pages_file)
+            manifest = Path(self.pages_file).with_name("retrieval_manifest.json")
+            m = vr.load_json(manifest, {}) if manifest.is_file() else {}
+            assert not m.get("dry_run"), f"{manifest} says this was a dry run: its pages are not real retrieval"
+            code = page_evidence_code()
+            # the pages file and the code that turns pages into evidence are part of both
+            # names, so other pages, or evidence made by other code, never mix with these
+            tag = f"pages{self.pages}_{sha[:12]}_c{code[:8]}"
+            self.kq_file = base / f"kq_{tag}_s{self.store_tag}.json"
+            self.run_dir = self.runs / f"e2e_{tag}_s{self.store_tag}_p{self.instructions_sha[:8]}_k{PIN_SHA}"
+            self.settings = {"evidence": f"the top {self.pages} pages of each question, from {Path(self.pages_file).name}",
+                             "pages": self.pages, "pages_file": self.pages_file, "pages_file_sha256": sha,
+                             "page_evidence_code_sha256": code,
+                             "page_retriever": m.get("method"), "page_retriever_model": m.get("model_id"),
+                             "page_retriever_commit": m.get("model_commit_loaded")}
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.plans_file = self.run_dir / "plans.json"
-        self.settings = {k: getattr(CFG, k) for k in SETTING_NAMES}
         self.job = os.environ.get("SLURM_JOB_ID", "nojob")
         say(f"code commit {self.commit} | retrieval code {self.retr_commit} | store {self.store_tag} "
             f"| parser instructions {self.instructions_sha[:12]}")
@@ -151,6 +186,11 @@ class Run:
         if self.repeat:
             say(f"REPEAT RUN '{self.repeat}': the DEV plans again, from {self.kq_file}, "
                 f"with their own model cache {self.model_cache}")
+        if self.pages:
+            who = " ".join(x for x in (self.settings["page_retriever_model"] or "retriever not named in a manifest",
+                                       str(self.settings["page_retriever_commit"] or "")[:8]) if x)
+            say(f"PAGES RUN: {self.settings['evidence']} (sha256 {self.settings['pages_file_sha256'][:12]}, "
+                f"{who}), evidence file {self.kq_file.name}")
         say(f"run folder: {self.run_dir}")
 
 
@@ -260,6 +300,8 @@ def first_port(job: str) -> int:
 # --------------------------------------------------------------------------- #
 def stage_retrieval(R: Run) -> int:
     say("GPU:", gpu_names())
+    if R.pages:
+        return stage_page_evidence(R, load_retrieval())
     pipeline = load_retrieval()
     n_store = pipeline.store.client.count(CFG.coll_chunks, exact=True).count
     say(f"graph        : {pipeline.kg.g.number_of_nodes():,} nodes, {pipeline.kg.g.number_of_edges():,} edges")
@@ -363,6 +405,66 @@ def stage_retrieval(R: Run) -> int:
     return 0
 
 
+def page_evidence_code() -> str:
+    """sha256 of what turns pages into evidence: mrag/vine/page_evidence.py,
+    stage_page_evidence below, the parser's order of pieces, the figure payload,
+    FIG_KEYS and the figures file (each sheet's page). Part of the pages run's
+    file and folder names, so evidence made another way never meets these plans."""
+    import inspect
+    from mrag.retrieval import _figure_payload_from_graph
+    from mrag.vine import page_evidence as pe
+    from mrag.vine.parser import _sort_key
+    h = hashlib.sha256(Path(pe.__file__).read_bytes())
+    for f in (stage_page_evidence, _sort_key, _figure_payload_from_graph):
+        h.update(inspect.getsource(f).encode())
+    h.update(repr(FIG_KEYS).encode())
+    figures = Path(CFG.figures_jsonl)
+    h.update(hashlib.sha256(figures.read_bytes()).digest() if figures.is_file() else b"no figures file")
+    return h.hexdigest()
+
+
+def stage_page_evidence(R: Run, pipeline) -> int:
+    """The pages run's evidence: for each question, every piece VINE's store holds
+    on the pages in R.pages_file, and the figures on those pages. No search, no
+    DEV gate: the pages were chosen by the other retriever."""
+    from mrag.retrieval import _figure_payload_from_graph
+    from mrag.vine import page_evidence as pe
+    from mrag.vine.parser import _sort_key
+    kg = pipeline.kg
+    pages = pe.read_pages_file(R.pages_file, R.questions, R.pages)
+    payloads = pe.scroll_payloads(pipeline.retriever.store.client, CFG.coll_chunks)
+    # each sheet's page, for table rows, figure descriptions and the figures listed
+    sheets = pe.sheet_pages(json.loads(l) for l in Path(CFG.figures_jsonl).read_text().splitlines() if l.strip())
+    pieces, no_page = pe.by_page(payloads, sheets)
+    figs = pe.figures_by_page(sheets)
+    say(f"store: {len(payloads):,} pieces on {len(pieces):,} pages ({no_page} on no page), {pe.counts(payloads)} | "
+        f"{len(sheets)} figures and tables on {len(figs)} pages | evidence code {R.settings['page_evidence_code_sha256'][:8]}")
+    kq = {}
+    for i, (qid, q) in enumerate(R.questions.items(), 1):
+        chunks, figures = pe.evidence_for_pages(pages[qid], pieces, figs,
+                                                lambda fid: _figure_payload_from_graph(kg, fid), _sort_key)
+        n = pe.counts(chunks)
+        kq[qid] = vr.plain({"question": q, "chunks": chunks, "figures": [{k: f.get(k) for k in FIG_KEYS if k in f}
+                                                                          for f in figures],
+                            "pages": pages[qid], "closure": {}, "find": {}, "seconds": 0.0,
+                            "evidence_code": R.settings["page_evidence_code_sha256"]})
+        say(f"  {i:2d}/{len(R.questions)} {qid:26s} pages {[p['page_pdf'] for p in pages[qid]]} | "
+            f"{len(chunks):3d} pieces, {n['normative']:3d} Standards/Guidance/Options, {len(figures):2d} figures")
+        if not chunks:
+            say(f"STOPPED: no piece of the store is on the pages of {qid}; check the pages file")
+            return 1
+    vr.save_json(R.kq_file, kq)
+    say(f"saved -> {R.kq_file}")
+    sizes = {qid: len(build_parser_prompt(kq[qid]["question"], kq[qid]["chunks"], "", None, kq[qid]["figures"]))
+             for qid in R.questions}
+    longest = max(sizes, key=sizes.get)
+    ordered = sorted(sizes.values())
+    say(f"parser prompts: median {ordered[len(ordered) // 2]:,} characters, longest {sizes[longest]:,} ({longest}); "
+        f"about {ordered[len(ordered) // 2] // 4:,} and {sizes[longest] // 4:,} tokens")
+    say("\nRETRIEVAL STAGE FINISHED (pages run)")
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # Stage 2: the plans, one vLLM server per GPU
 # --------------------------------------------------------------------------- #
@@ -406,6 +508,9 @@ def _stage_parse(R: Run) -> int:
     kq = vr.load_json(R.kq_file, {})
     no_kq = [q for q in R.questions if q not in kq or kq[q].get("question") != R.questions[q]]
     assert not no_kq, f"no Kq yet for {no_kq[:5]} -- the retrieval stage has not finished"
+    if R.pages:
+        other = [q for q in R.questions if kq[q].get("evidence_code") != R.settings["page_evidence_code_sha256"]]
+        assert not other, f"the evidence of {other[:5]} was made by other code -- run the retrieval stage again"
     records = vr.load_json(R.plans_file, {})
     to_parse = [q for q in R.questions if vr.plan_needs_retry(records.get(q), R.questions[q])]
     say(f"plans: {len(R.questions) - len(to_parse)} already made (from {R.plans_file.name}), {len(to_parse)} to make")
@@ -555,9 +660,14 @@ def _stage_parse(R: Run) -> int:
     say(f"all plans in {(time.time() - t_all) / 60:.0f} minutes")
 
     dev_plans = [records[q] for q in R.dev_ids if q in records]
-    say("\n=== DEV plans ===")
-    pc.print_summary(pc.summarize(dev_plans))
+    if dev_plans:
+        say("\n=== DEV plans ===")
+        pc.print_summary(pc.summarize(dev_plans))
     others = [records[q] for q in R.questions if q not in R.dev_ids and q in records]
+    if R.pages:
+        n_checks = sum(len((r.get("spec") or {}).get("obligations") or []) for r in others)
+        say(f"{R.set_name} plans: {n_checks} checks in all (changes_104 with VINE's own evidence: 739 for the 40); "
+            f"at about $0.026 a check the checkers would cost about ${n_checks * 0.026:.0f}")
     if R.answer_set:
         say(f"{R.set_name} plans: " + ", ".join(f"{k} {sum(1 for r in others if r['outcome'] == k)}"
                                               for k in ("valid first time", "valid after repair", "valid, open problems",
@@ -592,6 +702,18 @@ def stage_execute(R: Run) -> int:
     records = vr.load_json(R.plans_file, {})
     no_plan = [q for q in R.questions if q not in records]
     assert not no_plan, f"no plan yet for {no_plan[:5]} -- the parse stage has not finished"
+    if R.pages:
+        # the pages run shows the parser far more provisions; stop before the API if the
+        # plans grew past what was agreed (VINE_MAX_CHECKS, default 2000: about $52)
+        n_checks = sum(len((records[q].get("spec") or {}).get("obligations") or []) for q in R.questions)
+        cap = os.environ.get("VINE_MAX_CHECKS", "").strip() or "2000"
+        assert cap.isdigit(), f"VINE_MAX_CHECKS={cap!r}: give a whole number of checks"
+        cap = int(cap)
+        say(f"plans: {n_checks} checks in all; limit {cap} (about ${cap * 0.026:.0f})")
+        if n_checks > cap:
+            say(f"STOPPED before any checker call: {n_checks} checks would cost about ${n_checks * 0.026:.0f}. "
+                f"To go ahead, submit the execute stage again with VINE_MAX_CHECKS={n_checks} set.")
+            return 1
     assert os.environ.get("ANTHROPIC_API_KEY"), "no Anthropic key (see hprc/README.md)"
 
     say("GPU:", gpu_names())
@@ -646,6 +768,7 @@ def stage_execute(R: Run) -> int:
                 # certificates, after the decision is fixed; the composed text
                 # is kept in answer.provenance.template_text
                 "answer_writer": CHECKER_MODEL,
+                "evidence": R.settings if R.pages else "Kq (VINE's own retrieval)",
                 "machine": "FASTER", "slurm_job": R.job}
     vr.save_json(R.run_dir / f"exec_manifest_{R.commit}.json", manifest)
 
@@ -690,8 +813,9 @@ def stage_execute(R: Run) -> int:
             f"| {r['seconds']:5.0f}s | ${r.get('cost_usd', 0):.3f}" + (f" | ERROR {r['error']}" if r.get("error") else ""))
 
     dev_exec = [done[q] for q in R.dev_ids]
-    say("\n=== DEV ===")
-    ec.print_exec_summary(ec.summarize_execution([r for r in dev_exec if not r.get("error")]))
+    if dev_exec:
+        say("\n=== DEV ===")
+        ec.print_exec_summary(ec.summarize_execution([r for r in dev_exec if not r.get("error")]))
     say(f"cost of new checker calls in this job: ${ac.cost_usd(ask0.calls, CHECKER_MODEL):.3f}\n")
     for r in dev_exec:
         if r.get("error"):
@@ -713,7 +837,8 @@ def stage_execute(R: Run) -> int:
     vr.save_json(result_file, {
         "commit": R.commit, "retrieval_commit": R.retr_commit, "store": R.store_tag,
         "retrieval_settings": R.settings,
-        "retrieval_check": {"file": check_file.name, "gate": vr.load_json(check_file, {}).get("gate")},
+        "retrieval_check": ({"file": check_file.name, "gate": vr.load_json(check_file, {}).get("gate")}
+                            if not R.pages else "none: the pages were chosen by the other retriever"),
         "parse_manifest": vr.load_json(R.run_dir / "parse_manifest.json", {}), "exec_manifest": manifest,
         "plans": {q: records[q] for q in R.questions}, "executions": {q: done[q] for q in R.questions}})
     say("\nsaved ->", answers_file)
