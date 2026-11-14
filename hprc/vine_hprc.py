@@ -78,6 +78,11 @@ SEED, EFFORT = 42, "xhigh"
 GPU_UTIL = 0.90
 # the checkers, as in the notebook
 CHECKER_MODEL, CHECKER_EFFORT, CHECKER_MAX_TOKENS = "claude-sonnet-5-5", "high", 32000
+# the checker model's second look at each plan before it is checked (14 Nov 2026,
+# mrag/vine/plan_review.py); VINE_PLAN_REVIEW=0 turns it off, e.g. for an ablation
+_REVIEW_SETTING = os.environ.get("VINE_PLAN_REVIEW", "1").strip() or "1"
+assert _REVIEW_SETTING in ("0", "1"), f"VINE_PLAN_REVIEW={_REVIEW_SETTING!r}: 1 (on) or 0 (off)"
+PLAN_REVIEW = _REVIEW_SETTING == "1"
 MAX_IMAGES = 4
 FIG_KEYS = ("figure_id", "caption", "n_sheets", "image_paths", "image_path", "page_pdf", "source")
 SETTING_NAMES = (
@@ -85,7 +90,8 @@ SETTING_NAMES = (
     "expansion_reserved_slots", "compile_closure_budget", "compile_find_provisions",
     "compile_sentence_queries", "compile_list_depth", "compile_term_queries", "compile_term_candidates",
     "compile_heading_sections", "compile_heading_candidates", "compile_heading_paragraphs",
-    "compile_pool_cap", "compile_sentence_terms", "anchor_sections", "anchor_section_chunks")
+    "compile_pool_cap", "compile_sentence_terms", "anchor_sections", "anchor_section_chunks",
+    "section_mates_per_section", "section_mates_total")
 
 
 def say(*a) -> None:
@@ -689,6 +695,44 @@ def _stage_parse(R: Run) -> int:
 # --------------------------------------------------------------------------- #
 # Stage 3: the checkers execute every plan; the answers
 # --------------------------------------------------------------------------- #
+def reviewed_network(question: str, plan: dict, chunks: list, ask):
+    """(network for the answer, review record or None, reviewed plan or None).
+    The checker model's second look at the plan (mrag/vine/plan_review.py).
+    The parser's own network is always the one executed first, unchanged;
+    with checks added, the answer is written over the reviewed network, whose
+    added checks are decided afterwards on their own (execute_with_review)."""
+    from mrag.vine import plan_review as pr
+    from mrag.vine.compile import instantiate
+    if not PLAN_REVIEW:
+        return plan["net"], None, None
+    reviewed, review = pr.review_plan(question, plan["spec"], chunks, ask, build=instantiate)
+    if not review.get("added"):
+        return plan["net"], review, None
+    net, problems = instantiate(reviewed)
+    if net is None or problems:                  # review_plan checked this; never run a broken plan
+        review["error"] = "the reviewed plan did not build: " + "; ".join(map(str, problems))[:300]
+        review["added"] = []
+        return plan["net"], review, None
+    return net, review, reviewed
+
+
+def execute_with_review(plan: dict, answer_net, review, reviewed, verifiers):
+    """The parser's own network, executed exactly as without the review; then
+    the review's checks, decided on their own and added to the same store so
+    the answer reports them. Returns the trace."""
+    from mrag.vine import plan_review as pr
+    from mrag.vine.compile import instantiate
+    from mrag.vine.execute import execute
+    trace = execute(plan["net"], verifiers)
+    if reviewed is not None and review and review.get("added"):
+        extra = pr.run_added_checks(reviewed, [a["id"] for a in review["added"]], verifiers,
+                                    execute, instantiate)
+        for state, cert in extra:
+            trace.store.add(state, cert)
+        review["decided"] = [s for s, _c in extra]
+    return trace
+
+
 def stage_execute(R: Run) -> int:
     from mrag.vine import anthropic_client as ac
     from mrag.vine import table_data
@@ -698,6 +742,7 @@ def stage_execute(R: Run) -> int:
     from mrag.vine.execute import execute
     from mrag.vine.answer import answer as write_answer
     from mrag.vine.model_verifiers import READING_RULES, LOOKUP_RULES, MAX_REASKS, _contract
+    from mrag.vine import plan_review as pr
 
     records = vr.load_json(R.plans_file, {})
     no_plan = [q for q in R.questions if q not in records]
@@ -751,10 +796,14 @@ def stage_execute(R: Run) -> int:
         plans[qid] = {"spec": spec, "net": net, "problems": problems}
     say(f"{sum(1 for p in plans.values() if p['net'] is not None and not p['problems'])} of {len(plans)} plans can be executed")
 
+    kq = vr.load_json(R.kq_file, {}) if PLAN_REVIEW else {}
+    if PLAN_REVIEW:
+        no_kq = [q for q in R.questions if q not in kq]
+        assert not no_kq, f"the plan review needs the evidence the plans were made from; none for {no_kq[:5]}"
     model_options = {"use_pointers": True, "max_pointed_chunks": 8, "max_images": MAX_IMAGES,
                      "labels": True, "use_lookups": True, "max_lookups": 12,
                      "named_exceptions": True, "max_named_exceptions": 6}
-    exec_file = R.run_dir / f"exec_{R.commit}.json"
+    exec_file = R.run_dir / (f"exec_{R.commit}.json" if PLAN_REVIEW else f"exec_{R.commit}_noreview.json")
     manifest = {"commit": R.commit, "plans_file": str(R.plans_file), "instructions_sha256": R.instructions_sha,
                 "checker_model": CHECKER_MODEL, "checker_effort": CHECKER_EFFORT,
                 "checker_max_tokens": CHECKER_MAX_TOKENS, "checker_temperature": "not settable (model default)",
@@ -769,8 +818,11 @@ def stage_execute(R: Run) -> int:
                 # is kept in answer.provenance.template_text
                 "answer_writer": CHECKER_MODEL,
                 "evidence": R.settings if R.pages else "Kq (VINE's own retrieval)",
+                "plan_review": ({"model": CHECKER_MODEL, "prompt_sha256": pr.PROMPT_SHA256, "max_add": pr.MAX_ADD}
+                                if PLAN_REVIEW else "off"),
                 "machine": "FASTER", "slurm_job": R.job}
-    vr.save_json(R.run_dir / f"exec_manifest_{R.commit}.json", manifest)
+    vr.save_json(R.run_dir / (f"exec_manifest_{R.commit}.json" if PLAN_REVIEW
+                              else f"exec_manifest_{R.commit}_noreview.json"), manifest)
 
     def run_case(qid: str) -> dict:
         q = R.questions[qid]
@@ -779,15 +831,26 @@ def stage_execute(R: Run) -> int:
         t0 = time.time()
         if plan["net"] is None or plan["problems"]:
             return ec.make_exec_record(qid, q, plan["spec"], plan["net"], None, None, [], 0.0, None)
+        # a second look at the plan by the checker model before it is checked
+        # (mrag/vine/plan_review.py): checks it adds are recorded, and the
+        # plan the parser wrote stays in "spec"
+        net, review, reviewed = reviewed_network(q, plan, (kq.get(qid) or {}).get("chunks") or [], ask0)
         verifiers = build_verifiers(tables=table_list, kg=kg, retriever=retriever, ask=ask0,
                                     query=q, hand_over=True, model_options=model_options)
-        trace = execute(plan["net"], verifiers)
+        trace = execute_with_review(plan, net, review, reviewed, verifiers)
         # Eq 6: a = f_LM(q, C*, Pi_q). The decision, citations and confidence
         # come from the certificates; the model only writes the prose, and if
         # it fails the composed text stands.
-        answer = write_answer(q, plan["net"], trace, verbalize=ask0)
-        rec = ec.make_exec_record(qid, q, plan["spec"], plan["net"], trace, answer,
+        answer = write_answer(q, net, trace, verbalize=ask0)
+        rec = ec.make_exec_record(qid, q, plan["spec"], net, trace, answer,
                                   ask0.calls[n0:], time.time() - t0, None)
+        if review is not None:
+            rec["plan_review"] = review
+            if reviewed is not None:
+                rec["reviewed_spec"] = reviewed.as_dict()
+                together = ((answer.provenance or {}).get("parts_together") if answer is not None else None)
+                if together:
+                    rec["reviewed_decision"] = together
         rec["cost_usd"] = ac.cost_usd(ask0.calls[n0:], CHECKER_MODEL)
         return rec
 

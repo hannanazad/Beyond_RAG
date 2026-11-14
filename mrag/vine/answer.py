@@ -432,6 +432,63 @@ def parts_of_question(net: Network, trace: ExecutionTrace) -> List[Dict[str, Any
     return out
 
 
+# Each result is reported as the statement that was checked (14 Nov 2026: an
+# answer shortened "the speed condition for X is met, and X is required" to
+# "the condition is met", which a reader took for "the requirement is met").
+WORDS_RULE = ("Report each result in the words of its claim, or in words that mean "
+            "exactly the same; never shorten a claim so that it says something "
+            "else (for example, so that a condition being met reads as a "
+            "requirement being met, or a requirement that applies reads as one "
+            "that is met). ")
+
+
+def parts_outside_decision(net: Network, trace: ExecutionTrace,
+                           question_parts: Optional[List[Dict[str, Any]]] = None) -> bool:
+    """Whether a part of the question is answered by a check the decision does
+    not rest on: a check added by the plan review (plan_review.py) is one.
+    Such a part must be answered from its own results, and the parts joined
+    from those results, not from the decision alone (14 Nov 2026)."""
+    parts = question_parts if question_parts is not None else parts_of_question(net, trace)
+    # by the network's structure, not by which checks ran: a parser's plan
+    # normally names in "answered_by" only what the terminal depends on, so
+    # for it this is False, whatever ran or was skipped
+    rest = _decision_ops(net)
+    return any(r["id"] not in rest for p in parts for r in p["results"])
+
+
+def _decision_ops(net: Network) -> Set[str]:
+    """The ids of the operations the terminal depends on, by structure."""
+    producer = {op.produces: op for op in net.operations}
+    rest: Set[str] = set()
+    todo = [net.terminal] if net.terminal else []
+    while todo:
+        state = todo.pop()
+        op = producer.get(state)
+        if op is None or op.id in rest:
+            continue
+        rest.add(op.id)
+        todo += list(op.merge_inputs or []) + list(op.requires or []) + list(op.guard_states or [])
+    return rest
+
+
+def parts_together(net: Network, trace: ExecutionTrace, question_parts: List[Dict[str, Any]]) -> str:
+    """The decision, lowered by the part results it does not rest on (checks
+    the plan review added): the network's own result and those results taken
+    together, three-valued (FALSE when one is FALSE, else UNKNOWN when one is
+    open or did not run, else TRUE), results that do not apply left out. So a
+    check the decision already handled -- one set aside by an exception, or
+    read at its group's heading -- counts as the decision counted it, and an
+    open decision is never turned into a yes by an added check."""
+    rest = _decision_ops(net)
+    terminal = trace.terminal.status.value if trace.terminal is not None else "UNKNOWN"
+    st = [terminal] + [r["status"] for p in question_parts for r in p["results"] if r["id"] not in rest]
+    if "FALSE" in st:
+        return "FALSE"
+    if any(s in ("UNKNOWN", "NOT RUN") for s in st):
+        return "UNKNOWN"
+    return "TRUE" if "TRUE" in st else Status.NOT_APPLICABLE.value
+
+
 def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
     """The prompt for Eq 6. It states the decision; it does not ask for one."""
     f = _facts(net, trace)
@@ -492,11 +549,12 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
             "found not to apply. A check marked \"set aside\" is reported as "
             "covered by the exception or alternative, not as a failure. Each "
             "claim listed is written as the statement that was checked, so a "
-            "claim found not true must be reported as not true. Plain prose, no "
+            "claim found not true must be reported as not true. " + WORDS_RULE + "Plain prose, no "
             "headings. There is no length limit: leave nothing out.")
 
     question_parts = parts_of_question(net, trace)
-    by_parts = len(question_parts) >= 2
+    outside = parts_outside_decision(net, trace, question_parts)
+    by_parts = len(question_parts) >= 2 or bool(question_parts and outside)
     if by_parts:
         # The question asks two or more things. Each is answered from its own
         # results; the terminal only joins them (read at face value), so it is
@@ -529,7 +587,7 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
             "a recommendation rather than a requirement; each Option and what it "
             "allows here, named as a permission; and each check found not to "
             "apply. A check marked \"set aside\" is reported as covered by the "
-            "exception or alternative, not as a failure. Plain prose, no "
+            "exception or alternative, not as a failure. " + WORDS_RULE + "Plain prose, no "
             "headings. There is no length limit: leave nothing out.")
 
     def reason(cert: Certificate) -> str:
@@ -544,9 +602,16 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
             for r in part["results"]:
                 block.append(f"   - [{r['status']}] {r['claim']}  [{r['authority']}]"
                              + (f"\n     not decided: {r['why_open']}" if r.get("why_open") else ""))
-        parts += ["PARTS OF THE QUESTION (answer each from its own results)\n" + "\n".join(block), "",
-                  "ALL PARTS TOGETHER (TRUE only when every part holds; this is not the "
-                  f"answer to any one part)\n{status}" + (f" — {terminal.claim}" if terminal else "")]
+        parts += ["PARTS OF THE QUESTION (answer each from its own results)\n" + "\n".join(block), ""]
+        if outside:
+            # a part rests on a check the decision does not (a check the plan
+            # review added): the parts are joined from their own results
+            parts += ["ALL PARTS TOGETHER (the network's decision, together with the checks "
+                      "the plan review added under the parts; TRUE only when every part holds; "
+                      f"this is not the answer to any one part)\n{parts_together(net, trace, question_parts)}"]
+        else:
+            parts += ["ALL PARTS TOGETHER (TRUE only when every part holds; this is not the "
+                      f"answer to any one part)\n{status}" + (f" — {terminal.claim}" if terminal else "")]
     else:
         parts += [f"DECISION\n{status}" + (f" — {terminal.claim}" if terminal else "")]
     parts += ["", "SUPPORTING CERTIFICATES\n" + ("\n".join(lines) or "(none)")]
@@ -576,6 +641,9 @@ def build_answer_prompt(query: str, net: Network, trace: ExecutionTrace) -> str:
     # apart, so the answer reports every check without saying the decision
     # rests on them (10 Nov 2026: nothing the plan checked is dropped).
     other = _other_checks(net, trace, f["support"])
+    if by_parts:                       # a check listed under a part is not listed again here
+        under_parts = {r["id"] for p in question_parts for r in p["results"]}
+        other = [c for c in other if c.obligation_id not in under_parts]
     if other:
         parts += ["", "OTHER CHECKS MADE (the decision does not rest on them)\n"
                   + "\n".join(f"- [{c.status.value}] {c.claim}  [{c.normative_authority.value}]"
@@ -610,6 +678,8 @@ def answer(query: str, net: Network, trace: ExecutionTrace,
              "results": [{k: r[k] for k in ("id", "status", "authority", "why_open") if k in r}
                          for r in p["results"]]}
             for p in question_parts]
+        if parts_outside_decision(net, trace, question_parts):
+            base.provenance["parts_together"] = parts_together(net, trace, question_parts)
     if verbalize is None:
         return base
 

@@ -588,6 +588,15 @@ class Retriever:
             result.debug["closure"] = counts
             result.debug["n_closure_chunks"] = len(extra)
 
+        # ---- the rest of the sections Kq already holds, best matches first --
+        # (part of closing Kq: off with closure=False, like the rest of it)
+        if closure and finder is not None:
+            base = list(result.chunks or final_chunks)
+            mates = self._section_mates(query, base)
+            if mates:
+                result.chunks = base + mates
+            result.debug["section_mates"] = len(mates)
+
         result.debug["n_chunks"] = len(result.chunks)
         result.debug["n_figures"] = len(figs_out)
         return result
@@ -810,6 +819,64 @@ class Retriever:
             frontier = arrived        # expand only what is new
 
         return collected
+
+    def _section_mates(self, query: str, chunks: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """The other Standards, Guidance and Options of the sections Kq already
+        holds, best matches to the question first, a few per section and a few
+        in all (CFG.section_mates_per_section, CFG.section_mates_total;
+        14 Nov 2026).
+
+        A rule and its exception, or a rule and the Option that relaxes it,
+        usually sit in the same section. Search finds the section through one
+        paragraph; the anchor rule fills in only the top sections. A section
+        further down kept just the paragraph search found, so the Option beside
+        it never reached the parser. The cross-encoder reads each candidate
+        against the question, as `_best_in_section` does for the anchor
+        sections. Appended after the closure, in their own small budget."""
+        per = int(getattr(CFG, "section_mates_per_section", 0) or 0)
+        total = int(getattr(CFG, "section_mates_total", 0) or 0)
+        if per <= 0 or total <= 0 or self.rerank is None or not query:
+            return []
+        from .find_provisions import DEFINITION_SECTIONS, _NORMATIVE, _NOTE_SOURCES, ranking_text
+        recs = getattr(self.kg, "_chunk", {}) or {}
+        have = {c.get("chunk_id") for c in chunks if c.get("chunk_id")}
+        # the definition sections are not sections of rules (1C.02 alone holds
+        # some 300 definitions); the definition closure brings the terms used
+        sections = [s for s in dict.fromkeys(c.get("section_id") for c in chunks if c.get("section_id"))
+                    if s not in DEFINITION_SECTIONS]
+        per_cap = int(getattr(CFG, "section_mates_section_candidates", 60))
+        cand: List[str] = []
+        for sec in sections:
+            took = 0
+            for cid in self.kg.chunks_for_section(sec):
+                r = recs.get(cid) or {}
+                if (cid not in have and cid not in cand and r.get("content_type") in _NORMATIVE
+                        and r.get("source") not in _NOTE_SOURCES):
+                    cand.append(cid)
+                    took += 1
+                    if took >= per_cap:
+                        break
+        cand = cand[:int(getattr(CFG, "section_mates_candidates", 400))]
+        if not cand:
+            return []
+        picked: List[Tuple[str, float]] = []
+        per_section: Dict[str, int] = {}
+        for idx, score in self.rerank.rank(query, [ranking_text(recs[c]) for c in cand], top_k=len(cand)):
+            cid = cand[idx]
+            sec = str((recs.get(cid) or {}).get("section_id") or "")
+            if per_section.get(sec, 0) >= per:
+                continue
+            per_section[sec] = per_section.get(sec, 0) + 1
+            picked.append((cid, float(score)))
+            if len(picked) >= total:
+                break
+        if not picked:
+            return []
+        score_of = dict(picked)
+        hits = self.store.fetch_chunks_by_ids(CFG.coll_chunks, [c for c, _ in picked],
+                                              default_score=float(getattr(CFG, "obligation_anchor_score", 0.015)))
+        return [{**(h["payload"] or {}), "score": score_of.get((h["payload"] or {}).get("chunk_id"), 0.0),
+                 "source": "section_mate", "closure_depth": 1} for h in hits]
 
     def _best_in_section(self, query: str, ids: List[str], want: int) -> List[str]:
         """A section's chunks with its normative paragraphs in the order the

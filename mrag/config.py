@@ -338,6 +338,14 @@ class Config:
     # pieces before its Paragraph 11, so the paragraph naming the sign used
     # with or instead of the marking never reached Kq (DEV P47).
     anchor_section_chunks: int = 12
+    # The other Standards, Guidance and Options of EVERY section Kq already
+    # holds, best matches to the question first (cross-encoder), at most this
+    # many per section and this many in all (14 Nov 2026). The anchor rule
+    # above covers only the top sections; 5 of the 9 gold paragraphs Kq missed
+    # on the 40 sample questions sat in a section Kq already held further
+    # down. 0 turns it off.
+    section_mates_per_section: int = 2
+    section_mates_total: int = 10
     # How many top-ranked chunks contribute their section's citations
     # to cross-reference expansion.
     expansion_source_chunks: int = 10

@@ -197,11 +197,27 @@ Step 5. What is asked. List each thing the question asks in "asked", and
 name the obligations or merges whose results answer it. Every part of the
 question has at least one check: a part with no check is a part the answer
 cannot cover. Each part is answered as it is asked:
+  - Name in "answered_by" the checks whose results ARE the answer to the
+    part as it is asked. When a part asks what kind of provision governs
+    something (required, recommended or allowed: Standard, Guidance or
+    Option), it is answered by a check that says which heading governs it
+    here, not by a check of whether the case meets it. When a part asks
+    whether the case meets something, it is answered by the checks of
+    whether it does.
   - When a part asks whether something is permitted, acceptable or allowed,
     check it against every provision shown that could require or forbid
     something about it, Standards included, and not only against the
     provision that permits it. Not prohibited does not mean allowed
-    (Section 1B.03).
+    (Section 1B.03): a check that a provision does not prohibit something
+    never answers such a part on its own.
+  - When the case removes, replaces or changes something that a provision
+    requires (a deletion, a substitution, a different device or display),
+    check the changed case against that provision itself: whether the case,
+    as changed, still meets what the provision requires.
+  - When a part asks whether a chosen display, device, layout or option
+    suits the case, check that what it shows or does fits the facts of the
+    case (where traffic can go, what is closed, what is present), not only
+    that no provision forbids it.
   - When a part asks you to interpret, explain or identify something, one
     obligation states that reading and whether it fits the facts of the case.
 
@@ -294,9 +310,12 @@ claim
     <section> paragraph <n>: <what it requires>"). Never write a claim that
     reads like the rule itself ("X is not used for Y"): the checker may read
     it as a question about the manual instead of the case.
-  - A claim states one thing. Do not join a reason to it ("because ..."):
+  - A claim states one thing. Do not join a reason to it ("because ...")
+    or a conclusion drawn from it ("..., so ...", "therefore", "which means"):
     when a reason must hold, make it an obligation of its own and list it in
-    "requires".
+    "requires"; a conclusion is what a merge or the next obligation states.
+    A claim with a conclusion joined to it is judged as a whole, so when the
+    conclusion cannot be settled the claim cannot be either.
   - When a claim restates a fact, use the fact's own words. Do not widen or
     narrow it with qualifiers the fact does not have: the checker can then
     no longer match it with the fact.

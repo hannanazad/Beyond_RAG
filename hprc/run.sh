@@ -81,7 +81,10 @@ LOG="$VINE_HOME/logs"; mkdir -p "$LOG"
 # shell can never turn a normal run into a repeat run
 # (the pages run's settings too: empty for any other run)
 EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_PAGES_FILE=$PAGES_FILE,VINE_PAGES=$PAGES"
-EXPORT="$EXPORT,VINE_MAX_CHECKS=${VINE_MAX_CHECKS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
+# the checker model's second look at each plan: on unless VINE_PLAN_REVIEW=0 is given
+[[ "${VINE_PLAN_REVIEW:-1}" =~ ^[01]$ ]] || { echo "VINE_PLAN_REVIEW must be 1 (on) or 0 (off)"; exit 1; }
+EXPORT="$EXPORT,VINE_MAX_CHECKS=${VINE_MAX_CHECKS:-},VINE_PLAN_REVIEW=${VINE_PLAN_REVIEW:-1}"
+EXPORT="$EXPORT,VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
 dep=()
 submit() {   # stage gpus cpus mem time
     local id
