@@ -95,6 +95,7 @@ def _non_blocking(cert: Certificate, merge_authority: Optional[Authority] = Auth
                                                        permission demands nothing
         input at the merge's own heading,
                         or stronger, FALSE   -> FALSE
+        input WEAKER than the merge, UNKNOWN -> TRUE   (14 Nov 2026) see below
 
     The last line is the change of 12 Oct 2026. Before it, every non-Standard
     FALSE counted as TRUE whatever the merge, so a merge whose claim IS the
@@ -114,6 +115,16 @@ def _non_blocking(cert: Certificate, merge_authority: Optional[Authority] = Auth
     apply (OPTION, FALSE) rescue a rule whose mandatory threshold had failed,
     certifying a design as warranted when it was not.
 
+    UNKNOWN (14 Nov 2026). An input weaker than the merge counts as TRUE when
+    it is TRUE and, by the lines above, also when it is FALSE. So whatever it
+    turns out to be, the merge comes out the same, and an UNKNOWN there cannot
+    change the merge either: it counts as TRUE. Before this, one open Option
+    or Guidance check made a Standard group UNKNOWN although no answer to it
+    could have changed the group. The check itself stays UNKNOWN in its own
+    certificate and is still reported as left unresolved. This holds only
+    where the merge is read at its own heading: a merge read at face value
+    (merge_authority None, below) keeps every input as it is.
+
     The paper states what each authority means for a failed check but not the
     merge-level treatment, so the adjusted statuses are recorded in the merged
     certificate's provenance ("blocking_adjusted").
@@ -124,7 +135,7 @@ def _non_blocking(cert: Certificate, merge_authority: Optional[Authority] = Auth
         # followed or an Option that is not available is a FALSE answer to its
         # part, and the bundle "every part holds" is then not TRUE (12 Nov 2026).
         return cert.status
-    if (cert.status is Status.FALSE and cert.normative_authority is not Authority.STANDARD
+    if (cert.status in (Status.FALSE, Status.UNKNOWN) and cert.normative_authority is not Authority.STANDARD
             and stronger(merge_authority, cert.normative_authority)):
         return Status.TRUE
     return cert.status

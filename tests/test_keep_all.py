@@ -64,9 +64,15 @@ tr2 = execute(net2, {v: verify for v in ALL})
 p2 = build_answer_prompt("q", net2, tr2)
 check("DECISION\nTRUE" in p2 and "set aside: an exception or an alternative that holds covers it" in p2,
       "a base rule an exception covers is marked set aside")
-table.update({"b": Status.UNKNOWN})
+table.update({"a": Status.UNKNOWN, "b": T})
 tr3 = execute(net, {v: verify for v in ALL})
 p3 = build_answer_prompt("q", net, tr3)
 check("DECISION\nUNKNOWN" in p3 and "report the other checks listed as what was found" in p3,
       "the abstention prompt says how to report the other checks")
+# an open Guidance under the Standard merge does not block it, and is still reported open
+table.update({"a": T, "b": Status.UNKNOWN})
+tr4 = execute(net, {v: verify for v in ALL})
+p4 = build_answer_prompt("q", net, tr4)
+check("DECISION\nTRUE" in p4 and "LEFT UNRESOLVED\n- Device D is at the recommended height." in p4,
+      "an open Guidance does not block a Standard merge, and is listed as left unresolved")
 print(f"ALL KEEP-ALL TESTS PASSED ({ok} checks)")

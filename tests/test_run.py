@@ -181,16 +181,28 @@ def _unknown(op):
                        normative_authority=op.normative_authority)
 
 
+# the Standard (o1, calculator) is left open: the requirement is unresolved
+r = ask_vine(Q, chunks=CHUNKS, section_id="2C.07", ask=ask,
+             verifiers={"calculator": lambda op, st: _unknown(op),
+                        "symbolic": lambda op, st: _true(op),
+                        "llm": lambda op, st: _true(op),
+                        "vlm": lambda op, st: _true(op)})
+assert r.status is Status.UNKNOWN          # one branch unresolved
+assert r.answer.abstained
+assert not r.certified
+# only the Guidance (o2, symbolic) is left open: read at the merge's Standard
+# heading it cannot change the merge, TRUE or FALSE, so the merge holds; o2
+# itself stays open (14 Nov 2026, execute._non_blocking)
+ask = model(GOOD_SPEC, VERDICT, VERDICT, "FINAL PROSE")
 r = ask_vine(Q, chunks=CHUNKS, section_id="2C.07", ask=ask,
              verifiers={"calculator": lambda op, st: _true(op),
                         "symbolic": lambda op, st: _unknown(op),
                         "llm": lambda op, st: _unknown(op),
                         "vlm": lambda op, st: _unknown(op)})
-assert r.status is Status.UNKNOWN          # one branch unresolved
-assert r.answer.abstained
-assert not r.certified
+assert r.status is Status.TRUE and r.certified
+assert r.trace.store.latest("s_o2").status is Status.UNKNOWN
 print("7. an unresolved branch leaves the run uncertified and the answer an "
-       "abstention")
+       "abstention; an open Guidance under a Standard merge does not")
 
 # ---- 8. a missing verifier abstains, it is not stubbed ------------------
 v = build_verifiers(tables=(), kg=None, retriever=None, ask=None)

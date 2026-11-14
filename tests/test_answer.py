@@ -95,12 +95,12 @@ print("3. a type derived from the verb is marked in the citation, not blurred "
       "with a printed heading")
 
 # ---- 4. an unresolved branch produces an abstention, not a hedge ----------
-trace = run({"b": Status.UNKNOWN})
+trace = run({"a": Status.UNKNOWN})
 a = compose(QUERY, NET, trace)
 assert a.status is Status.UNKNOWN and a.abstained
 assert a.confidence == 0.0 or a.confidence < 0.9
 assert "cannot be answered" in a.text
-assert "the layout matches Figure 2C-1" in a.text     # WHICH check was open
+assert "a Curve sign shall be used" in a.text     # WHICH check was open
 assert "probably" not in a.text.lower() and "likely" not in a.text.lower()
 print("4. an unresolved check gives an abstention that names what was left "
       "open")
@@ -135,14 +135,14 @@ print("7. the prompt supplies the decision and the evidence, and forbids "
       "re-deciding")
 
 # ---- 8. the abstention prompt is different, on purpose --------------------
-prompt = build_answer_prompt(QUERY, NET, run({"b": Status.UNKNOWN}))
+prompt = build_answer_prompt(QUERY, NET, run({"a": Status.UNKNOWN}))
 assert "No decision was established" in prompt
 assert "reads like a cautious yes is wrong" in prompt
 assert "LEFT UNRESOLVED" in prompt
 print("8. an abstention prompt tells the model not to write a cautious yes")
 
 # ---- 9. the model writes the prose and nothing else ------------------------
-trace = run({"b": Status.UNKNOWN})
+trace = run({"a": Status.UNKNOWN})
 said = {}
 
 
@@ -156,8 +156,18 @@ a = answer(QUERY, NET, trace, stub)
 assert a.text.startswith("Yes, a Curve sign")          # the prose is used
 assert a.status is Status.UNKNOWN                      # the status is NOT
 assert a.abstained and a.provenance["verbalized"] is True
-assert a.unresolved == ["the layout matches Figure 2C-1"]
+assert a.unresolved == ["a Curve sign shall be used"]
 print("9. a model that answers anyway changes the wording, never the status")
+
+# ---- 9b. an open Guidance under the Standard merge: decided, still reported open
+trace = run({"b": Status.UNKNOWN})
+a = compose(QUERY, NET, trace)
+assert a.status is Status.TRUE and not a.abstained     # read at the Standard heading it cannot change m
+assert a.unresolved == ["the layout matches Figure 2C-1"]
+assert trace.store.latest("s_b").status is Status.UNKNOWN
+assert trace.store.latest("s_m").provenance["blocking_adjusted"]["s_b"] == "TRUE"
+assert trace.store.latest("s_m").provenance["inputs"]["s_b"] == "UNKNOWN"
+print("9b. an open Guidance check does not block a Standard merge; it stays reported as open")
 
 # ---- 10. a failed model leaves the decision answerable --------------------
 def boom(prompt, images):

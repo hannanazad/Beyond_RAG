@@ -249,8 +249,9 @@ def _authority_of(op: Optional[Operation]) -> Authority:
 def _blocking(status: Status, authority: Authority, merge_authority: Authority) -> Status:
     """The S3.2 reading, restated over bare statuses for the reference: a
     FALSE printed under a heading WEAKER than the merge's own does not refute
-    the merge's claim (see execute._non_blocking)."""
-    if (status is Status.FALSE and authority is not Authority.STANDARD
+    the merge's claim, so an UNKNOWN there cannot either (see
+    execute._non_blocking)."""
+    if (status in (Status.FALSE, Status.UNKNOWN) and authority is not Authority.STANDARD
             and _STRENGTH[authority] < _STRENGTH[merge_authority]):
         return Status.TRUE
     return status
