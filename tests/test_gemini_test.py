@@ -201,6 +201,43 @@ def test_no_answer_images_and_no_key_are_errors():
             os.environ["GEMINI_API_KEY"] = saved
 
 
+def test_the_key_is_cleaned_and_never_shown_in_an_error():
+    key = "AQ.Ab12CD34ef56GH78ij90KL12mn34OP56qr78ST90uv"
+    # a paste that brought a line break and other text with it: refused, without showing the key
+    for raw in ("\rls -l $SCRATCH/vine/gemini_key" + key, key + " extra", "two keys\n" + key):
+        try:
+            gc.make_ask_gemini(api_key=raw, post=FakePost([]))
+        except gc.GeminiError as e:
+            assert key not in str(e) and "Save it again" in str(e), str(e)
+        else:
+            raise AssertionError(f"{raw!r} was accepted")
+    # a line break or spaces at the ends only: cleaned and used
+    post = FakePost([reply()])
+    ask = gc.make_ask_gemini(api_key="  " + key + "\r\n", post=post, sleep=lambda s: None)
+    ask("p", [])
+    assert post.calls[0]["headers"]["x-goog-api-key"] == key
+
+    # an error that quotes the header (as requests does for a bad header value) never shows the key
+    def quoting(url, json=None, timeout=None, headers=None):
+        raise ValueError(f"Invalid header value: {headers['x-goog-api-key']!r}")
+    ask = gc.make_ask_gemini(api_key=key, post=quoting, sleep=lambda s: None)
+    try:
+        ask("p", [])
+    except gc.GeminiError as e:
+        assert key not in str(e) and "<key>" in str(e), str(e)
+    else:
+        raise AssertionError("no error")
+    # nor an error body that echoes it
+    ask = gc.make_ask_gemini(api_key=key, post=FakePost([Resp(403, text=f"bad key {key}")]), sleep=lambda s: None)
+    try:
+        ask("p", [])
+    except gc.GeminiError as e:
+        assert key not in str(e) and "<key>" in str(e)
+    else:
+        raise AssertionError("no error")
+    assert gc.output_token_limit(api_key="\rjunk " + key, get=lambda *a, **k: 1 / 0) is None
+
+
 # --------------------------------------------------------------------------- #
 # the run: its own folder and caches; the Qwen runs untouched
 # --------------------------------------------------------------------------- #
@@ -328,6 +365,14 @@ def test_gemini_parse_stage_writes_only_its_own_folder():
         with th._Patched(patches, {"VINE_PARSER": "gemini", "GEMINI_API_KEY": None, "CUDA_VISIBLE_DEVICES": None}):
             assert V.stage_parse(g) == 1
         assert built == [] and not g.plans_file.exists()
+
+        # a key file with other text in it: the probe's client refuses it, and the stage stops cleanly
+        def refusing(*a, **k):
+            raise gc.GeminiError("the Gemini key holds more than one key")
+        with th._Patched(patches + [(gemini_client, "make_ask_gemini", refusing)],
+                         {"VINE_PARSER": "gemini", "GEMINI_API_KEY": "x y", "CUDA_VISIBLE_DEVICES": None}):
+            assert V.stage_parse(g) == 1
+        assert not g.plans_file.exists()
         # one question's Gemini call fails: the stage stops (so the execute job does not start) ...
         bad = qwen.questions["P01-scenario"]
         fail_for.add(bad)
@@ -378,7 +423,8 @@ def test_run_sh_gemini_submits_parse_on_one_gpu_then_execute_and_refuses_the_res
         (scratch / "vine" / ".done_models").write_text("")
         (scratch / "vine" / "anthropic_key").write_text("a")
         stubs.mkdir()
-        (stubs / "sbatch").write_text('#!/bin/bash\necho "$@" >> "$SIM_LOG"\necho $((RANDOM + 1000))\n')
+        (stubs / "sbatch").write_text('#!/bin/bash\necho "$@ KEY_IN_ENV=${GEMINI_API_KEY:-none}" >> "$SIM_LOG"\n'
+                                      'echo $((RANDOM + 1000))\n')
         (stubs / "sbatch").chmod(0o755)
         qfile = d / "questions_40.json"
         qfile.write_text('{"SAMPLE002": "a question"}')
@@ -396,9 +442,21 @@ def test_run_sh_gemini_submits_parse_on_one_gpu_then_execute_and_refuses_the_res
         g = {"VINE_PARSER": "gemini", "VINE_QUESTIONS": str(qfile)}
         code, out, calls = run("123", "2", "parse", extra=g)
         assert code == 1 and calls == [] and "gemini_key" in out, out          # no key yet
-        (scratch / "vine" / "gemini_key").write_text("g")
+        # a key file with other text in it (a paste that took the next line too): refused, key not shown
+        (scratch / "vine" / "gemini_key").write_text("\rls -l $SCRATCH/vine/gemini_keyAQ.secretpart123")
         code, out, calls = run("123", "2", "parse", extra=g)
+        assert code == 1 and calls == [] and "save it again" in out and "secretpart" not in out, out
+        (scratch / "vine" / "gemini_key").write_text("cd\nAQ.secretpart123")          # two lines: refused too
+        code, out, calls = run("123", "2", "parse", extra=g)
+        assert code == 1 and calls == [] and "secretpart" not in out, out
+        # a key in the shell instead of the file: not accepted, and never passed to the jobs
+        (scratch / "vine" / "gemini_key").unlink()
+        code, out, calls = run("123", "2", "parse", extra={**g, "GEMINI_API_KEY": "AQ.fromshell123"})
+        assert code == 1 and calls == [] and "missing" in out, out
+        (scratch / "vine" / "gemini_key").write_text("  AQ.secret-part_123\r\n")
+        code, out, calls = run("123", "2", "parse", extra={**g, "GEMINI_API_KEY": "AQ.fromshell123"})
         assert code == 0, out
+        assert all("KEY_IN_ENV=none" in c for c in calls), calls
         assert len(calls) == 2 and "STAGE=parse" in calls[0] and "STAGE=execute" in calls[1]
         assert "--gres=gpu:a100:1" in calls[0], calls[0]                      # no GPU work: one A100 only
         assert all("VINE_PARSER=gemini" in c and f"VINE_QUESTIONS={qfile}" in c for c in calls)

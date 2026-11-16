@@ -91,10 +91,25 @@ if [ -z "$REPEAT$PROBE" ] && [ ! -s "$VINE_HOME/anthropic_key" ] && [ -z "${ANTH
     echo '  read -rs -p "Anthropic key: " K; echo; printf "%s" "$K" > $SCRATCH/vine/anthropic_key; chmod 600 $SCRATCH/vine/anthropic_key; unset K'
     exit 1
 fi
-if [ "$PARSER" = gemini ] && [ ! -s "$VINE_HOME/gemini_key" ] && [ -z "${GEMINI_API_KEY:-}" ]; then
-    echo "the Gemini key is missing; save it once with (it asks for the key, it is not shown):"
-    echo '  read -rs -p "Gemini key: " K; echo; (umask 077; printf "%s" "$K" > $SCRATCH/vine/gemini_key); chmod 600 $SCRATCH/vine/gemini_key; unset K'
-    exit 1
+if [ "$PARSER" = gemini ]; then
+    # the key comes from the key file only: a GEMINI_API_KEY left in this shell is never
+    # passed on (--export=ALL would store it with the jobs)
+    unset GEMINI_API_KEY
+    SAVE_KEY='  read -rs -p "Gemini key: " K; echo; (umask 077; printf "%s" "$K" > $SCRATCH/vine/gemini_key); chmod 600 $SCRATCH/vine/gemini_key; unset K'
+    if [ ! -s "$VINE_HOME/gemini_key" ]; then
+        echo "the Gemini key is missing; save it once (type the command, press Enter, then paste the key alone):"
+        echo "$SAVE_KEY"
+        exit 1
+    fi
+    # the file must hold one key: spaces or line breaks at its ends are fine, nothing else (never printed)
+    k="$(cat "$VINE_HOME/gemini_key")"; k="${k#"${k%%[![:space:]]*}"}"; k="${k%"${k##*[![:space:]]}"}"
+    if ! [[ "$k" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        unset k
+        echo "the Gemini key file holds more than the key (other text or spaces); save it again, pasting the key alone:"
+        echo "$SAVE_KEY"
+        exit 1
+    fi
+    unset k
 fi
 [ "$NGPU" -ge 1 ] && [ "$NGPU" -le 10 ] || { echo "GPUS must be 1 to 10"; exit 1; }
 # the Gemini parse uses no GPU: one A100 only, because the gpu partition needs one

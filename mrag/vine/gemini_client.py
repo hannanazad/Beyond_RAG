@@ -36,6 +36,29 @@ RETRY_STATUS = (429, 500, 502, 503, 504)
 MAX_TRIES_NO_ANSWER = 3
 
 
+KEY_SHAPE = re.compile(r"[A-Za-z0-9._-]{1,200}")   # letters, digits, ".", "_", "-": nothing else
+
+
+def clean_key(raw: Optional[str]) -> str:
+    """The key without the spaces or line breaks a paste can add at its ends.
+    Anything else in it (a space or line break inside, other text, any other
+    character) stops the run with a message that never shows the key."""
+    key = (raw or "").strip()
+    if key and not KEY_SHAPE.fullmatch(key):
+        raise GeminiError(
+            "the Gemini key holds more than one key: spaces, line breaks or other text "
+            f"({len(key)} characters). Save it again, pasting the key alone (the key is not shown here).")
+    return key
+
+
+def scrub(text: str, key: str) -> str:
+    """Error text with the key (and any long key-like run of characters) removed."""
+    t = str(text or "")
+    if key:
+        t = t.replace(key, "<key>")
+    return re.sub(r"AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z._-]{20,}", "<key>", t)
+
+
 def _refuses_output_cap(status, text) -> bool:
     """A 400 about the output cap, in either spelling Google uses."""
     t = (text or "").lower()
@@ -59,7 +82,10 @@ def output_token_limit(model: str = "gemini-4-argon", api_key: Optional[str] = N
                        get: Optional[Callable[..., Any]] = None, timeout: float = 60) -> Optional[int]:
     """The model's own output limit (`outputTokenLimit` of GET models/MODEL), or
     None when it cannot be read."""
-    key = api_key if api_key is not None else os.environ.get("GEMINI_API_KEY", "")
+    try:
+        key = clean_key(api_key if api_key is not None else os.environ.get("GEMINI_API_KEY", ""))
+    except GeminiError:
+        return None
     if get is None:
         import requests
         get = requests.get
@@ -128,7 +154,7 @@ def make_ask_gemini(model: str = "gemini-4-argon", *, thinking_level: str = "hig
                     post: Optional[Callable[..., Any]] = None, sleep: Callable[[float], None] = time.sleep,
                     cache_only: bool = False):
     """`ask(prompt, images) -> str` on Gemini. `post` and `sleep` are for tests."""
-    key = api_key if api_key is not None else os.environ.get("GEMINI_API_KEY", "")
+    key = clean_key(api_key if api_key is not None else os.environ.get("GEMINI_API_KEY", ""))
     if not key and not cache_only:
         raise GeminiError("no Gemini key: set GEMINI_API_KEY (the job reads it from $VINE_HOME/gemini_key)")
     if post is None:
@@ -176,7 +202,7 @@ def make_ask_gemini(model: str = "gemini-4-argon", *, thinking_level: str = "hig
                          headers={"x-goog-api-key": key, "Content-Type": "application/json"})
                 status, text = r.status_code, r.text
             except Exception as e:                                # noqa: BLE001
-                status, text = None, type(e).__name__ + ": " + str(e)[:300]
+                status, text = None, type(e).__name__ + ": " + scrub(str(e), key)[:300]
             if status == 200:
                 break
             if _refuses_output_cap(status, text) and state["max_tokens"] > fallback_max_tokens:
@@ -192,7 +218,7 @@ def make_ask_gemini(model: str = "gemini-4-argon", *, thinking_level: str = "hig
                 after = _wait_asked(r, text)
                 sleep(min(600.0, max(wait, after)))
                 continue
-            raise GeminiError(f"Gemini answered {status} after {tries} tries: {(text or '')[:800]}")
+            raise GeminiError(f"Gemini answered {status} after {tries} tries: {scrub(text, key)[:800]}")
 
         data = r.json()
         got = read_response(data)

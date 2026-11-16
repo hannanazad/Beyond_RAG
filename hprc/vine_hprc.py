@@ -751,8 +751,8 @@ def _stage_parse_gemini(R: Run) -> int:
     say(f"{GEMINI_MODEL}: the model entry gives an output limit of {limit or 'nothing readable'}; "
         f"asking with {cap} (thinking included)")
     # the probe uses the real settings (thinking level and cap), with no cache
-    probe = gc.make_ask_gemini(GEMINI_MODEL, thinking_level=GEMINI_THINKING, max_tokens=cap)
     try:
+        probe = gc.make_ask_gemini(GEMINI_MODEL, thinking_level=GEMINI_THINKING, max_tokens=cap)
         reply = probe('Reply with this JSON object and nothing else: {"ok": true}', [])
     except Exception as e:                                       # noqa: BLE001
         say(f"STOPPED: the Gemini probe failed: {e}")
