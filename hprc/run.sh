@@ -25,6 +25,12 @@
 #                The execute stage stops before any checker call if the plans hold
 #                more than VINE_MAX_CHECKS checks (default 2000, about $52).
 #
+#   VINE_PARSER=gemini VINE_QUESTIONS=FILE bash hprc/run.sh ACCOUNT 1 parse
+#   the Gemini test (gemini_test branch only): Gemini 4 Argon writes the plans over
+#                Google's API (no GPU used), the Sonnet checkers as usual; parse and
+#                execute only, in a run folder of its own (name ending _gemini4argon).
+#                The key is read from $SCRATCH/vine/gemini_key.
+#
 #   retrieval : 1 A100, the retrieval check on 154 DEV cases (the gate) + Kq
 #   parse     : GPUS A100s, one parser server on each, the plans
 #   execute   : 1 A100, the checkers (Anthropic API) + the answers
@@ -62,6 +68,19 @@ if [ "$FIRST" = repeat ]; then
     [[ "$REPEAT" =~ ^[A-Za-z0-9_-]{1,40}$ ]] || { echo "usage: bash hprc/run.sh ACCOUNT GPUS repeat NAME   (NAME: letters, digits, - and _ only)"; exit 1; }
     [ -z "${VINE_QUESTIONS:-}" ] || { echo "a repeat run makes the DEV plans only -- unset VINE_QUESTIONS first"; exit 1; }
 fi
+PARSER="$(printf '%s' "${VINE_PARSER:-}" | tr '[:upper:]' '[:lower:]')"
+case "$PARSER" in ""|qwen|gemini) ;; *) echo "VINE_PARSER must be qwen or gemini (or unset)"; exit 1 ;; esac
+if [ "$PARSER" = gemini ]; then
+    case "$FIRST" in parse|execute) ;; *)
+        echo "the Gemini test starts at parse or execute: VINE_PARSER=gemini VINE_QUESTIONS=FILE bash hprc/run.sh ACCOUNT 1 parse"
+        exit 1 ;; esac
+    [ -n "${VINE_QUESTIONS:-}" ] && [ -f "${VINE_QUESTIONS:-}" ] || { echo "set VINE_QUESTIONS to the questions file first (an absolute path)"; exit 1; }
+    case "$VINE_QUESTIONS" in /*) ;; *) echo "VINE_QUESTIONS must be an absolute path"; exit 1 ;; esac
+fi
+if [ "$PARSER" != gemini ]; then
+    echo "NOTE: this checkout (gemini_test branch) runs the Gemini test only. Without VINE_PARSER=gemini"
+    echo "      in front of the command, every job it submits stops at once and changes nothing."
+fi
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$REPO/hprc/env.sh"
 
@@ -72,7 +91,14 @@ if [ -z "$REPEAT$PROBE" ] && [ ! -s "$VINE_HOME/anthropic_key" ] && [ -z "${ANTH
     echo '  read -rs -p "Anthropic key: " K; echo; printf "%s" "$K" > $SCRATCH/vine/anthropic_key; chmod 600 $SCRATCH/vine/anthropic_key; unset K'
     exit 1
 fi
+if [ "$PARSER" = gemini ] && [ ! -s "$VINE_HOME/gemini_key" ] && [ -z "${GEMINI_API_KEY:-}" ]; then
+    echo "the Gemini key is missing; save it once with (it asks for the key, it is not shown):"
+    echo '  read -rs -p "Gemini key: " K; echo; (umask 077; printf "%s" "$K" > $SCRATCH/vine/gemini_key); chmod 600 $SCRATCH/vine/gemini_key; unset K'
+    exit 1
+fi
 [ "$NGPU" -ge 1 ] && [ "$NGPU" -le 10 ] || { echo "GPUS must be 1 to 10"; exit 1; }
+# the Gemini parse uses no GPU: one A100 only, because the gpu partition needs one
+[ "$PARSER" != gemini ] || NGPU=1
 CPUS=$(( NGPU * 4 )); MEM=$(( NGPU * 24 + 16 )); [ "$MEM" -le 240 ] || MEM=240
 
 cd "$REPO"
@@ -81,7 +107,7 @@ LOG="$VINE_HOME/logs"; mkdir -p "$LOG"
 # shell can never turn a normal run into a repeat run
 # (the pages run's settings too: empty for any other run)
 EXPORT="ALL,VINE_REPO=$REPO,VINE_QUESTIONS=${VINE_QUESTIONS:-},VINE_PAGES_FILE=$PAGES_FILE,VINE_PAGES=$PAGES"
-EXPORT="$EXPORT,VINE_MAX_CHECKS=${VINE_MAX_CHECKS:-},VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
+EXPORT="$EXPORT,VINE_MAX_CHECKS=${VINE_MAX_CHECKS:-},VINE_PARSER=$PARSER,VINE_REPEAT=$REPEAT,VINE_PROBE=$PROBE"
 dep=()
 submit() {   # stage gpus cpus mem time
     local id
@@ -121,7 +147,11 @@ if [ -n "$REPEAT" ]; then
     echo "when done  : $SCRATCH/vine/envs/retrieval/bin/python hprc/compare_plans.py $REPEAT"
     exit 0
 fi
-echo "submitting (account $ACCT, $NGPU GPUs for the parser), from the $FIRST stage:"
+if [ "$PARSER" = gemini ]; then
+    echo "submitting the GEMINI TEST (account $ACCT): plans by Gemini 4 Argon, checks by Sonnet, from the $FIRST stage:"
+else
+    echo "submitting (account $ACCT, $NGPU GPUs for the parser), from the $FIRST stage:"
+fi
 [ -z "$PAGES_FILE" ] || echo "  pages run: the top $PAGES pages of each question in $PAGES_FILE"
 started=0
 for st in retrieval parse execute; do

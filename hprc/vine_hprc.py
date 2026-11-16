@@ -76,6 +76,12 @@ PIN_SHA = hashlib.sha256((PIN_DIR / "sitecustomize.py").read_bytes()).hexdigest(
 ENGINE = f"vllm {VLLM_VERSION} + pin_tuning {PIN_SHA}"
 SEED, EFFORT = 42, "xhigh"
 GPU_UTIL = 0.90
+# gemini_test branch: VINE_PARSER=gemini makes Gemini 4 Argon (Google's API) write the plans
+# instead of Qwen, with the same instructions word for word. Its plans, its saved replies and
+# its checker replies live in a run folder of their own (name ending _gemini4argon), so
+# nothing of the Qwen runs is read for the plans or written. Unset (or "qwen"): as before.
+GEMINI_MODEL, GEMINI_THINKING, GEMINI_MAX_TOKENS = "gemini-4-argon", "high", 65536
+GEMINI_WORKERS, GEMINI_TAG = 8, "gemini4argon"
 # the checkers, as in the notebook
 CHECKER_MODEL, CHECKER_EFFORT, CHECKER_MAX_TOKENS = "claude-sonnet-5-5", "high", 32000
 MAX_IMAGES = 4
@@ -177,6 +183,15 @@ class Run:
                              "page_evidence_code_sha256": code,
                              "page_retriever": m.get("method"), "page_retriever_model": m.get("model_id"),
                              "page_retriever_commit": m.get("model_commit_loaded")}
+        self.parser = os.environ.get("VINE_PARSER", "").strip().lower() or "qwen"
+        assert self.parser in ("qwen", "gemini"), f"VINE_PARSER={self.parser!r}: use qwen or gemini"
+        self.checker_cache = self.runs / "checker_cache"
+        if self.parser == "gemini":
+            assert not (self.pages or self.repeat or self.probe), \
+                "the Gemini test is a plain run: no pages, repeat or probe -- unset them"
+            self.run_dir = self.run_dir.with_name(f"{self.run_dir.name}_{GEMINI_TAG}")
+            self.model_cache = self.run_dir / "model_cache"
+            self.checker_cache = self.run_dir / "checker_cache"
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.plans_file = self.run_dir / "plans.json"
         self.job = os.environ.get("SLURM_JOB_ID", "nojob")
@@ -191,6 +206,9 @@ class Run:
                                        str(self.settings["page_retriever_commit"] or "")[:8]) if x)
             say(f"PAGES RUN: {self.settings['evidence']} (sha256 {self.settings['pages_file_sha256'][:12]}, "
                 f"{who}), evidence file {self.kq_file.name}")
+        if self.parser == "gemini":
+            say(f"GEMINI TEST: plans by {GEMINI_MODEL} (thinking {GEMINI_THINKING}), checks by {CHECKER_MODEL}; "
+                f"Kq read from {self.kq_file.name} (read only)")
         say(f"run folder: {self.run_dir}")
 
 
@@ -490,7 +508,7 @@ def stage_parse(R: Run) -> int:
         return 1
     lock.write_text(R.job)
     try:
-        return _stage_parse(R)
+        return _stage_parse_gemini(R) if R.parser == "gemini" else _stage_parse(R)
     finally:
         try:
             if lock.read_text().strip() == R.job:
@@ -686,6 +704,157 @@ def _stage_parse(R: Run) -> int:
     return 0
 
 
+def _stage_parse_gemini(R: Run) -> int:
+    """The parse stage of the Gemini test: the same parser, instructions, repair
+    loop and plan records as _stage_parse, with Gemini 4 Argon answering over
+    Google's API instead of the Qwen servers. No GPU is used; GEMINI_WORKERS
+    plans are made at a time. Every reply is saved in this run's own model cache."""
+    from mrag.kg_vine import VineKG
+    from mrag.vine import table_data, gemini_client as gc
+    from mrag.vine.parser import exceptions_from_graph, make_semantic_parser
+    from mrag.vine.compile import instantiate
+
+    kq = vr.load_json(R.kq_file, {})
+    no_kq = [q for q in R.questions if q not in kq or kq[q].get("question") != R.questions[q]]
+    assert not no_kq, (f"no Kq for {no_kq[:5]} in {R.kq_file.name}: the Gemini test only reads Kq "
+                       "the Qwen runs made, for the same questions")
+    records = vr.load_json(R.plans_file, {})
+
+    def needs(q: str) -> bool:
+        # as for Qwen, and also any plan whose Gemini call failed (a 400 too: it comes
+        # from a setting, so after a fix the plan must be asked for again)
+        rec = records.get(q)
+        return vr.plan_needs_retry(rec, R.questions[q]) or bool(
+            rec and rec.get("outcome") == "failed" and "the model call failed" in json.dumps(rec.get("problems") or []))
+
+    to_parse = [q for q in R.questions if needs(q)]
+    say(f"plans: {len(R.questions) - len(to_parse)} already made (from {R.plans_file}), {len(to_parse)} to make")
+    if not to_parse:
+        say("PARSE STAGE FINISHED (nothing to do)")
+        return 0
+    if not os.environ.get("GEMINI_API_KEY"):
+        say("STOPPED: no Gemini key. Save it once in $SCRATCH/vine/gemini_key (see the run steps).")
+        return 1
+
+    kg = VineKG(CFG.vine_graph, figures_path=CFG.figures_jsonl, sign_codes_path=CFG.sign_codes_json,
+                items_path=CFG.vine_items, tables_path=CFG.tables_jsonl,
+                table_rows_in_closure=getattr(CFG, "closure_table_rows", 15))
+    tables = {}
+    for t in table_data.load(Path(CFG.tables_jsonl)):
+        tables.setdefault(t.table_id, []).append(t)
+
+    # the output cap: 65,536 (Google's docs for a synchronous call); the model entry may say
+    # less. The probe below asks with 65,536 and the client falls back to 32,768 only if the
+    # API refuses it, so the cap is what the API accepts, not what the entry says.
+    limit = gc.output_token_limit(GEMINI_MODEL)
+    cap = GEMINI_MAX_TOKENS
+    say(f"{GEMINI_MODEL}: the model entry gives an output limit of {limit or 'nothing readable'}; "
+        f"asking with {cap} (thinking included)")
+    # the probe uses the real settings (thinking level and cap), with no cache
+    probe = gc.make_ask_gemini(GEMINI_MODEL, thinking_level=GEMINI_THINKING, max_tokens=cap)
+    try:
+        reply = probe('Reply with this JSON object and nothing else: {"ok": true}', [])
+    except Exception as e:                                       # noqa: BLE001
+        say(f"STOPPED: the Gemini probe failed: {e}")
+        return 1
+    cap = int((probe.last or {}).get("max_tokens") or cap)       # after a refused cap, the smaller one
+    version = (probe.last or {}).get("model_version")
+    say(f"probe reply: {reply[:60]!r} | {(probe.last or {}).get('finish_reason')} | model version {version} "
+        f"| cap {cap}")
+    if '"ok"' not in reply:
+        say("STOPPED: Gemini answered, but not with the JSON asked for. Send this log.")
+        return 1
+
+    n = min(GEMINI_WORKERS, len(to_parse))
+    vr.save_json(R.run_dir / "parse_manifest.json", {
+        "commit": R.commit, "parser": "gemini", "model": GEMINI_MODEL, "model_version": version,
+        "thinking_level": GEMINI_THINKING, "max_tokens": cap, "model_output_limit": limit,
+        "sampling": "none sent (Gemini 4 takes no temperature, top_p or seed)", "workers": n,
+        "max_attempts": 3, "fallback": False,
+        "instructions": "the changes_104 instructions, word for word (the ones the Qwen runs use)",
+        "instructions_sha256": R.instructions_sha, "kq_file": R.kq_file.name,
+        "retrieval_settings": R.settings, "model_cache": str(R.model_cache),
+        "machine": "Grace", "slurm_job": R.job})
+
+    order = [q for q in R.dev_ids if q in to_parse] + [q for q in to_parse if q not in R.dev_ids]
+    work: "queue.Queue[str]" = queue.Queue()
+    for q in order:
+        work.put(q)
+    lock = threading.Lock()
+    done = [0]
+
+    def worker(i: int) -> None:
+        ask = gc.make_ask_gemini(GEMINI_MODEL, thinking_level=GEMINI_THINKING, max_tokens=cap,
+                                 cache_dir=str(R.model_cache))
+        parse = make_semantic_parser(ask, max_attempts=3, fall_back_to_baseline=False,
+                                     check_ref=kg.is_known_citation, tables=tables,
+                                     exceptions_of=exceptions_from_graph(kg))
+        while True:
+            try:
+                qid = work.get_nowait()
+            except queue.Empty:
+                return
+            v = kq[qid]
+            t0 = time.time()
+            try:
+                spec, rep = parse(v["question"], v["chunks"], "", v["figures"])
+                net = instantiate(spec)[0] if spec is not None else None
+                rec = pc.make_record(qid, v["question"], v, spec, rep, net, time.time() - t0,
+                                     case=R.case.get(qid))
+            except Exception as e:                               # noqa: BLE001
+                rec = vr.failed_plan_record(qid, v["question"], f"the parse stopped: {e!r}", kq=v)
+            rec["api_worker"] = i
+            rec["plan_writer"] = GEMINI_MODEL
+            with lock:
+                records[qid] = rec
+                vr.save_json(R.plans_file, records)
+                done[0] += 1
+                s = rec["stats"]
+                say(f"  {done[0]:2d}/{len(order)} [api{i}] {qid:26s} {rec['outcome']:19s} attempts {rec['attempts']} "
+                    f"checks {s.get('obligations', 0):2d} merges {s.get('merges', 0)} | {rec['seconds']:5.0f}s "
+                    f"| finish {[c.get('finish_reason') for c in rec['calls']]} "
+                    f"| prompt tokens {[c.get('prompt_tokens') for c in rec['calls']]} "
+                    f"| thinking tokens {[(c.get('usage') or {}).get('thinking_tokens') for c in rec['calls']]}")
+
+    say(f"making {len(order)} plans with {GEMINI_MODEL}, {n} at a time ...")
+    t_all = time.time()
+    workers = [threading.Thread(target=worker, args=(i,)) for i in range(n)]
+    for t in workers:
+        t.start()
+    for t in workers:
+        t.join()
+    say(f"all plans in {(time.time() - t_all) / 60:.0f} minutes")
+
+    dev_plans = [records[q] for q in R.dev_ids if q in records]
+    if dev_plans:
+        say("\n=== DEV plans ===")
+        pc.print_summary(pc.summarize(dev_plans))
+    others = [records[q] for q in R.questions if q not in R.dev_ids and q in records]
+    if R.answer_set:
+        say(f"{R.set_name} plans: " + ", ".join(f"{k} {sum(1 for r in others if r['outcome'] == k)}"
+                                              for k in ("valid first time", "valid after repair", "valid, open problems",
+                                                        "failed")))
+    usage = [c.get("usage") or {} for r in records.values() if r.get("plan_writer") == GEMINI_MODEL
+             for c in r.get("calls") or [] if not c.get("cached")]
+    tin = sum(int(u.get("prompt_tokens") or 0) for u in usage)
+    tout = sum(int(u.get("completion_tokens") or 0) for u in usage)
+    say(f"Gemini tokens this job and before (calls not read from the cache): {tin:,} in, {tout:,} out "
+        f"(thinking included); at $2 / $10 per million about ${tin * 2e-6 + tout * 1e-5:.2f}")
+    for r in dev_plans:
+        say()
+        pc.print_plan(r)
+    broken = [q for q in R.questions if needs(q)]
+    if broken:
+        first = next((records[q].get("problems") for q in broken if records.get(q)), "")
+        say(f"\nSTOPPED: {len(broken)} plans broke (the Gemini call or the run, not the plan): {broken}. "
+            f"First problem: {json.dumps(first)[:600]}\n"
+            f"Submit the parse stage again (it makes only those): VINE_PARSER=gemini VINE_QUESTIONS=<the same file> bash $SCRATCH/vine_gemini/hprc/run.sh ACCOUNT 1 parse\n"
+            f"If the same plans fail every time, go on without them: the same command with execute instead of parse.")
+        return 1
+    say("\nPARSE STAGE FINISHED")
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # Stage 3: the checkers execute every plan; the answers
 # --------------------------------------------------------------------------- #
@@ -702,9 +871,10 @@ def stage_execute(R: Run) -> int:
     records = vr.load_json(R.plans_file, {})
     no_plan = [q for q in R.questions if q not in records]
     assert not no_plan, f"no plan yet for {no_plan[:5]} -- the parse stage has not finished"
-    if R.pages:
-        # the pages run shows the parser far more provisions; stop before the API if the
-        # plans grew past what was agreed (VINE_MAX_CHECKS, default 2000: about $52)
+    if R.pages or R.parser == "gemini":
+        # the pages run shows the parser far more provisions, and the Gemini test has a
+        # checker cache of its own (every check is a new paid call); stop before the API
+        # if the plans grew past what was agreed (VINE_MAX_CHECKS, default 2000: about $52)
         n_checks = sum(len((records[q].get("spec") or {}).get("obligations") or []) for q in R.questions)
         cap = os.environ.get("VINE_MAX_CHECKS", "").strip() or "2000"
         assert cap.isdigit(), f"VINE_MAX_CHECKS={cap!r}: give a whole number of checks"
@@ -712,7 +882,8 @@ def stage_execute(R: Run) -> int:
         say(f"plans: {n_checks} checks in all; limit {cap} (about ${cap * 0.026:.0f})")
         if n_checks > cap:
             say(f"STOPPED before any checker call: {n_checks} checks would cost about ${n_checks * 0.026:.0f}. "
-                f"To go ahead, submit the execute stage again with VINE_MAX_CHECKS={n_checks} set.")
+                f"To go ahead, submit the execute stage again with VINE_MAX_CHECKS={n_checks} set"
+                + (" (and VINE_PARSER=gemini, as for every job of the Gemini test)." if R.parser == "gemini" else "."))
             return 1
     assert os.environ.get("ANTHROPIC_API_KEY"), "no Anthropic key (see hprc/README.md)"
 
@@ -722,7 +893,7 @@ def stage_execute(R: Run) -> int:
     table_list = list(table_data.load(Path(CFG.tables_jsonl)))
 
     ask0 = ac.make_ask_anthropic(CHECKER_MODEL, effort=CHECKER_EFFORT, max_tokens=CHECKER_MAX_TOKENS,
-                                 cache_dir=str(R.runs / "checker_cache"))
+                                 cache_dir=str(R.checker_cache))
     reply = ask0('Reply with this JSON object and nothing else: {"ok": true}', [])
     say("text probe  :", repr(reply[:80]), "|", ask0.last["finish_reason"], "|", ask0.last["model"])
     assert '"ok"' in reply, "the API answered, but not with the JSON asked for"
@@ -769,6 +940,9 @@ def stage_execute(R: Run) -> int:
                 # is kept in answer.provenance.template_text
                 "answer_writer": CHECKER_MODEL,
                 "evidence": R.settings if R.pages else "Kq (VINE's own retrieval)",
+                "plan_writer": (f"{GEMINI_MODEL} (thinking {GEMINI_THINKING})" if R.parser == "gemini"
+                                else f"{MODEL_ID} ({EFFORT})"),
+                "checker_cache": str(R.checker_cache),
                 "machine": "FASTER", "slurm_job": R.job}
     vr.save_json(R.run_dir / f"exec_manifest_{R.commit}.json", manifest)
 
@@ -886,6 +1060,10 @@ def main() -> int:
     say(f"=== VINE on FASTER: {args.stage} | {time.strftime('%Y-%m-%d %H:%M:%S')} | job {os.environ.get('SLURM_JOB_ID', '-')} "
         f"| node {os.uname().nodename} ===")
     R = Run()
+    if R.parser == "gemini" and args.stage not in ("parse", "execute"):
+        say(f"STOPPED: the Gemini test runs the parse and execute stages only (not {args.stage}); "
+            "it reads the Kq the Qwen runs made and never writes it")
+        return 2
     if R.repeat and args.stage != "parse":
         say(f"STOPPED: a repeat run (VINE_REPEAT={R.repeat}) makes plans only -- the parse stage, not {args.stage}")
         return 2
