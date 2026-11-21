@@ -140,14 +140,21 @@ def image_list(entry: Dict[str, Any], draft: Optional[Dict[str, Any]]) -> List[s
         for p in [p for p in (f.get("image_paths") or [f.get("image_path")]) if p]:
             if len(out) < MAX_IMAGES:
                 out.append(str(p))
+    for c in entry.get("chunks") or []:                 # whole pages that carry their picture
+        if core.is_page(c) and c.get("image_path") and len(out) < MAX_IMAGES:
+            out.append(str(c["image_path"]))
     return out
 
 
 def image_ids(entry: Dict[str, Any], paths: List[str]) -> List[str]:
+    """The evidence id of each attached image: its figure, or its page."""
     names = {}
     for f in entry.get("figures") or []:
         for p in [p for p in (f.get("image_paths") or [f.get("image_path")]) if p]:
             names[Path(str(p)).name] = str(f.get("figure_id") or Path(str(p)).stem)
+    for c in entry.get("chunks") or []:
+        if core.is_page(c) and c.get("image_path"):
+            names[Path(str(c["image_path"])).name] = str(c.get("chunk_id"))
     return [names.get(Path(p).name, Path(p).stem) for p in paths]
 
 

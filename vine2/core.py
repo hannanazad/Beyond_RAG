@@ -77,22 +77,37 @@ def fid_in_id(fid: str, piece_id: str) -> bool:
     return re.search(rf"(?<![0-9A-Za-z-]){re.escape(fid)}(?![0-9A-Za-z])", piece_id) is not None
 
 
+def is_page(c: Dict[str, Any]) -> bool:
+    """A whole manual page as one piece (vine2/visrag_pages.py: VisRAG's pages, with the
+    words printed on them and no label of any kind)."""
+    return str(c.get("source") or "") == "visrag_page"
+
+
 def evidence_index(entry: Dict[str, Any], attached: Sequence[str] = ()) -> Dict[str, Dict[str, Any]]:
-    """id -> {"text", "kind", "section", "ordinal", "title", "figure", "image"} for every
-    piece and every listed figure or table. A figure's text is its caption plus the words
-    of its table rows and figure readings among the pieces, so a quote from a printed
-    table can be found. "image" is True only for a figure whose image was attached
-    (`attached`: figure ids), the only case where a value may be read from a picture."""
+    """id -> {"text", "kind", "section", "ordinal", "title", "figure", "image", "page"} for
+    every piece and every listed figure or table. A figure's text is its caption plus the
+    words of its table rows and figure readings among the pieces, so a quote from a printed
+    table can be found. "image" is True only for a figure or a page whose image was attached
+    (`attached`: their ids), the only case where a value may be read from a picture. A page
+    piece ("page": True) has no type: its kind is "Page"."""
     idx: Dict[str, Dict[str, Any]] = {}
+    shown = set(attached)
     for c in entry.get("chunks") or []:
         cid = str(c.get("chunk_id") or "")
         if not cid:
+            continue
+        if is_page(c):
+            raw = str(c.get("text") or "")
+            # a word broken at a line end: matched with the hyphen joined ("require-|ments") or kept
+            # ("right-of-|way"), since the PDF does not say which
+            match = [re.sub(r"-[ \t]*\n\s*", "", raw), re.sub(r"-[ \t]*\n\s*", "-", raw)]
+            idx[cid] = {"text": raw, "match": match, "kind": "Page", "section": "", "ordinal": None,
+                        "title": "", "authority": None, "figure": False, "image": cid in shown, "page": True}
             continue
         idx[cid] = {"text": piece_text(c), "kind": str(c.get("content_type") or "Support"),
                     "section": str(c.get("section_id") or ""), "ordinal": c.get("ordinal"),
                     "title": str(c.get("section_title") or ""), "authority": c.get("authority"),
                     "figure": False, "image": False}
-    shown = set(attached)
     for f in entry.get("figures") or []:
         fid = str(f.get("figure_id") or "")
         if not fid:
@@ -108,12 +123,18 @@ def evidence_index(entry: Dict[str, Any], attached: Sequence[str] = ()) -> Dict[
 def evidence_block(entry: Dict[str, Any]) -> str:
     """All of the question's evidence, each piece whole and labelled with its id, grouped as
     the writer saw it (Standard, Guidance, Option, Support, then the rest), then the list
-    of figures and tables."""
+    of figures and tables. Whole pages come first, in the order given, each as its id and
+    its words."""
     groups: Dict[str, List[Dict[str, Any]]] = {}
+    pages = [c for c in entry.get("chunks") or [] if is_page(c)]
     for c in entry.get("chunks") or []:
-        groups.setdefault(str(c.get("content_type") or "Support"), []).append(c)
+        if not is_page(c):
+            groups.setdefault(str(c.get("content_type") or "Support"), []).append(c)
     order = list(GROUP_ORDER) + [g for g in groups if g not in GROUP_ORDER]
     out: List[str] = []
+    if pages:
+        out.append("=== Pages ===")
+        out += [f"[{c.get('chunk_id')}]\n{str(c.get('text') or '').strip()}\n" for c in pages]
     for g in order:
         if not groups.get(g):
             continue
@@ -181,12 +202,19 @@ def verify_quote(quote: str, source_id: str, idx: Dict[str, Dict[str, Any]]) -> 
     if not parts or words < MIN_QUOTE_WORDS or (len(parts) > 1 and min(len(p.split()) for p in parts) < MIN_PART_WORDS):
         return {"verified": False, "id": source_id, "why": "quote too short"}
     sid = str(source_id or "").strip().strip("[]")
-    if sid in idx and _found_in(parts, idx[sid]["text"]):
+
+    def found(v: Dict[str, Any]) -> bool:
+        return any(_found_in(parts, t) for t in (v.get("match") or [v["text"]]))
+    if sid in idx and found(idx[sid]):
         return {"verified": "text", "id": sid, "why": ""}
-    others = [k for k, v in idx.items() if k != sid and not v.get("figure") and _found_in(parts, v["text"])]
+    others = [k for k, v in idx.items() if k != sid and not v.get("figure") and found(v)]
     if len(others) == 1:
         return {"verified": "text", "id": others[0], "why": f"found under {others[0]}, not {sid or '(no id)'}"}
     if sid in idx and idx[sid].get("image"):
+        if idx[sid].get("page"):          # a page's picture shows its words: a quote mostly of them is a misquote
+            qw = _content(" ".join(parts))
+            if qw and len(qw & _content(idx[sid]["text"])) >= 0.5 * len(qw):
+                return {"verified": False, "id": sid, "why": "the quote is not in this page's words"}
         return {"verified": "image", "id": sid, "why": "read from the attached image; code cannot check it"}
     if sid not in idx:
         return {"verified": False, "id": sid, "why": "this id is missing from the question's evidence"}
@@ -550,6 +578,14 @@ Reply with one JSON object only, no other text:
  "additions": [{"text": "...", "sources": [{"id": "...", "quote": "..."}], "reason": "..."}]}"""
 
 
+PAGE_RULES = """
+
+The evidence here is whole manual pages, each with its id ([Page 12]) and the words printed on
+it. A paragraph's type is the heading printed above it on the page (Standard, Guidance,
+Option, Support), and its section is the section heading above it. Quote from the page's words; a
+source id is the page's id."""
+
+
 def checker_prompt(question: str, entry: Dict[str, Any], statements: Sequence[Dict[str, Any]],
                    image_ids: Sequence[str] = (), only: Optional[Sequence[int]] = None,
                    additions: bool = True) -> str:
@@ -565,7 +601,8 @@ def checker_prompt(question: str, entry: Dict[str, Any], statements: Sequence[Di
         task = f"Check all {len(nums)} statements."
     if not additions:
         task += ' Give "additions": [] in this reply (they are asked for separately).'
-    return (f"{CHECKER_RULES}\n\n##### QUESTION\n{question.strip()}\n\n##### EVIDENCE{imgs}\n"
+    rules = CHECKER_RULES + (PAGE_RULES if any(is_page(c) for c in entry.get("chunks") or []) else "")
+    return (f"{rules}\n\n##### QUESTION\n{question.strip()}\n\n##### EVIDENCE{imgs}\n"
             f"{evidence_block(entry)}\n\n##### DRAFT ANSWER (numbered statements)\n"
             f"{numbered_answer(statements)}\n\n{task} Reply with the JSON object only.")
 
@@ -760,17 +797,49 @@ def _piece(i: str) -> str:
 
 def _verified_text(srcs: Sequence[Dict[str, Any]], idx: Dict[str, Dict[str, Any]]) -> str:
     """What a change may draw its numbers from: each text-verified piece whole, but for a
-    figure or table id only the quote (a whole table holds other rows' values)."""
+    figure or table id, or a whole page, only the quote (they hold other rows' and
+    paragraphs' values)."""
     parts = []
     for x in srcs:
         if x["verified"] == "text":
             v = idx.get(x["id"], {})
-            parts.append(x["quote"] if v.get("figure") else v.get("text", ""))
+            parts.append(x["quote"] if v.get("figure") or v.get("page") else v.get("text", ""))
     return " ".join(parts)
 
 
 def _kinds(srcs: Sequence[Dict[str, Any]], idx: Dict[str, Dict[str, Any]]) -> Set[str]:
-    return {str(idx.get(x["id"], {}).get("kind", "")).lower() for x in srcs if x["verified"] == "text"}
+    """The provision types the text-verified sources show: a piece's own type; for a whole
+    page (no type given), the force of the words its quote states ("shall": Standard, ...),
+    or Support when it states none."""
+    out: Set[str] = set()
+    for x in srcs:
+        if x["verified"] != "text":
+            continue
+        v = idx.get(x["id"], {})
+        if v.get("page"):
+            out |= _page_types(x["quote"], v)
+        else:
+            out.add(str(v.get("kind", "")).lower())
+    return out
+
+
+_PAGE_HEADING = re.compile(r"(?<![a-z])(standard|guidance|option|support)\s*:")
+
+
+def _page_types(quote: str, v: Dict[str, Any]) -> Set[str]:
+    """A whole page's type for a quote from it: the last heading ("Standard:", "Guidance:",
+    "Option:", "Support:") printed above the quote on that page (the page's own words); if
+    none is above it, the force of the words the quote states, or Support if it states none."""
+    parts = _parts(quote)
+    for t in v.get("match") or [v.get("text", "")]:
+        n = norm(t)
+        m = re.compile(rf"(?<![a-z0-9]){re.escape(parts[0])}(?![a-z0-9])").search(n) if parts else None
+        if m:
+            heads = list(_PAGE_HEADING.finditer(n, 0, m.start()))
+            if heads:
+                return {heads[-1].group(1)}
+            break
+    return {FORCE[w] for w in _stated_force(quote)} or {"support"}
 
 
 def _force_problem(new: str, old: str, srcs: Sequence[Dict[str, Any]], idx: Dict[str, Dict[str, Any]]) -> str:
@@ -788,8 +857,11 @@ def _force_problem(new: str, old: str, srcs: Sequence[Dict[str, Any]], idx: Dict
     for x in srcs:
         if x["verified"] != "text":
             continue
-        kind = str(idx.get(x["id"], {}).get("kind", "")).lower()
-        if kind in TYPE_NAMES:
+        v = idx.get(x["id"], {})
+        kind = str(v.get("kind", "")).lower()
+        if v.get("page"):
+            ok |= _page_types(x["quote"], v)
+        elif kind in TYPE_NAMES:
             ok.add(kind)
         else:
             ok |= {FORCE[w] for w in _stated_force(x["quote"])}
@@ -839,7 +911,7 @@ def _correction_problem(original: str, correction: str, srcs: Sequence[Dict[str,
         # "not required" backed by an Option or a Guidance: the evidence shows it is no Standard
         kinds = _kinds(srcs, idx)
         about = any(len(_content(x["quote"]) & _content(correction)) >= 3 for x in srcs if x["verified"] == "text"
-                    and str(idx.get(x["id"], {}).get("kind", "")).lower() in ("option", "guidance"))
+                    and _kinds([x], idx) & {"option", "guidance"})
         not_required = (bool(added) and _negs(correction) > _negs(original)
                         and all(re.search(r"\b(?:required|mandatory|needed)$", a) for a in added)
                         and about and "standard" not in kinds)

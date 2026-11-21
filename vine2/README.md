@@ -95,6 +95,32 @@ To check only some questions in stage B, put `V2_ONLY=VQ001,VQ002` in front of t
 | `.../manifest.json` | settings, fingerprints, totals |
 | `.../checker_cache/` | every checker reply, so a run can be repeated exactly |
 
+## On VisRAG's pages instead of VINE's evidence
+
+The same pipeline, with VisRAG's retrieval in place of VINE's, to test VisRAG's retrieval inside VINE. **Nothing of VINE's goes in**: no VINE piece, label, type or section number.
+
+```
+bash vine2/run_vine2_visrag_grace.sh 132692299628 $SCRATCH/questions150/questions_150.json
+```
+
+| Job | What |
+|---|---|
+| 1. VisRAG (1 A100) | VisRAG-Ret ranks the manual's pages (`compare40/visrag_retrieve.py`, unchanged; the page vectors of the 40-question run are reused). Then `vine2/visrag_pages.py` takes the top 20 pages of each question: each page is one piece, `Page X`, holding the words printed on it, read straight from the manual PDF. The first 4 pages also go as pictures. |
+| 2. writer (2 A100s) | Qwen3.8-27B answers from those pages (`vine2/run_qwen_pages.py`: `compare40/run_qwen_rag.py` unchanged, with `vine2/pages_writer.py` as the writer). GEMS-RAG's prompt, each page whole, cited as "Page X". |
+| 3. checker (CPU) | `vine2/check_job.slurm` and `vine2/check.py`, as for VINE's evidence. |
+
+The page words are there so the code can check Sonnet's quotes word for word: they are the same words as on the page pictures.
+
+**How the code checks work on pages** (pages carry no labels):
+- a paragraph's type ("shall needs a Standard", and the types a fix may name) is the heading printed above the quote ("Standard:", "Guidance:", "Option:", "Support:") on that page; with no heading above it, the quote's own words (shall / should / may);
+- numbers in a fix must be in the quote itself, not just somewhere on the page;
+- a word broken at a line end in the PDF is matched both joined and with its hyphen;
+- one page is one piece, so two paragraphs on the same page count as one source for the "two pieces" rule (stricter than with VINE's evidence, where each paragraph is a piece).
+
+**Output:** `$SCRATCH/Beyond_RAG/vine2_runs/questions_150_visrag_p20/` (grade `answers_final_clean.md`). The page evidence is `$SCRATCH/Beyond_RAG/compare40_runs/visrag/pages_questions_150_p20.json`, and the drafts are `.../vine_rag/answers_qwen_questions_150_visrag_p20.jsonl`. The run on VINE's evidence is not touched.
+
+Tests: `python3 tests/test_vine2_pages.py`.
+
 ## What it does not promise
 
 "Checked" means a model compared the statement with the quoted manual text, and code confirmed the quote is really there. It is not a proof. A statement can be checked against the wrong paragraph, and the evidence can miss a paragraph that retrieval did not find. The code checks above limit the damage of a wrong check; they cannot rule it out.
@@ -103,6 +129,7 @@ To check only some questions in stage B, put `V2_ONLY=VQ001,VQ002` in front of t
 
 ```
 python3 tests/test_vine2.py
+python3 tests/test_vine2_pages.py
 ```
 
 The tests use made-up evidence and stand-in models: no GPU, no API, no data.
