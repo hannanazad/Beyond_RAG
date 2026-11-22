@@ -349,7 +349,10 @@ assert "pinned m3docrag_retrieve.py" in setup and "pinned vidorag_ocr.py" in set
 for mod in (m3, vo, rr):
     assert len(mod.PINNED) == 40 and all(ch in "0123456789abcdef" for ch in mod.PINNED)
 assert vr.PINNED == vo.PINNED
-print("11. the pinned code commits: one place each, read by the setup")
+assert "need_files" in setup and 'make_poppler' in setup and '"torch==2.6.0" "torchvision==0.21.0"' in setup
+for job in ("vine2/vis_retrieve_job.slurm", "vine2/vidorag_ocr_job.slurm"):
+    assert 'export PATH="$VINE_HOME/vis/poppler_bin:$PATH"' in (ROOT / job).read_text(), job
+print("11. the pinned code commits: one place each, read by the setup; file-limit check; poppler wrappers")
 # ---- 12. the review's safeguards: clean model loads, reused files tied to their inputs -------
 import logging  # noqa: E402
 import warnings  # noqa: E402

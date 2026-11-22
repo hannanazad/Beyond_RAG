@@ -22,7 +22,9 @@ if [ -n "$(git -C "$REPO" status --porcelain --untracked-files=no -- vine2)" ]; 
 fi
 echo "code sha256: vidorag_ocr.py $(sha256sum "$REPO/vine2/vidorag_ocr.py" | cut -c1-12)" \
      "| ViDoRAG $(git -C "$VINE_HOME/ext/vidorag" rev-parse --short=12 HEAD)"
-command -v pdftoppm >/dev/null || { echo "STOPPED: pdftoppm (poppler) is missing on this node"; exit 1; }
+export PATH="$VINE_HOME/vis/poppler_bin:$PATH"         # Grace's poppler module, for pdf2image (vine2/vis_setup.sh)
+[ "$(command -v pdftoppm)" = "$VINE_HOME/vis/poppler_bin/pdftoppm" ] && pdftoppm -v >/dev/null 2>&1 \
+    || { echo "STOPPED: poppler does not run on this node: run  bash vine2/vis_setup.sh vidorag"; exit 1; }
 echo "poppler: $(pdftoppm -v 2>&1 | head -1)"
 "$VINE_HOME/envs/vidorag_ocr/bin/python" -I -c "import cv2, fastdeploy" >/dev/null \
     || { echo "STOPPED: the OCR libraries do not load on this node (cv2 or fastdeploy)"; exit 1; }

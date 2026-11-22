@@ -54,6 +54,9 @@ REV="$(sed -n 's/^REVISION = "\([0-9a-f]*\)"$/\1/p' "$REPO/hprc/vine_hprc.py")"
 if [ "$SYSTEM" = vidorag ]; then
     [ -x "$VINE_HOME/envs/vidorag_ocr/bin/python" ] || { echo "ViDoRAG's OCR environment is missing: run  bash vine2/vis_setup.sh vidorag"; exit 1; }
 fi
+if [ "$SYSTEM" != regionrag ]; then
+    [ -x "$VINE_HOME/vis/poppler_bin/pdftoppm" ] || { echo "poppler for pdf2image is not set up: run  bash vine2/vis_setup.sh $SYSTEM"; exit 1; }
+fi
 if [ "$SYSTEM" = regionrag ]; then
     [ -s "$MRAG_BASE_DIR/compare40_runs/visrag/pages/page_0001.png" ] || { echo "the VisRAG run's page pictures are missing"; exit 1; }
 fi

@@ -41,7 +41,9 @@ echo "code sha256: ${V2_SYSTEM}_retrieve.py $(sha256sum "$REPO/vine2/${V2_SYSTEM
      "| $V2_SYSTEM code $(git -C "$CODE" rev-parse --short=12 HEAD)"
 nvidia-smi -L || true
 if [ "$V2_SYSTEM" = m3docrag ]; then
-    command -v pdftoppm >/dev/null || { echo "STOPPED: pdftoppm (poppler) is missing on this node"; exit 1; }
+    export PATH="$VINE_HOME/vis/poppler_bin:$PATH"     # Grace's poppler module, for pdf2image (vine2/vis_setup.sh)
+    [ "$(command -v pdftoppm)" = "$VINE_HOME/vis/poppler_bin/pdftoppm" ] && pdftoppm -v >/dev/null 2>&1 \
+        || { echo "STOPPED: poppler does not run on this node: run  bash vine2/vis_setup.sh m3docrag"; exit 1; }
     echo "poppler: $(pdftoppm -v 2>&1 | head -1)"
 fi
 cd "$REPO"
