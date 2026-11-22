@@ -174,8 +174,18 @@ case "$SYSTEM" in
     make_env vidorag 3.12 "import sys; assert sys.version_info[:2] == (3, 12); import torch, transformers, colpali_engine, sklearn, llama_index.core, llama_index.embeddings.huggingface, llama_index.readers.file; print('torch', torch.__version__, '| transformers', transformers.__version__)" inst_vid
     OP="$VINE_HOME/envs/vidorag_ocr/bin/python"
     inst_ocr() {
-        uv pip install -q --python "$OP" --find-links https://www.paddlepaddle.org.cn/whl/fastdeploy.html \
+        # FastDeploy 1.0.7, its last release, from PyPI (Paddle's own download server now
+        # refuses the wheel: 403)
+        uv pip install -q --python "$OP" --index-url https://pypi.org/simple \
             "fastdeploy-python==1.0.7" "numpy<2" "pillow" "pdf2image==1.17.0" "tqdm"
+        # OpenCV needs libGL, which a cluster may not have: then the same version without
+        # its window code (the same cv2 for reading pictures)
+        if ! "$OP" -I -c "import cv2" 2>/dev/null; then
+            local cv; cv="$("$OP" -I -c "from importlib.metadata import version; print(version('opencv-python'))")"
+            echo "OpenCV does not load here (no libGL): using opencv-python-headless $cv instead"
+            uv pip uninstall -q --python "$OP" opencv-python
+            uv pip install -q --python "$OP" --index-url https://pypi.org/simple "opencv-python-headless==$cv"
+        fi
     }
     make_env vidorag_ocr 3.10 "import sys; assert sys.version_info[:2] == (3, 10); import fastdeploy, cv2, numpy, PIL, pdf2image; print('fastdeploy imports')" inst_ocr
     OCRM="$VINE_HOME/ext/vidorag_ocr_models"
