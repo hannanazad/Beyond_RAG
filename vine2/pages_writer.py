@@ -7,8 +7,9 @@ place of compare40/run_vine_rag.py), once a question, with the same options:
         --models Qwen/Qwen3.8-27B-FP8 --only VQ001 --tag TAG --out DIR \
         --local-server URL --local-max-len N
 
-The evidence is vine2/visrag_pages.py's file: VisRAG's top pages for the question, each the
-words printed on it, the first pages also as pictures. Nothing of VINE's.
+The evidence is vine2/visrag_pages.py's file (VisRAG's top pages) or vine2/vis_evidence.py's
+(M3DocRAG's or ViDoRAG's pages, RegionRAG's regions): each piece the words printed on it, the
+first ones also as pictures. Nothing of VINE's.
 
 The answer is ONE call to the answer model with GEMS-RAG's answer prompt (the few-shot style
 of the untouched copy in gems_rag/), as in compare40/run_vine_rag.py and run_visrag.py. The
@@ -17,6 +18,8 @@ prompt is GEMS-RAG's own, with two differences that live in this file only:
     pieces by type and cut each to 1,400 characters; a page has no type);
   - the allowed citations are the pages, "Page X" (GEMS-RAG's own form for a page).
 The page pictures are passed as GEMS-RAG passes pages ("[Image N] Page X (full page view)").
+A region's picture (RegionRAG) is a part of a page, so it is named so: "[Image N] Page X
+(region k) (part of the page)"; for pages the prompt is unchanged.
 
 Output: answers_<tag>.jsonl in --out, one line per answer, in the format of
 run_vine_rag.py's records (so run_qwen_rag.py merges them and vine2/check.py reads them).
@@ -39,6 +42,10 @@ REPO = HERE.parent
 GEMS = REPO / "gems_rag"
 C40 = REPO / "compare40"
 MODELS = "Qwen/Qwen3.8-27B-FP8"
+# the evidence sources this writer takes (the same as vine2/core.py PAGE_SOURCES), and the
+# name each run's records carry
+SYSTEMS = {"visrag_page": "vine2_visrag_pages", "m3docrag_page": "vine2_m3docrag_pages",
+           "vidorag_page": "vine2_vidorag_pages", "regionrag_region": "vine2_regionrag_regions"}
 
 
 def now() -> str:
@@ -59,16 +66,26 @@ def page_cites(chunks, used_visuals) -> list:
     return cites
 
 
-def pages_vlm(VLM):
+def region_visual_lines(used_visuals) -> list:
+    """The picture lines for regions: GEMS-RAG's page line, named as a part of the page."""
+    return [f"[Image {i}] Page {v.get('page_printed', '?')} (part of the page)"
+            for i, (_kind, v) in enumerate(used_visuals, 1)]
+
+
+def pages_vlm(VLM, regions: bool = False):
     """GEMS-RAG's VLM class, with only the evidence text and the allowed citations printed for
-    pages (see the top)."""
+    pages (see the top); for regions, also the picture lines."""
     class PagesVLM(VLM):
         def _format_evidence_text(self, chunks):
             return page_text_block(chunks)
 
         def _format_allowed_cites(self, chunks, used_visuals):
             return page_cites(chunks, used_visuals)
-    return PagesVLM
+
+    class RegionsVLM(PagesVLM):
+        def _format_visual_lines(self, used_visuals):
+            return region_visual_lines(used_visuals)
+    return RegionsVLM if regions else PagesVLM
 
 
 def pictures(entry):
@@ -106,12 +123,16 @@ def main() -> int:
     kq = json.loads(kq_path.read_text())
     questions = json.loads(Path(args.questions).read_text())
     ids = [q.strip() for q in args.only.split(",") if q.strip()] or list(questions)
+    sources = set()
     for qid in ids:
         assert qid in kq, f"{qid} has no page evidence in {kq_path.name}"
         assert kq[qid]["question"] == questions[qid], f"{qid}: the page evidence was made for a different text"
-        assert kq[qid]["chunks"] and all(c.get("source") == "visrag_page" for c in kq[qid]["chunks"]), \
+        assert kq[qid]["chunks"] and all(c.get("source") in SYSTEMS for c in kq[qid]["chunks"]), \
             f"{qid}: {kq_path.name} is not a page evidence file"
-    print(f"page evidence : {kq_path} ({len(ids)} questions)")
+        sources |= {c["source"] for c in kq[qid]["chunks"]}
+    assert len(sources) == 1, f"{kq_path.name} mixes pieces of different systems: {sorted(sources)}"
+    source = sources.pop()
+    print(f"page evidence : {kq_path} ({len(ids)} questions, {source})")
 
     os.environ["MRAG_ENV"] = "hprc"
     os.environ["MRAG_BASE_DIR"] = str(Path(os.environ["SCRATCH"]) / "Beyond_RAG" / "gems_rag")
@@ -132,7 +153,7 @@ def main() -> int:
         reasoning_file = out_dir / f"reasoning_{args.tag}.jsonl"
         print(f"answer model on our own server: {args.local_server} (window {args.local_max_len:,} tokens)")
 
-    PagesVLM = pages_vlm(VLM)
+    PagesVLM = pages_vlm(VLM, regions=source == "regionrag_region")
 
     done = {}
     if out_file.exists():
@@ -164,7 +185,7 @@ def main() -> int:
                 if done.get((resolved, qid)) == sha:
                     print(f"[{i}/{len(ids)}] SKIP {qid} (already answered from this prompt)")
                     continue
-                rec = {"system": "vine2_visrag_pages", "model_id": resolved, "question_id": qid,
+                rec = {"system": SYSTEMS[source], "model_id": resolved, "question_id": qid,
                        "question": question, "kq_file": kq_path.name,
                        "n_pieces": len(chunks), "piece_ids": [c.get("chunk_id") for c in chunks],
                        "images": sent, "prompt_sha256": sha, "prompt_chars": len(prompt),

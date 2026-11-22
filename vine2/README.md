@@ -121,6 +121,30 @@ The page words are there so the code can check Sonnet's quotes word for word: th
 
 Tests: `python3 tests/test_vine2_pages.py`.
 
+## On M3DocRAG's, ViDoRAG's or RegionRAG's retrieval
+
+The same test for three more visual RAG systems (why these three: the project doc `VISUAL_RAG_PICKS_2026-11-21.md`). Only each system's **retrieval** goes in, run with **its own code** at a pinned commit and its released models, and **nothing of VINE's**. Then the same writer, checker and code checks as above.
+
+```
+bash vine2/vis_setup.sh m3docrag        # once per system, on a login node (internet)
+bash vine2/run_vine2_vis_grace.sh 132692299628 $SCRATCH/questions150/questions_150.json m3docrag
+```
+
+| System (code, commit) | What goes in, a question (20 pieces, the first 4 also as pictures) |
+|---|---|
+| M3DocRAG (bloomberg/m3docrag, 29e6ac2) | Its top 20 pages: ColPali v1.2 on its own page pictures (pdf2image, 144 dpi), the question as it is, MaxSim over every page (`m3docrag_retrieve.py`). Each page is `Page X` with the words printed on it, from the PDF, as for VisRAG. |
+| ViDoRAG (Alibaba-NLP/ViDoRAG, 2c1ec39) | The pages ViDoRAG returns (5 to 20; its Gaussian-mixture cut on ColQwen2 v1.0 over page pictures and BGE-M3 over the pages' OCR text, joined, in page order). Each page is `Page X` with the **OCR text ViDoRAG gave**, as it is. Its pictures (200 dpi JPEG) and OCR (FastDeploy PP-OCRv3, CPU) are made first by its own scripts (`vidorag_ocr.py`, job 0). The 4 pictures are the pages its picture side ranked highest. |
+| RegionRAG (Aeryn666/RegionRAG, 1ff0f29) | Its best 20 regions (RegionRet: per-patch similarity, connected patches, one box each; its default settings), on the page pictures of the VisRAG run (RegionRAG has no PDF step). Each region is `Page X (region k)` with the words printed inside its box, from the PDF; the first 4 regions also go as the region cut from the page picture. |
+
+- `vis_setup.sh SYSTEM` makes the system's own environment (its authors' library versions), copies its code at the pinned commit, downloads its models and records their commits (`$SCRATCH/vine/vis/SYSTEM_revisions.json`). A model already in the cache is used as it is. RegionRAG's model is gated on Hugging Face: agree to its terms with your account and put a read token in `$SCRATCH/vine/hf_token` first.
+- The code checks on pages are those above. For regions: a region may not show its heading, so then the quote's own words give its type; and **regions of one page are one piece** for the two-pieces rule, as for whole pages.
+- The checker gets a short note on regions ("parts of manual pages"); for pages its prompt is the same as in the VisRAG run, word for word.
+- A region's box moves in steps of the model's picture patches (about 15 points on the page), so a word at the edge of a box can be cut off or left out.
+- Safeguards: a model that loads with weights "newly initialized" or adapter keys missing stops the job (`LoadGuard`); a model a system loads by name must resolve offline to the recorded commit; the files a system never makes again (M3DocRAG's page pictures, ViDoRAG's pictures, OCR and vectors) are tied to the PDF, code and model commits (`vine2_inputs.json`) and a mismatch stops; one retrieval per system at a time (M3DocRAG, ViDoRAG share their folders); a new checker job waits for the checkers already queued.
+- **Output:** `$SCRATCH/Beyond_RAG/vine2_runs/questions_150_SYSTEM_p20/` (grade `answers_final_clean.md`); evidence `.../compare40_runs/SYSTEM/pieces_questions_150_p20.json`; drafts `.../vine_rag/answers_qwen_questions_150_SYSTEM_p20.jsonl`. Different systems may run at the same time.
+
+Tests: `python3 tests/test_vine2_vis.py`.
+
 ## What it does not promise
 
 "Checked" means a model compared the statement with the quoted manual text, and code confirmed the quote is really there. It is not a proof. A statement can be checked against the wrong paragraph, and the evidence can miss a paragraph that retrieval did not find. The code checks above limit the damage of a wrong check; they cannot rule it out.
@@ -130,6 +154,7 @@ Tests: `python3 tests/test_vine2_pages.py`.
 ```
 python3 tests/test_vine2.py
 python3 tests/test_vine2_pages.py
+python3 tests/test_vine2_vis.py
 ```
 
 The tests use made-up evidence and stand-in models: no GPU, no API, no data.

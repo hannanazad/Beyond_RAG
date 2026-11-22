@@ -1,10 +1,11 @@
-"""vine2/run_qwen_pages.py -- stage A of VINE answer-then-check on VisRAG's pages.
+"""vine2/run_qwen_pages.py -- stage A of VINE answer-then-check on another system's pages
+(VisRAG, M3DocRAG, ViDoRAG) or regions (RegionRAG).
 
     $RETR_ENV/bin/python -u vine2/run_qwen_pages.py --kq PAGES_EVIDENCE --questions FILE --tag TAG
 
 This is compare40/run_qwen_rag.py, unchanged and imported as it is: the same Qwen3.8-27B
 files, servers, settings, picture check, queue and answer files. The one difference: each
-question is answered by vine2/pages_writer.py (VisRAG's pages) where run_qwen_rag.py starts
+question is answered by vine2/pages_writer.py (the page evidence) where run_qwen_rag.py starts
 compare40/run_vine_rag.py (VINE's pieces). Only that one command line is changed, on its
 way to subprocess.run; every other call goes through untouched.
 """
@@ -40,7 +41,7 @@ def main() -> int:
     sys.path.insert(0, str(REPO / "compare40"))
     import run_qwen_rag as rq  # noqa: E402
     rq.subprocess = _Subprocess()
-    print(f"stage A on VisRAG's pages: compare40/run_qwen_rag.py, each question answered by {WRITER}", flush=True)
+    print(f"stage A on page evidence: compare40/run_qwen_rag.py, each question answered by {WRITER}", flush=True)
     return rq.main()
 
 

@@ -1,7 +1,8 @@
 #!/bin/bash
-# vine2/pages_answer_job.slurm -- job 2 of VINE answer-then-check on VisRAG's pages: the writer
-# (Qwen3.8-27B) answers every question from its page evidence. Submitted by
-# vine2/run_vine2_visrag_grace.sh, after job 1. Not meant to be submitted by hand.
+# vine2/pages_answer_job.slurm -- job 2 of VINE answer-then-check on another system's pages
+# (VisRAG, M3DocRAG, ViDoRAG) or regions (RegionRAG): the writer (Qwen3.8-27B) answers every
+# question from its page evidence. Submitted by vine2/run_vine2_visrag_grace.sh or
+# vine2/run_vine2_vis_grace.sh, after job 1. Not meant to be submitted by hand.
 #
 # Runs vine2/run_qwen_pages.py: compare40/run_qwen_rag.py unchanged (the same servers, settings
 # and picture check as stage A of the run on VINE's evidence), each question answered by
@@ -21,7 +22,7 @@ export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1
 export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ANTHROPIC_API_KEY
 
-echo "job $SLURM_JOB_ID | stage A (writer, VisRAG's pages) | $V2_STEM | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
+echo "job $SLURM_JOB_ID | stage A (writer, page evidence) | $V2_STEM | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
 echo "repo $REPO at $(git -C "$REPO" rev-parse --short HEAD)"
 if [ -n "$(git -C "$REPO" status --porcelain --untracked-files=no -- vine2 compare40/run_qwen_rag.py compare40/qwen_local.py gems_rag/mrag mrag/vine/vllm_client.py hprc/vine_hprc.py hprc/pin_tuning)" ]; then
     echo "STOPPED: vine2, the Qwen runner, GEMS-RAG or the model settings are changed locally"; exit 1

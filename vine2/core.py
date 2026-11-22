@@ -77,10 +77,22 @@ def fid_in_id(fid: str, piece_id: str) -> bool:
     return re.search(rf"(?<![0-9A-Za-z-]){re.escape(fid)}(?![0-9A-Za-z])", piece_id) is not None
 
 
+# pieces found by another system's retrieval, with nothing of VINE's (no label of any kind):
+# whole pages (VisRAG: vine2/visrag_pages.py; M3DocRAG, ViDoRAG: vine2/vis_evidence.py) and
+# parts of pages (RegionRAG's regions: vine2/vis_evidence.py)
+PAGE_SOURCES = ("visrag_page", "m3docrag_page", "vidorag_page", "regionrag_region")
+REGION_SOURCES = ("regionrag_region",)
+
+
 def is_page(c: Dict[str, Any]) -> bool:
-    """A whole manual page as one piece (vine2/visrag_pages.py: VisRAG's pages, with the
-    words printed on them and no label of any kind)."""
-    return str(c.get("source") or "") == "visrag_page"
+    """A manual page, or a part of one, as one piece: its id and the words printed on it, and
+    no label of any kind."""
+    return str(c.get("source") or "") in PAGE_SOURCES
+
+
+def is_region(c: Dict[str, Any]) -> bool:
+    """A part of a manual page (a region another system's retrieval picked) as one piece."""
+    return str(c.get("source") or "") in REGION_SOURCES
 
 
 def evidence_index(entry: Dict[str, Any], attached: Sequence[str] = ()) -> Dict[str, Dict[str, Any]]:
@@ -585,6 +597,14 @@ it. A paragraph's type is the heading printed above it on the page (Standard, Gu
 Option, Support), and its section is the section heading above it. Quote from the page's words; a
 source id is the page's id."""
 
+REGION_RULES = """
+
+The evidence here is parts of manual pages (regions), each with its id ([Page 12 (region 1)])
+and the words printed inside it. A region may not show the heading above its words. A
+paragraph's type is the heading printed above it (Standard, Guidance, Option, Support) when the
+region shows it, and its section is the section heading above it when shown. Quote from the
+region's words; a source id is the region's id."""
+
 
 def checker_prompt(question: str, entry: Dict[str, Any], statements: Sequence[Dict[str, Any]],
                    image_ids: Sequence[str] = (), only: Optional[Sequence[int]] = None,
@@ -601,7 +621,9 @@ def checker_prompt(question: str, entry: Dict[str, Any], statements: Sequence[Di
         task = f"Check all {len(nums)} statements."
     if not additions:
         task += ' Give "additions": [] in this reply (they are asked for separately).'
-    rules = CHECKER_RULES + (PAGE_RULES if any(is_page(c) for c in entry.get("chunks") or []) else "")
+    chunks = entry.get("chunks") or []
+    rules = CHECKER_RULES + (REGION_RULES if any(is_region(c) for c in chunks)
+                             else PAGE_RULES if any(is_page(c) for c in chunks) else "")
     return (f"{rules}\n\n##### QUESTION\n{question.strip()}\n\n##### EVIDENCE{imgs}\n"
             f"{evidence_block(entry)}\n\n##### DRAFT ANSWER (numbered statements)\n"
             f"{numbered_answer(statements)}\n\n{task} Reply with the JSON object only.")
@@ -788,11 +810,18 @@ def _plain_negs(text: str) -> int:
     return sum(1 for w in re.findall(r"[a-z]+", t) if w in NEGATIONS)
 
 
+_REGION_ID = re.compile(r"(Page .+?) \(region \d+\)")
+
+
 def _piece(i: str) -> str:
     """The piece a source id belongs to: a table row or a figure reading counts as its table
-    or figure, so one table is never two pieces."""
+    or figure, so one table is never two pieces; a region of a page ("Page 7 (region 2)")
+    counts as its page, so one page is never two pieces."""
     m = _FIGCITE.search(i) if i.startswith("vine:") else None
-    return re.sub(r"\s+", " ", m.group(1)) if m else i
+    if m:
+        return re.sub(r"\s+", " ", m.group(1))
+    r = _REGION_ID.fullmatch(i)
+    return r.group(1) if r else i
 
 
 def _verified_text(srcs: Sequence[Dict[str, Any]], idx: Dict[str, Dict[str, Any]]) -> str:
