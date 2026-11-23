@@ -315,7 +315,12 @@ if [ "${VIDORAG_SMOKE:-0}" = 1 ]; then
       "$VP" -I -c "
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-n = SentenceSplitter(chunk_size=1024, chunk_overlap=0).split_text('Zorb markers shall be wide. ' * 50)
+from concurrent.futures import ThreadPoolExecutor
+from llama_index.core.utils import globals_helper
+globals_helper.punkt_tokenizer, globals_helper.stopwords     # as the job does, before the threads
+sp = SentenceSplitter(chunk_size=1024, chunk_overlap=0)
+with ThreadPoolExecutor(max_workers=5) as ex:                # ViDoRAG splits in 5 threads
+    n = list(ex.map(lambda i: sp.split_text('Zorb markers shall be wide. ' * 50), range(10)))[0]
 e = HuggingFaceEmbedding(model_name='BAAI/bge-m3', device='cpu', trust_remote_code=True)
 print('splitter chunks', len(n), '| BGE-M3 vector', len(e.get_text_embedding('zorb marker')))
 " ) || fail "ViDoRAG's text side does not load offline: tell Claude"

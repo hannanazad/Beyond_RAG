@@ -367,6 +367,9 @@ assert "pinned m3docrag_retrieve.py" in setup and "pinned vidorag_ocr.py" in set
 for mod in (m3, vo, rr):
     assert len(mod.PINNED) == 40 and all(ch in "0123456789abcdef" for ch in mod.PINNED)
 assert vr.PINNED == vo.PINNED
+vsrc = (ROOT / "vine2/vidorag_retrieve.py").read_text()
+assert vsrc.index("globals_helper.punkt_tokenizer, globals_helper.stopwords") < vsrc.index("Ingestion(dataset_dir")
+assert vsrc.index("Ingestion(dataset_dir") < vsrc.index("emb.get_text_embedding('warm-up')") < vsrc.index("ing.ingestion_multi_session()")
 assert "need_files" in setup and 'make_poppler' in setup and '"torch==2.6.0" "torchvision==0.21.0"' in setup
 for job in ("vine2/vis_retrieve_job.slurm", "vine2/vidorag_ocr_job.slurm"):
     assert 'export PATH="$VINE_HOME/vis/poppler_bin:$PATH"' in (ROOT / job).read_text(), job

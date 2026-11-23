@@ -144,6 +144,14 @@ def main() -> int:
     sys.path.insert(0, str(args.code))
     from ingestion import Ingestion
     from search_engine import HybridSearchEngine
+    # llama-index loads NLTK's word lists (punkt, stopwords) lazily, the first time a text is
+    # split. ViDoRAG splits the pages' text in 5 threads at once (ingestion.py), and NLTK's lazy
+    # loader is not thread-safe: two threads loading together fail with AttributeError
+    # '_LazyCorpusLoader__args'. Loading them once here, before the threads, gives exactly the
+    # same lists and tokenizer; nothing else changes.
+    from llama_index.core.utils import globals_helper
+    globals_helper.punkt_tokenizer, globals_helper.stopwords
+    vc.log(f"NLTK word lists loaded once before ViDoRAG's threads ({len(globals_helper.stopwords)} stopwords)")
 
     dataset_dir = os.path.join("./data", DATASET)
     for inp, outp, model in (("img", "colqwen_ingestion", VL_MODEL), ("ppocr", "bge_ingestion", TEXT_MODEL)):
@@ -156,6 +164,15 @@ def main() -> int:
                 vc.log(f"  {removed} half-written node files removed from {outp}/ (made again)")
             with vc.LoadGuard(model):
                 ing = Ingestion(dataset_dir, input_prefix=inp, output_prefix=outp, embed_model_name=model)
+            if model == TEXT_MODEL:
+                # BGE-M3's tokenizer is shared by ViDoRAG's 5 threads, and its first use sets its
+                # padding and truncation; two threads doing that at once can fail ("Already
+                # borrowed"). One embedding here, before the threads, sets them once. The same
+                # settings would be set by the first page anyway; nothing is written or kept.
+                emb = ing.pipeline.transformations[-1]
+                if type(emb).__name__ != "HuggingFaceEmbedding":
+                    sys.exit(f"STOPPED: ViDoRAG's text pipeline ends with {type(emb).__name__}, not HuggingFaceEmbedding")
+                vc.log(f"BGE-M3 used once before ViDoRAG's threads (vector {len(emb.get_text_embedding('warm-up'))})")
             ing.ingestion_multi_session()
             del ing
             if not check_nodes(data / outp):
