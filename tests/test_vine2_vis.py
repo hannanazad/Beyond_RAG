@@ -313,8 +313,26 @@ seen = []
 assert vo.ocr_all(img, txt, 3, lambda p: seen.append(p) or f"text of {Path(p).name}") == 3
 assert (txt / "MUTCD_2.txt").read_text() == "text of MUTCD_2.jpg" and seen[0].endswith("MUTCD_1.jpg")
 assert vo.ocr_all(img, txt, 3, lambda p: 1 / 0) == 0                                       # done pages kept
+# its models by name, as folders: links to the recorded downloads (PEFT 0.11.1 offline)
+hfc = TMP / "hfc"
+for repo, rev in (("vidore/colzorb-v1.0", "c" * 40), ("vidore/colzorb-base", "d" * 40)):
+    (hfc / f"models--{repo.replace('/', '--')}" / "snapshots" / rev).mkdir(parents=True)
+os.environ["HF_HUB_CACHE"] = str(hfc)
+revs_l = {"models": {"vidore/colzorb-v1.0": "c" * 40, "vidore/colzorb-base": "d" * 40}}
+work = TMP / "vwork"
+assert vr.link_models(work, revs_l, ["vidore/colzorb-v1.0", "vidore/colzorb-base"]) == \
+    ["vidore/colzorb-v1.0", "vidore/colzorb-base"]
+assert (work / "vidore/colzorb-v1.0").resolve() == (hfc / "models--vidore--colzorb-v1.0/snapshots" / ("c" * 40)).resolve()
+(work / "vidore/colzorb-base").unlink()
+(work / "vidore/colzorb-base").symlink_to(TMP)                         # a stale link is made again
+vr.link_models(work, revs_l, ["vidore/colzorb-base"])
+assert (work / "vidore/colzorb-base").resolve().name == "d" * 40
+(work / "vidore/real").mkdir()
+(hfc / "models--vidore--real" / "snapshots" / ("c" * 40)).mkdir(parents=True)
+stops(lambda: vr.link_models(work, {"models": {"vidore/real": "c" * 40}}, ["vidore/real"]), "is not a link")
+stops(lambda: vr.link_models(work, revs_l, ["../x/y"]), "not a plain")
 print("9. ViDoRAG: its file names, its returned pages in order (no repeats), half-written nodes made again, "
-      "its pictures and OCR page by page")
+      "its pictures and OCR page by page; its models linked by name for offline loading")
 
 # ---- 10. RegionRAG: its regions, page names, collators ----------------------------------------
 assert rr.page_of("page_0130.png") == 130

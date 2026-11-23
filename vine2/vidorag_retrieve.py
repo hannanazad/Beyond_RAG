@@ -48,6 +48,32 @@ def page_of(path: str) -> int:
     return int(m.group(1))
 
 
+def link_models(work: Path, revs: Dict[str, Any], repos: List[str]) -> List[str]:
+    """ViDoRAG loads its models by name ("vidore/colqwen2-v1.0"). For an adapter, PEFT 0.11.1
+    (ViDoRAG's lock) then asks the Hugging Face website whether the weights file exists, which
+    fails on an offline compute node, although the file is on disk. A name that is also a folder
+    under the working folder is loaded from that folder instead: so each model is linked there,
+    under its own name, to the download at the recorded commit. Same name, same files."""
+    made = []
+    for repo in repos:
+        name = Path(repo)
+        if name.is_absolute() or ".." in name.parts or len(name.parts) != 2:
+            sys.exit(f"STOPPED: {repo} is not a plain Hugging Face model id")
+        target = vc.snapshot(revs, repo)
+        link = work / name
+        if link.is_symlink():
+            if link.resolve() == target.resolve():
+                made.append(repo)
+                continue
+            link.unlink()
+        elif link.exists():
+            sys.exit(f"STOPPED: {link} exists and is not a link: move it away")
+        link.parent.mkdir(parents=True, exist_ok=True)
+        link.symlink_to(target)
+        made.append(repo)
+    return made
+
+
 def items_of(result: Dict[str, Any], vl_rank: Dict[int, int]) -> List[Dict[str, Any]]:
     """ViDoRAG's answer for one question (nodes2dict of its ImageNodes) -> vine2 items, in its order."""
     out = []
@@ -109,6 +135,11 @@ def main() -> int:
     import torch
     if not torch.cuda.is_available():
         sys.exit("STOPPED: no CUDA GPU here; run this in a GPU job")
+    # the ColQwen2 adapter and the base it names, as folders under the working folder (see
+    # link_models); BGE-M3 is not an adapter and loads offline from the cache as it is
+    adapters = [VL_MODEL] + [b["repo"] for r, b in (revs.get("bases") or {}).items() if r == VL_MODEL]
+    linked = link_models(args.work, revs, adapters)
+    vc.log(f"models linked under {args.work} at the recorded commits: {linked}")
     os.chdir(args.work)                          # ViDoRAG reads ./data/<dataset>
     sys.path.insert(0, str(args.code))
     from ingestion import Ingestion
@@ -158,6 +189,7 @@ def main() -> int:
         "ocr_manifest": ocr_man, "query": "the question text as it is", "n_pages": n_pages,
         "pdf": str(args.pdf), "pdf_sha256": pdf_sha,
         "env": {k: os.environ.get(k) for k in ("LLAMA_INDEX_CACHE_DIR", "TIKTOKEN_CACHE_DIR", "HF_HUB_CACHE")},
+        "models_linked": linked,
         "pages_a_question": {"min": sizes[0], "median": sizes[len(sizes) // 2], "max": sizes[-1]},
         "questions_file": str(args.questions), "questions_sha256": vc.sha256_file(args.questions),
         "gpu": torch.cuda.get_device_name(0),

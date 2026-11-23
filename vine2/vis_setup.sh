@@ -319,6 +319,17 @@ n = SentenceSplitter(chunk_size=1024, chunk_overlap=0).split_text('Zorb markers 
 e = HuggingFaceEmbedding(model_name='BAAI/bge-m3', device='cpu', trust_remote_code=True)
 print('splitter chunks', len(n), '| BGE-M3 vector', len(e.get_text_embedding('zorb marker')))
 " ) || fail "ViDoRAG's text side does not load offline: tell Claude"
+    # the ColQwen2 adapter offline, as the job finds it: a link under its own name (see
+    # vine2/vidorag_retrieve.py link_models); reads only the adapter's weights
+    echo "offline check of ViDoRAG's ColQwen2 adapter (through the link the job makes) ..."
+    T="$VINE_HOME/vis/.offline_test"; rm -rf "$T"; mkdir -p "$T/vidore"
+    ln -s "$HF_HUB_CACHE/models--vidore--colqwen2-v1.0/snapshots/$("$VP" -I -c "import json,sys; print(json.load(open(sys.argv[1]))['models']['vidore/colqwen2-v1.0'])" "$REVFILE")" "$T/vidore/colqwen2-v1.0"
+    ( cd "$T" && HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 "$VP" -I -c "
+from peft.utils import load_peft_weights
+w = load_peft_weights('vidore/colqwen2-v1.0', device='cpu')
+print(len(w), 'adapter tensors loaded offline')
+" ) || { rm -rf "$T"; fail "ViDoRAG's ColQwen2 adapter does not load offline through the link: tell Claude"; }
+    rm -rf "$T"
 fi
 echo
 echo "done: $SYSTEM is ready. Next:  bash vine2/run_vine2_vis_grace.sh 132692299628 QUESTIONS_FILE $SYSTEM"
