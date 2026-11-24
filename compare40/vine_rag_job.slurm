@@ -16,8 +16,10 @@ source "$REPO/hprc/env.sh"
 : "${VR_QUESTIONS:?VR_QUESTIONS is not set -- submit with compare40/run_vine_rag_grace.sh}"
 : "${VR_TAG:?VR_TAG is not set -- submit with compare40/run_vine_rag_grace.sh}"
 : "${VR_KQ:?VR_KQ is not set -- submit with compare40/run_vine_rag_grace.sh}"
+VR_IMAGES="${VR_IMAGES:-4}"                  # figure pictures a question (the launcher's MAX_IMAGES)
+[[ "$VR_IMAGES" =~ ^[0-9]+$ ]] && [ "$VR_IMAGES" -ge 1 ] && [ "$VR_IMAGES" -le 20 ] || { echo "STOPPED: VR_IMAGES must be 1 to 20: $VR_IMAGES"; exit 1; }
 
-echo "job $SLURM_JOB_ID | tag $VR_TAG | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
+echo "job $SLURM_JOB_ID | tag $VR_TAG | up to $VR_IMAGES figure pictures a question | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
 
 # a second job would ask (and pay for) every question again
 sq=$(squeue -h -u "$USER" -t RUNNING -o "%i %j") || { echo "STOPPED: squeue failed"; exit 1; }
@@ -62,7 +64,7 @@ echo "evidence sha256 $(sha256sum "$KQ" | cut -c1-12)"
 echo; echo "===== VINE as plain RAG, Sonnet 5.5 ====="
 set +e
 "$RETR_ENV/bin/python" -u compare40/run_vine_rag.py --kq "$KQ" --questions "$VR_QUESTIONS" \
-    --models claude-sonnet-5-5 --tag "$VR_TAG"
+    --models claude-sonnet-5-5 --tag "$VR_TAG" --max-images "$VR_IMAGES"
 RC=$?
 set -e
 echo; echo "VINE as plain RAG exit $RC | $(date '+%Y-%m-%d %H:%M:%S')"

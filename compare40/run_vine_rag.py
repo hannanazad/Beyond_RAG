@@ -12,6 +12,13 @@ passes its name, worked out by VINE's own code). Each question gets:
     counted (the checkers' own rule and limit, model_verifiers.verify).
 Nothing is cut down.
 
+--max-images N (1 to 20, default 4): send up to N image files instead of 4, in the same
+order (the same pictures first). With the default nothing changes. Above 4, a picture over
+3.7 MB, or every picture when together they pass 24 MB, is sent as a JPEG copy (quality 92)
+made in OUT/figure_jpeg/ (VINE's own figure files are never touched): the rule of the
+VisRAG run (run_visrag.py), inside the API's limits of 5 MB a picture and 32 MB a request.
+Each record then also has "max_images".
+
 The answer is ONE call to the answer model, with GEMS-RAG's answer prompt (the few-shot
 style of the untouched copy in gems_rag/), so systems 1 and 2 differ only in the evidence.
 There is no plan-maker, no checker and no figure filter (VINE has none).
@@ -32,7 +39,7 @@ GEMS-RAG's instructions and few-shot examples are left exactly as GEMS-RAG print
 Output: $SCRATCH/Beyond_RAG/compare40_runs/vine_rag/answers_<tag>.jsonl, one line per
 answer: the evidence ids, the images, the prompt's SHA-256, the usage and the timing.
 Run again, it skips an answer already made from the same prompt and makes it again if
-the prompt changed (a new line; the last line of a (model, question) is the one to use).
+the prompt changed (a new line; the last line of a (model, question) counts).
 A missing image file stops the run (as in run_gems_rag.py).
 
 --local-server URL --local-max-len N: the answer model is served by our own vLLM server
@@ -60,6 +67,9 @@ REPO = HERE.parent
 GEMS = REPO / "gems_rag"
 MODELS = "claude-sonnet-5-5,claude-fable-5"
 MAX_IMAGES = 4                   # VINE's checkers' own image limit (model_verifiers.verify)
+MAX_IMAGES_ALLOWED = 20          # --max-images at most this: Claude's full-size limit a request
+MAX_IMAGE_BYTES = int(3.7 * 1024 * 1024)        # as compare40/run_visrag.py
+MAX_REQUEST_IMAGE_BYTES = 24 * 1024 * 1024      # as compare40/run_visrag.py
 GROUP_ORDER = ("Standard", "Guidance", "Option", "Support")   # GEMS-RAG's order; others after
 
 
@@ -69,6 +79,33 @@ def now() -> str:
 
 def blank(v) -> bool:
     return v is None or str(v).strip() in ("", "None")
+
+
+def fit_sizes(shown: list, jpeg_dir: Path) -> list:
+    """Only with --max-images above 4. A picture over 3.7 MB, or every picture when together
+    they pass 24 MB, is sent as a JPEG copy in jpeg_dir (made once; written to a temporary
+    name first, so a stopped job leaves no half picture). Records the form of each."""
+    total = sum(Path(s["image_path"]).stat().st_size for s in shown)
+    all_jpeg = total > MAX_REQUEST_IMAGE_BYTES
+    out = []
+    for s in shown:
+        src = Path(s["image_path"])
+        big = src.stat().st_size > MAX_IMAGE_BYTES
+        if not (all_jpeg or big):
+            out.append({**s, "form": src.suffix.lstrip(".").lower() or "?"})
+            continue
+        key = hashlib.sha256(str(src.resolve()).encode()).hexdigest()[:16]
+        jpg = jpeg_dir / f"{src.stem}_{key}.jpg"
+        if not jpg.exists():
+            from PIL import Image
+            jpeg_dir.mkdir(parents=True, exist_ok=True)
+            tmp = jpg.with_suffix(".jpg.part")
+            with Image.open(src) as im:
+                im.convert("RGB").save(tmp, format="JPEG", quality=92)
+            tmp.replace(jpg)
+        out.append({**s, "image_path": str(jpg), "form": "jpeg", "source_image": str(src),
+                    "why_jpeg": "over 3.7 MB" if big else "the request would pass 24 MB"})
+    return out
 
 
 def main() -> int:
@@ -81,8 +118,11 @@ def main() -> int:
     ap.add_argument("--only", default="", help="comma-separated question ids (a smoke test)")
     ap.add_argument("--local-server", default="", help="our own vLLM server, e.g. http://127.0.0.1:20000/v1")
     ap.add_argument("--local-max-len", type=int, default=0, help="that server's window (--max-model-len)")
+    ap.add_argument("--max-images", type=int, default=MAX_IMAGES,
+                    help=f"image files a question, 1 to {MAX_IMAGES_ALLOWED} (default {MAX_IMAGES}, VINE's checkers' limit)")
     args = ap.parse_args()
     assert bool(args.local_server) == bool(args.local_max_len), "--local-server needs --local-max-len"
+    assert 1 <= args.max_images <= MAX_IMAGES_ALLOWED, f"--max-images must be 1 to {MAX_IMAGES_ALLOWED}"
 
     scratch = Path(os.environ["SCRATCH"])
     vine_data = scratch / "Beyond_RAG"
@@ -98,7 +138,8 @@ def main() -> int:
     for qid in ids:
         assert qid in kq, f"{qid} has no VINE evidence in {kq_path.name}: run VINE's retrieval stage first"
         assert kq[qid]["question"] == questions[qid], f"{qid}: VINE's evidence was found for a different text"
-    print(f"VINE evidence : {kq_path} ({len(ids)} questions)")
+    print(f"VINE evidence : {kq_path} ({len(ids)} questions)"
+          + (f" | up to {args.max_images} images a question" if args.max_images != MAX_IMAGES else ""))
 
     # VINE's figure records: each image's printed page and its sheet caption
     fig_meta = {}
@@ -177,7 +218,8 @@ def main() -> int:
         return out
 
     def figures(qid):
-        """VINE's figures: every one listed (id and caption) and cited; images in VINE's order, at most 4."""
+        """VINE's figures: every one listed (id and caption) and cited; images in VINE's order,
+        at most --max-images (default 4)."""
         shown, missing, lines, cites = [], [], [], []
         for f in kq[qid].get("figures") or []:
             fid = str(f.get("figure_id") or "")
@@ -190,12 +232,14 @@ def main() -> int:
                 if not Path(p).exists():
                     missing.append(str(p))
                     continue
-                if len(shown) < MAX_IMAGES:
+                if len(shown) < args.max_images:
                     m = fig_meta.get(Path(p).name, {})
                     shown.append({"figure_id": fid or m.get("figure_id", "?"),
                                   "caption": m.get("caption") or f.get("caption", ""),
                                   "page_printed": m.get("page_printed") or "?",
                                   "image_path": str(p)})
+        if args.max_images > MAX_IMAGES and shown:
+            shown = fit_sizes(shown, out_dir / "figure_jpeg")
         return shown, missing, lines, cites
 
     done = {}
@@ -236,6 +280,9 @@ def main() -> int:
                        "images": sent, "prompt_sha256": sha, "prompt_chars": len(prompt),
                        "prompt_style": CFG.prompt_style_answer, "max_new_tokens": CFG.max_new_tokens,
                        "started_at": now()}
+                if args.max_images != MAX_IMAGES:
+                    rec["max_images"] = args.max_images
+                    rec["image_forms"] = [f.get("form") for f in figs]
                 answer, err, t0 = "", None, time.time()
                 mark, rmark = (len(local.calls), len(local.reasoning)) if local else (0, 0)
                 for attempt in range(1, 4):                 # GEMS-RAG's runner: 3 tries, 8 s back-off
