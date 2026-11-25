@@ -1,12 +1,17 @@
 #!/bin/bash
 # vine2/run_vine2_grace.sh -- run VINE answer-then-check on Grace, for any question file.
 #
-#   bash vine2/run_vine2_grace.sh ACCOUNT QUESTIONS_FILE [GPUS]
+#   bash vine2/run_vine2_grace.sh ACCOUNT QUESTIONS_FILE [GPUS [MAX_IMAGES]]
 #
 #   ACCOUNT         your project account number (Grace: 132692299628)
 #   QUESTIONS_FILE  {id: question text}, the same file VINE's retrieval stage read, so every
 #                   question already has VINE's evidence in kq_r4299665_s0c3805.json
 #   GPUS            A100s for stage A, 1 or 2 (default 2: one Grace node)
+#   MAX_IMAGES      optional, 1 to 20: VINE's figure pictures a question, in VINE's order,
+#                   for the writer and the checker (default 4, VINE's checkers' limit; then
+#                   nothing changes). With another number STEM ends in _img<N>, so the
+#                   drafts, the run folder and the job names are its own; before submitting
+#                   this prints how many pictures the questions have.
 #   V2_ONLY=VQ001,VQ002 (optional, in front of the command): stage B checks only these questions.
 #                   Stage A is skipped if these have drafts; if not, it answers every question
 #                   still without a draft, so the drafts file is always whole.
@@ -24,12 +29,14 @@
 # STEM is the question file's name without .json. The same command again does only what is
 # not done yet: answered questions are not asked again, saved checker replies are reused.
 set -euo pipefail
-USAGE="usage: bash vine2/run_vine2_grace.sh ACCOUNT QUESTIONS_FILE [GPUS]"
+USAGE="usage: bash vine2/run_vine2_grace.sh ACCOUNT QUESTIONS_FILE [GPUS [MAX_IMAGES]]"
 KQ_FILE_NAME="kq_r4299665_s0c3805.json"          # full VINE's evidence file, and no other
-[ $# -ge 2 ] && [ $# -le 3 ] || { echo "$USAGE"; exit 1; }
-ACCT="$1"; QFILE="$2"; NGPU="${3:-2}"
+[ $# -ge 2 ] && [ $# -le 4 ] || { echo "$USAGE"; exit 1; }
+ACCT="$1"; QFILE="$2"; NGPU="${3:-2}"; IMAGES="${4:-4}"
 [[ "$ACCT" =~ ^[0-9]+$ ]] || { echo "ACCOUNT must be a number: $ACCT"; exit 1; }
 [[ "$NGPU" =~ ^[12]$ ]] || { echo "GPUS must be 1 or 2 (one Grace node)"; exit 1; }
+[[ "$IMAGES" =~ ^[0-9]+$ ]] && [ "$IMAGES" -ge 1 ] && [ "$IMAGES" -le 20 ] || { echo "MAX_IMAGES must be 1 to 20: $IMAGES"; exit 1; }
+IMAGES=$((10#$IMAGES))
 QDIR="$(cd "$(dirname "$QFILE")" 2>/dev/null && pwd)" || { echo "no such folder: $(dirname "$QFILE")"; exit 1; }
 QFILE="$QDIR/$(basename "$QFILE")"
 [ -f "$QFILE" ] && [ -s "$QFILE" ] || { echo "the question file is missing or empty: $QFILE"; exit 1; }
@@ -63,7 +70,7 @@ for f in vine2/core.py vine2/check.py vine2/run_vine2_grace.sh vine2/answer_job.
     git -C "$REPO" ls-files --error-unmatch "$f" >/dev/null 2>&1 \
         || { echo "$f is not committed in $REPO: pull the pushed branch first"; exit 1; }
 done
-"$RETR_ENV/bin/python" -I - "$QFILE" "$KQ" <<'PY' || exit 1
+"$RETR_ENV/bin/python" -I - "$QFILE" "$KQ" "$IMAGES" <<'PY' || exit 1
 import json, os, sys
 q = json.load(open(sys.argv[1], encoding="utf-8"))
 if not isinstance(q, dict) or not q or not all(isinstance(v, str) and v.strip() for v in q.values()):
@@ -78,8 +85,15 @@ if absent or other or images:
              f"image files missing {len(images)} {images[:3]}")
 print(f"question file: {len(q)} questions, {next(iter(q))} ... {list(q)[-1]}; all in "
       f"{os.path.basename(sys.argv[2])} with the same text; every image found")
+cap = int(sys.argv[3])
+if cap != 4:
+    n = sorted(len([p for f in (kq[i].get("figures") or []) for p in (f.get("image_paths") or [f.get("image_path")]) if p])
+               for i in q)
+    print(f"figure pictures a question: {n[0]} to {n[-1]} (median {n[len(n) // 2]}); more than 4 in {sum(x > 4 for x in n)}, "
+          f"more than {cap} in {sum(x > cap for x in n)} (those send their first {cap})")
 PY
 STEM="$(basename "$QFILE" .json)"; STEM="${STEM//[^A-Za-z0-9_]/_}"
+[ "$IMAGES" -eq 4 ] || STEM="${STEM}_img$IMAGES"     # its own drafts, run folder and job names
 DRAFTS="$MRAG_BASE_DIR/compare40_runs/vine_rag/answers_qwen_$STEM.jsonl"
 [[ "${V2_ONLY:-}" =~ ^[A-Za-z0-9_,]*$ ]] || { echo "V2_ONLY must be ids separated by commas"; exit 1; }
 # stage A is skipped when every question (or every V2_ONLY question) already has a good draft
@@ -135,18 +149,18 @@ if [ "$MISSING" = "0" ]; then
 else
     echo "questions${V2_ONLY:+ in V2_ONLY} without a writer draft: $MISSING (stage A answers every question still without one)"
     a=$(sbatch --parsable --account="$ACCT" --job-name="vine2_answer_$STEM" --partition=gpu \
-         --export="ALL,VINE_REPO=$REPO,V2_QUESTIONS=$QFILE,V2_STEM=$STEM,V2_KQ=$KQ" \
+         --export="ALL,VINE_REPO=$REPO,V2_QUESTIONS=$QFILE,V2_STEM=$STEM,V2_KQ=$KQ,V2_IMAGES=$IMAGES" \
          --gres="gpu:a100:$NGPU" --nodes=1 --ntasks=1 --cpus-per-task="$CPUS" --mem="${MEM}G" --time=16:00:00 \
          --output="$LOG/vine2_answer_${STEM}_%j.log" vine2/answer_job.slurm)
     a="${a%%;*}"
     [[ "$a" =~ ^[0-9]+$ ]] || { echo "Slurm did not return a job number for stage A. Look with  squeue -u $USER" >&2; exit 1; }
     DEP="--dependency=afterany:$a"
-    echo "stage A (writer, $NGPU A100s, up to 16 h): job $a"
+    echo "stage A (writer, $NGPU A100s, up to 16 h, up to $IMAGES pictures a question): job $a"
     echo "watch A:  tail -f $LOG/vine2_answer_${STEM}_$a.log"
 fi
 # shellcheck disable=SC2086
 b=$(sbatch --parsable --account="$ACCT" --job-name="vine2_check_$STEM" --partition=medium $DEP \
-     --export="ALL,VINE_REPO=$REPO,V2_QUESTIONS=$QFILE,V2_STEM=$STEM,V2_KQ=$KQ" \
+     --export="ALL,VINE_REPO=$REPO,V2_QUESTIONS=$QFILE,V2_STEM=$STEM,V2_KQ=$KQ,V2_IMAGES=$IMAGES" \
      --nodes=1 --ntasks=1 --cpus-per-task=4 --mem=24G --time=08:00:00 \
      --output="$LOG/vine2_check_${STEM}_%j.log" vine2/check_job.slurm)
 b="${b%%;*}"

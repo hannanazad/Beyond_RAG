@@ -130,20 +130,23 @@ def latest_drafts(path: Path, writer: str, kq_name: str, checker: str,
     return out, name
 
 
-def image_list(entry: Dict[str, Any], draft: Optional[Dict[str, Any]]) -> List[str]:
+def image_list(entry: Dict[str, Any], draft: Optional[Dict[str, Any]], limit: int = MAX_IMAGES) -> List[str]:
     """The images the writer was shown (from its record); without a record, VINE's own
-    order, at most 4 files (as compare40/run_vine_rag.py picks them)."""
+    order, at most `limit` files (as compare40/run_vine_rag.py picks them; default 4)."""
     if draft and isinstance(draft.get("images"), list):
-        return [str(p) for p in draft["images"]][:MAX_IMAGES]
+        return [str(p) for p in draft["images"]][:limit]
     out: List[str] = []
     for f in entry.get("figures") or []:
         for p in [p for p in (f.get("image_paths") or [f.get("image_path")]) if p]:
-            if len(out) < MAX_IMAGES:
+            if len(out) < limit:
                 out.append(str(p))
     for c in entry.get("chunks") or []:                 # whole pages that carry their picture
-        if core.is_page(c) and c.get("image_path") and len(out) < MAX_IMAGES:
+        if core.is_page(c) and c.get("image_path") and len(out) < limit:
             out.append(str(c["image_path"]))
     return out
+
+
+_JPEG_COPY = re.compile(r"_[0-9a-f]{16}$")             # run_vine_rag.fit_sizes: <stem>_<16 hex>.jpg
 
 
 def image_ids(entry: Dict[str, Any], paths: List[str]) -> List[str]:
@@ -155,7 +158,18 @@ def image_ids(entry: Dict[str, Any], paths: List[str]) -> List[str]:
     for c in entry.get("chunks") or []:
         if core.is_page(c) and c.get("image_path"):
             names[Path(str(c["image_path"])).name] = str(c.get("chunk_id"))
-    return [names.get(Path(p).name, Path(p).stem) for p in paths]
+    stems = {Path(n).stem: v for n, v in names.items()}
+
+    def one(p: str) -> str:
+        if Path(p).name in names:
+            return names[Path(p).name]
+        # a JPEG copy of a big figure picture (run_vine_rag.fit_sizes, figure_jpeg/<stem>_<key>.jpg)
+        stem = Path(p).stem
+        m = _JPEG_COPY.search(stem)
+        if Path(p).suffix.lower() == ".jpg" and Path(p).parent.name == "figure_jpeg" and m:
+            return stems.get(stem[:m.start()], stem)
+        return stem
+    return [one(p) for p in paths]
 
 
 class Checker:
@@ -227,9 +241,9 @@ def _ask_checker(ask, question: str, entry: Dict[str, Any], statements: List[Dic
 
 
 def check_one(qid: str, question: str, entry: Dict[str, Any], draft: Optional[Dict[str, Any]],
-              checker: Checker, fallback_writer: bool) -> Dict[str, Any]:
+              checker: Checker, fallback_writer: bool, max_images: int = MAX_IMAGES) -> Dict[str, Any]:
     """Stage B for one question. Never raises: every failure gives an answer and a reason."""
-    paths = image_list(entry, draft)
+    paths = image_list(entry, draft, max_images)
     missing = [p for p in paths if not Path(p).exists()]
     paths = [p for p in paths if Path(p).exists()]
     ids = image_ids(entry, paths)
@@ -337,7 +351,12 @@ def main() -> int:
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--no-fallback-writer", action="store_true")
     ap.add_argument("--cache-only", action="store_true", help="replay saved replies only; never call the API")
+    ap.add_argument("--max-images", type=int, default=MAX_IMAGES,
+                    help=f"pictures shown to the checker, 1 to 20 (default {MAX_IMAGES}): the ones the writer was shown")
     args = ap.parse_args()
+    if not 1 <= args.max_images <= 20:
+        say("STOPPED: --max-images must be 1 to 20")
+        return 1
 
     out_dir = Path(args.out) if args.out else Path(os.environ["SCRATCH"]) / "Beyond_RAG" / "vine2_runs" / args.tag
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -352,7 +371,8 @@ def main() -> int:
     drafts, writer = latest_drafts(Path(args.drafts), args.writer, kq_path.name, args.checker, questions)
     have = sum(1 for q in ids if q in drafts)
     say(f"questions {len(ids)} | drafts by {writer or '(none)'}: {have} | "
-        f"checker {args.checker} (effort {args.effort}, max tokens {args.max_tokens:,}) | workers {args.workers}")
+        f"checker {args.checker} (effort {args.effort}, max tokens {args.max_tokens:,}) | workers {args.workers}"
+        + (f" | up to {args.max_images} pictures a question" if args.max_images != MAX_IMAGES else ""))
     if have < args.min_drafts * len(ids):
         say(f"STOPPED: only {have} of {len(ids)} questions have a draft (at least {args.min_drafts:.0%} needed). "
             f"The writer stage did not work: look at its log, then run the same command again. "
@@ -362,7 +382,8 @@ def main() -> int:
     final_path = out_dir / "final.jsonl"
     rules_sha = sha(core.CHECKER_RULES)[:12]
     code_sha = sha((HERE / "core.py").read_text() + (HERE / "check.py").read_text()
-                   + f"|{args.checker}|{args.effort}|{args.max_tokens}")[:12]   # the code and the checker's settings
+                   + f"|{args.checker}|{args.effort}|{args.max_tokens}"
+                   + (f"|images {args.max_images}" if args.max_images != MAX_IMAGES else ""))[:12]   # the code and the checker's settings
     latest: Dict[str, Dict[str, Any]] = {}        # each question's last record with this code and draft
     for r in read_jsonl(final_path):
         d = drafts.get(r.get("question_id"))
@@ -386,7 +407,8 @@ def main() -> int:
 
     def work(i: int, qid: str) -> None:
         try:
-            r = check_one(qid, questions[qid], kq[qid], drafts.get(qid), checker, not args.no_fallback_writer)
+            r = check_one(qid, questions[qid], kq[qid], drafts.get(qid), checker, not args.no_fallback_writer,
+                          args.max_images)
         except Exception as e:                                         # noqa: BLE001  (never lose a question)
             d = drafts.get(qid)
             r = {"question_id": qid, "status": "unchecked" if d else "no_answer",
@@ -441,6 +463,7 @@ def main() -> int:
                 "questions_sha256": sha(Path(args.questions).read_text()),
                 "drafts_file": str(args.drafts), "writer": writer, "checker": args.checker,
                 "effort": args.effort, "max_tokens": args.max_tokens, "fallback_writer": not args.no_fallback_writer,
+                **({"max_images": args.max_images} if args.max_images != MAX_IMAGES else {}),
                 "questions": len(every), "checked_this_run": ids if args.only else "all",
                 "statuses": statuses, "totals": totals,
                 "not_checked": {k: v for k, v in by_status.items() if k != "checked"},

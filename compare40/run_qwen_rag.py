@@ -28,6 +28,11 @@ This is system 2 (run_vine_rag.py: the same evidence, GEMS-RAG's answer prompt, 
      $SCRATCH/Beyond_RAG/compare40_runs/vine_rag/answers_<tag>.jsonl
      with the settings in qwen_rag_<tag>_manifest.json next to it.
 Run again, it answers only the questions that have no answer yet.
+
+--max-images N (1 to 20, default 4): each question is answered with run_vine_rag.py
+--max-images N (VINE's figure pictures in VINE's order), and the servers take as many
+pictures a prompt as the questions to answer send (at most N, at least 4). With the default
+the servers and every command are exactly as before.
 """
 from __future__ import annotations
 
@@ -53,6 +58,7 @@ sys.path.insert(0, str(HERE))
 import qwen_local as ql  # noqa: E402
 
 MAX_IMAGES = 4                 # VINE's image limit (run_vine_rag.MAX_IMAGES)
+IMAGE_LIMIT = MAX_IMAGES       # the servers' picture limit: --max-images (default 4, as before)
 WINDOW, MIN_WINDOW = 131072, 49152
 GPU_UTILS = (0.95, 0.90)
 SEED = 42
@@ -164,7 +170,7 @@ def with_vision(vc):
         return original(vllm_bin, model, served_name=served_name, port=port, max_model_len=max_model_len,
                         gpu_memory_utilization=gpu_memory_utilization, seed=seed, language_only="",
                         extra=list(extra) + ["--limit-mm-per-prompt",
-                                             json.dumps({"image": MAX_IMAGES, "video": 0})])
+                                             json.dumps({"image": IMAGE_LIMIT, "video": 0})])
     vc.serve_command = serve_command        # vllm_client.launch looks this name up when it runs
     return vc
 
@@ -275,7 +281,12 @@ def main() -> int:
     ap.add_argument("--questions", default=str(HERE / "questions_40.json"))
     ap.add_argument("--only", default="", help="comma-separated question ids (a smoke test)")
     ap.add_argument("--tag", default="qwen_v1")
+    ap.add_argument("--max-images", type=int, default=MAX_IMAGES,
+                    help=f"VINE's figure pictures a question, 1 to 20 (default {MAX_IMAGES}; then nothing changes): "
+                         "the servers' picture limit and run_vine_rag.py --max-images")
     args = ap.parse_args()
+    assert 1 <= args.max_images <= 20, "--max-images must be 1 to 20"
+    global IMAGE_LIMIT
 
     job = os.environ.get("SLURM_JOB_ID", "local")
     scratch = Path(os.environ["SCRATCH"])
@@ -298,6 +309,15 @@ def main() -> int:
     done = {r["question_id"] for f in part_files(out_dir, args.tag) for r in read_jsonl(f)
             if r.get("status") == "ok" and counts(r, kq_name)}
     todo = [q for q in ids if q not in done]
+    if args.max_images != MAX_IMAGES:
+        # the servers take as many pictures as the questions to answer will send, and no more
+        # (vLLM sets memory aside for its picture limit): VINE's existing figure files, at most N
+        need = max([min(args.max_images, sum(1 for f in (kq[q].get("figures") or [])
+                                             for p in (f.get("image_paths") or [f.get("image_path")])
+                                             if p and Path(p).exists())) for q in todo] or [0])
+        IMAGE_LIMIT = max(MAX_IMAGES, need)
+        say(f"pictures: up to {args.max_images} a question; the most any question here sends: {need} "
+            f"-> servers' picture limit {IMAGE_LIMIT}")
     say(f"job {job} | {MODEL_ID} @ {REVISION[:12]} | vLLM {VLLM_VERSION} | tag {args.tag}")
     say(f"questions: {len(ids)} | already answered: {len(ids) - len(todo)} | to answer: {len(todo)}")
     if not todo:
@@ -407,6 +427,8 @@ def answer_all(args, ids, todo, kq_name, out_dir, job, names, vis, model, vc, lo
                               "gpu_memory_utilization": s["gpu_memory_utilization"], "probe": probes[i]}
                              for i, s in usable],
                  "request_settings": ql.settings(), "kq_file": kq_name,
+                 **({"max_images": args.max_images, "server_image_limit": IMAGE_LIMIT}
+                    if args.max_images != MAX_IMAGES else {}),
                  "questions": todo, "repo_commit": subprocess.run(
                      ["git", "-C", str(REPO), "rev-parse", "--short", "HEAD"],
                      capture_output=True, text=True).stdout.strip()})
@@ -445,6 +467,8 @@ def answer_all(args, ids, todo, kq_name, out_dir, job, names, vis, model, vc, lo
                        "--questions", args.questions, "--models", MODEL_ID, "--only", q,
                        "--tag", f"{args.tag}_s{i}", "--out", str(out_dir),
                        "--local-server", s["base_url"] + "/v1", "--local-max-len", str(window)]
+                if args.max_images != MAX_IMAGES:     # only then: the default command is as before
+                    cmd += ["--max-images", str(args.max_images)]
                 t0 = time.time()
                 with log.open("a", encoding="utf-8") as lf:
                     lf.write(f"\n----- {q} | {now()} -----\n")

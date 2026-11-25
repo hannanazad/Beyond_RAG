@@ -16,12 +16,14 @@ source "$REPO/hprc/env.sh"
 : "${V2_QUESTIONS:?submit with vine2/run_vine2_grace.sh}"
 : "${V2_STEM:?submit with vine2/run_vine2_grace.sh}"
 : "${V2_KQ:?submit with vine2/run_vine2_grace.sh}"
+V2_IMAGES="${V2_IMAGES:-4}"                  # VINE's figure pictures a question (the launcher's MAX_IMAGES)
+[[ "$V2_IMAGES" =~ ^[0-9]+$ ]] && [ "$V2_IMAGES" -ge 1 ] && [ "$V2_IMAGES" -le 20 ] || { echo "STOPPED: V2_IMAGES must be 1 to 20: $V2_IMAGES"; exit 1; }
 
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1
 export NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1
 unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY ANTHROPIC_API_KEY
 
-echo "job $SLURM_JOB_ID | stage A (writer) | $V2_STEM | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
+echo "job $SLURM_JOB_ID | stage A (writer) | $V2_STEM | up to $V2_IMAGES pictures a question | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
 echo "repo $REPO at $(git -C "$REPO" rev-parse --short HEAD)"
 echo "questions $V2_QUESTIONS | sha256 $(sha256sum "$V2_QUESTIONS" | cut -c1-12)"
 echo "evidence $V2_KQ | sha256 $(sha256sum "$V2_KQ" | cut -c1-12)"
@@ -31,4 +33,4 @@ echo "code sha256: run_qwen_rag.py $(sha256sum "$REPO/compare40/run_qwen_rag.py"
 nvidia-smi -L || true
 cd "$REPO"
 "$RETR_ENV/bin/python" -u compare40/run_qwen_rag.py --kq "$V2_KQ" --questions "$V2_QUESTIONS" \
-    --tag "qwen_$V2_STEM"
+    --tag "qwen_$V2_STEM" --max-images "$V2_IMAGES"

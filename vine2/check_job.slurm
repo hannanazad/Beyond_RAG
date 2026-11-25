@@ -12,6 +12,8 @@ source "$REPO/hprc/env.sh"
 : "${V2_QUESTIONS:?submit with vine2/run_vine2_grace.sh}"
 : "${V2_STEM:?submit with vine2/run_vine2_grace.sh}"
 : "${V2_KQ:?submit with vine2/run_vine2_grace.sh}"
+V2_IMAGES="${V2_IMAGES:-4}"                  # pictures shown to the checker: the ones the writer saw
+[[ "$V2_IMAGES" =~ ^[0-9]+$ ]] && [ "$V2_IMAGES" -ge 1 ] && [ "$V2_IMAGES" -le 20 ] || { echo "STOPPED: V2_IMAGES must be 1 to 20: $V2_IMAGES"; exit 1; }
 
 echo "job $SLURM_JOB_ID | stage B (checker) | $V2_STEM | node $(hostname) | $(date '+%Y-%m-%d %H:%M:%S')"
 # a second checker job on the same answers would ask (and pay for) every question again
@@ -50,7 +52,7 @@ set +e
 ONLY=()
 [ -z "${V2_ONLY:-}" ] || { ONLY=(--only "$V2_ONLY"); echo "only these questions: $V2_ONLY"; }
 "$RETR_ENV/bin/python" -u vine2/check.py --kq "$V2_KQ" --questions "$V2_QUESTIONS" \
-    --drafts "$DRAFTS" --tag "$V2_STEM" "${ONLY[@]}"
+    --drafts "$DRAFTS" --tag "$V2_STEM" --max-images "$V2_IMAGES" "${ONLY[@]}"
 RC=$?
 set -e
 echo; echo "stage B exit $RC | $(date '+%Y-%m-%d %H:%M:%S')"
